@@ -17,8 +17,14 @@ if (!contractName || contractName.trim() === "") {
 (async function () {
   let config = await loadConfig(argv.network);
   let web3 = await loadWeb3(config);
+  console.log(web3.currentProvider);
+  console.log(`Using network ${argv.network} ${web3.currentProvider.host}`);
+
   let account = await loadAccount(config, web3);
+  console.log(`Deploying contract ${contractName} with args ${JSON.stringify(contractArgs)}`);
 
   let contract = await deployContract(web3, config.network, account, contractName, contractArgs);
   await saveContract(contractName, contract, config.network);
+
+  console.log(`Deployed ${contractName} at ${contract.address}`);
 })();

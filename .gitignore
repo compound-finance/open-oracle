@@ -3,3 +3,4 @@
 .build/contracts.json
 .build/test.json
 .build/development.json
+yarn-error.log

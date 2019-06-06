@@ -10,7 +10,7 @@ First, you will need solc 0.5.9 installed. The binary package is faster, but you
 To compile the contracts run:
 
 ```
-yarn run saddle:compile --network test
+yarn run saddle:compile
 ```
 
 To deploy the Open Oracle locally, you can run:

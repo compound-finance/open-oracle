@@ -7,6 +7,10 @@ export interface Config {
   network: string
 }
 
+export function chooseProvider(def: string | (() => string)): string {
+  return process.env['provider'] || Web3.givenProvider || ( typeof(def) === 'function' ? def() : def );
+}
+
 export async function getKeyword(keyword, file) {
   const kwVal = process.env[keyword];
   if (kwVal) {

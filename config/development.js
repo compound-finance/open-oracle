@@ -1,4 +1,5 @@
 const Web3 = require('web3');
+const {chooseProvider} = require('../.tsbuilt/config');
 
 const options = {
   transactionConfirmationBlocks: 1,
@@ -6,7 +7,7 @@ const options = {
 }
 
 async function getWeb3() {
-  return new Web3(process.env['provider'] || Web3.givenProvider || 'http://127.0.0.1:8545', undefined, options);
+  return new Web3(chooseProvider('http://127.0.0.1:8545'), undefined, options);
 }
 
 async function getAccount(web3) {

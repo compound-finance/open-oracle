@@ -1,5 +1,6 @@
 const Web3 = require('web3');
 const ganache = require('ganache-core');
+const {chooseProvider} = require('../.tsbuilt/config');
 
 const options = {
   transactionConfirmationBlocks: 1,
@@ -7,8 +8,7 @@ const options = {
 }
 
 async function getWeb3() {
-  console.log("loading test web3...");
-  return new Web3(process.env['provider'] || Web3.givenProvider || ganache.provider(), undefined, options);
+  return new Web3(chooseProvider(() => ganache.provider()), undefined, options);
 }
 
 async function getAccount(web3) {

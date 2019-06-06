@@ -9,8 +9,11 @@ import {Contract} from 'web3-eth-contract';
 let saddle;
 
 async function configure() {
-  let config = await loadConfig("test");
+  const network = 'test';
+  let config = await loadConfig(network);
   let web3 = await loadWeb3(config);
+  console.log(`Using network ${network} ${web3.currentProvider.host}`);
+
   let account = loadAccount(config, web3);
 
   async function deploy(contract: string, args: any[]): Promise<Contract> {
