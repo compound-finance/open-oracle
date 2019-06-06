@@ -9,6 +9,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
+const BUILD_FILE_NAME = 'build.json';
+const CONTRACT_FILE_NAME = 'contracts.json';
 async function readFile(file, def, fn) {
     return new Promise((resolve, reject) => {
         fs.access(file, fs.constants.F_OK, (err) => {
@@ -23,11 +25,19 @@ async function readFile(file, def, fn) {
         });
     });
 }
+async function writeFile(file, data) {
+    return new Promise((resolve, reject) => {
+        fs.writeFile(file, data, (err) => {
+            return err ? reject(err) : resolve();
+        });
+    });
+}
+exports.writeFile = writeFile;
 function getBuildFile(network, file) {
     return path.join(process.cwd(), '.build', network, file);
 }
 async function getContract(network, name) {
-    let contracts = await readFile(getBuildFile(network, 'contracts.json'), {}, JSON.parse);
+    let contracts = await readFile(getBuildFile(network, BUILD_FILE_NAME), {}, JSON.parse);
     let contractsObject = contracts["contracts"] || {};
     let foundContract = Object.entries(contractsObject).find(([pathContractName, contract]) => {
         let [_, contractName] = pathContractName.split(":", 2);
@@ -51,3 +61,10 @@ async function deployContract(web3, network, from, name, args) {
     return await contract.deploy({ data: '0x' + contractBuild.bin, arguments: args }).send({ from: from, gas: 1000000 });
 }
 exports.deployContract = deployContract;
+async function saveContract(name, contract, network) {
+    let file = getBuildFile(network, CONTRACT_FILE_NAME);
+    let curr = await readFile(file, {}, JSON.parse);
+    curr[name] = contract.address;
+    await writeFile(file, JSON.stringify(curr));
+}
+exports.saveContract = saveContract;

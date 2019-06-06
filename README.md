@@ -5,15 +5,32 @@ The Open Oracle is a standard and SDK allowing reporters to sign key-value pairs
 
 ## Contracts
 
-First, you will need solc 0.5.9 installed. The binary package is faster, but you can use solcjs by running `yarn install`.
+First, you will need solc 0.5.9 installed. The binary package is faster, but you can use solcjs by running `yarn install solcjs@0.5.9 --dev`.
 
-...
+To deploy the Open Oracle locally, you can run:
 
-## SDK
+```
+yarn run saddle:deploy development Oracle
+```
 
-This repository contains an SDK to allow users to quickly sign data in a number of languages. We currently support:
+Or you can add a view in `MyView.sol` and run:
 
-  * JavaScript / TypeScript
+```
+yarn run saddle:deploy development MyView arg1 arg2 ...
+```
+
+To run tests:
+
+```
+yarn run test
+```
+
+## Reporter SDK
+
+This repository contains a set of SDKs for reporters to easily sign "reporter" data in any supported languages. We currently support the following languages:
+
+  * [TypeScript](./sdk/typescript/README.md) / JavaScript
+  * [Elixir](./sdk/typescript/README.md)
 
 ## Poster
 
@@ -21,4 +38,4 @@ The poster is a simple application that reads from a given feed (or set of feeds
 
 ## Contributing
 
-Note: the code in this repository is held under the MIT license. Any contributors must agree to release contributed code under this same license.
+Note: the code in this repository is held under the MIT license. Any contributors must agree to release contributed code under this same license. Please submit an issue (or create a pull request) for any issues or contributions to the project.

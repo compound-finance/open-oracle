@@ -1,7 +1,7 @@
 {
-  "name": "delfi-reporter",
+  "name": "open-oracle-reporter",
   "version": "1.0.0",
-  "description": "The DelFi Reporter",
+  "description": "The Open Oracle Reporter",
   "main": "index.js",
   "repository": "https://github.com/compound-finance/delfi",
   "author": "Compound Labs, Inc.",

@@ -1,9 +1,12 @@
 {
-  "name": "delfi-poster",
+  "name": "open-oracle-poster",
   "version": "1.0.0",
-  "description": "A Customizable Poster for DelFi",
-  "main": "index.js",
-  "repository": "https://compound.finance/delfi",
+  "description": "A Customizable Poster for the Compound Open Oracle",
+  "main": "poster.js",
+  "repository": "https://compound.finance/open-oracle",
   "author": "Compound Labs, Inc.",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+  	"start": "node ./.tsbuilt/poster.js"
+  }
 }

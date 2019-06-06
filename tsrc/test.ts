@@ -3,6 +3,9 @@ import {loadConfig, loadWeb3, loadAccount} from './config';
 import {deployContract} from './contract';
 import {Contract} from 'web3-eth-contract';
 
+// let web3; // share web3 amoung tests
+// let account; // share primary account
+
 async function configure() {
   let config = await loadConfig("test");
   let web3 = await loadWeb3(config);
@@ -24,7 +27,7 @@ async function configure() {
 global['beforeEach'](() => {
   console.log("starting test");
 });
-global['beforeEach'](configure);
+global['before'](configure);
 global['afterEach'](() => {
   console.log("ending test");
 });

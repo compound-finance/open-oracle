@@ -1,5 +1,7 @@
 import Web3 from 'web3';
 import ganache from 'ganache-core';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface Config {
   network: string
@@ -12,21 +14,7 @@ export async function loadConfig(network: string): Promise<Config> {
 }
 
 export async function loadWeb3(config: Config): Promise<Web3> {
-  if (config.network === 'test') {
-    const options = {
-      transactionConfirmationBlocks: 1,
-      transactionBlockTimeout: 5
-    }
-
-    return new Web3(ganache.provider(), undefined, options);
-  } else {
-    const options = {
-      transactionConfirmationBlocks: 1,
-      transactionBlockTimeout: 5
-    }
-
-    return new Web3(Web3.givenProvider || 'http://127.0.0.1:8545', undefined, options);
-  }
+  return await import(path.join(process.cwd(), 'config', config.network));
 }
 
 export async function loadAccount(config: Config, web3: Web3): Promise<string> {

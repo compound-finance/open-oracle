@@ -1,1 +1,4 @@
 *node_modules*
+*.tsbuilt*
+.build/test
+.build/development

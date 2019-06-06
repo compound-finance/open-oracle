@@ -1,9 +1,9 @@
 {
-  "name": "delfi",
+  "name": "compound-open-oracle",
   "version": "1.0.0",
-  "description": "The Open Oracle",
+  "description": "The Compound Open Oracle",
   "main": "index.js",
-  "repository": "https://github.com/compound-finance/delfi",
+  "repository": "https://github.com/compound-finance/open-oracle",
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
@@ -14,8 +14,9 @@
     "jest": "^24.8.0"
   },
   "scripts": {
-    "saddle:test": "script/compile test && tsc && yarn run saddle:test:run",
+    "saddle:compile": "env network=${1:-\"development\"} && echo mkdir -p .build/${network} && echo solc --combined-json bin,abi --optimize contracts/*.sol > .build/${network}/build.json",
     "saddle:test:run": "node --async-stack-traces --stack-trace-limit=1000 ./node_modules/jest-cli/bin/jest.js",
-    "saddle:deploy": "./tsbuilt/do_deploy.js"
+    "saddle:deploy": "env network=${1:-\"development\"} && env contract=\"$2\" && shift && shift && yarn run saddle:compile && node ./.tsbuilt/deploy.js $@",
+    "test": "env network=${1:-\"test\"} && yarn run saddle:compile && yarn run saddle:test:run"
   }
 }

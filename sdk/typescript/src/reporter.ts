@@ -1,5 +1,6 @@
-import * as Web3 from 'web3';
-const web3 = new Web3();
+import Web3 from 'web3';
+
+const web3 = new Web3(); // This is just encoding, etc.
 
 interface TypeSignature {
   name: string,
@@ -9,8 +10,8 @@ interface TypeSignature {
   magic: string
 };
 
-const Delphi = {
-  annotateType: (name: string, keyType: string, valueType: string): TypeAnnotation {
+export const Reporter = {
+  annotateType: (name: string, keyType: string, valueType: string): TypeSignature {
     let encoder = (x) => x;
     let actualValueType;
 
