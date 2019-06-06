@@ -1,0 +1,12 @@
+{
+  "name": "delfi-reporter",
+  "version": "1.0.0",
+  "description": "The DelFi Reporter",
+  "main": "index.js",
+  "repository": "https://github.com/compound-finance/delfi",
+  "author": "Compound Labs, Inc.",
+  "license": "MIT",
+  "dependencies": {
+    "web3": "1.0.0-beta.55"
+  }
+}

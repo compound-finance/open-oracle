@@ -1,0 +1,21 @@
+{
+  "name": "delfi",
+  "version": "1.0.0",
+  "description": "The Open Oracle",
+  "main": "index.js",
+  "repository": "https://github.com/compound-finance/delfi",
+  "author": "Compound Labs, Inc.",
+  "license": "MIT",
+  "dependencies": {
+    "web3": "1.0.0-beta.55"
+  },
+  "devDependencies": {
+    "ganache-core": "^2.5.5",
+    "jest": "^24.8.0"
+  },
+  "scripts": {
+    "saddle:test": "script/compile test && tsc && yarn run saddle:test:run",
+    "saddle:test:run": "node --async-stack-traces --stack-trace-limit=1000 ./node_modules/jest-cli/bin/jest.js",
+    "saddle:deploy": "./tsbuilt/do_deploy.js"
+  }
+}

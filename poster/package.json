@@ -1,0 +1,9 @@
+{
+  "name": "delfi-poster",
+  "version": "1.0.0",
+  "description": "A Customizable Poster for DelFi",
+  "main": "index.js",
+  "repository": "https://compound.finance/delfi",
+  "author": "Compound Labs, Inc.",
+  "license": "MIT"
+}

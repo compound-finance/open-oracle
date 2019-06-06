@@ -1,0 +1,5 @@
+#!/bin/bash
+
+network="$1"
+mkdir -p .build/${network}
+solc --combined-json bin,abi --optimize contracts/*.sol > .build/${network}/contracts.json
