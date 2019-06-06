@@ -4,8 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import ganache from 'ganache-core';
 
-const BUILD_FILE_NAME = 'build.json';
-const CONTRACT_FILE_NAME = 'contracts.json';
+const BUILD_FILE_NAME = 'contracts.json';
 
 interface ContractBuild {
   abi: string
@@ -34,12 +33,12 @@ export async function writeFile<T>(file: string, data: string): Promise<void> {
   });
 }
 
-function getBuildFile(network: string, file: string): string {
-  return path.join(process.cwd(), '.build', network, file);
+function getBuildFile(file: string): string {
+  return path.join(process.cwd(), '.build', file);
 }
 
 async function getContract(network: string, name: string): Promise<ContractBuild | null> {
-  let contracts = await readFile(getBuildFile(network, BUILD_FILE_NAME), {}, JSON.parse);
+  let contracts = await readFile(getBuildFile(BUILD_FILE_NAME), {}, JSON.parse);
   let contractsObject = contracts["contracts"] || {};
 
   let foundContract = Object.entries(contractsObject).find(([pathContractName, contract]) => {
@@ -68,7 +67,7 @@ export async function deployContract(web3: Web3, network: string, from: string, 
 }
 
 export async function saveContract(name: string, contract: Contract, network: string): Promise<void> {
-  let file = getBuildFile(network, CONTRACT_FILE_NAME);
+  let file = getBuildFile(`${network}.json`);
   let curr = await readFile(file, {}, JSON.parse);
   curr[name] = contract.address;
   await writeFile(file, JSON.stringify(curr));

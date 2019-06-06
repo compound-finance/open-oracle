@@ -7,16 +7,17 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
-    "web3": "1.0.0-beta.55"
+    "web3": "1.0.0-beta.55",
+    "yargs": "^13.2.4"
   },
   "devDependencies": {
     "ganache-core": "^2.5.5",
     "jest": "^24.8.0"
   },
   "scripts": {
-    "saddle:compile": "env network=${1:-\"development\"} && echo mkdir -p .build/${network} && echo solc --combined-json bin,abi --optimize contracts/*.sol > .build/${network}/build.json",
+    "saddle:compile": "mkdir -p .build && solc --combined-json bin,abi --optimize contracts/*.sol > .build/contracts.json",
     "saddle:test:run": "node --async-stack-traces --stack-trace-limit=1000 ./node_modules/jest-cli/bin/jest.js",
-    "saddle:deploy": "env network=${1:-\"development\"} && env contract=\"$2\" && shift && shift && yarn run saddle:compile && node ./.tsbuilt/deploy.js $@",
-    "test": "env network=${1:-\"test\"} && yarn run saddle:compile && yarn run saddle:test:run"
+    "saddle:deploy": "yarn run saddle:compile && node ./.tsbuilt/deploy.js $@",
+    "test": "yarn run saddle:compile && yarn run saddle:test:run"
   }
 }

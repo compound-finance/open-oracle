@@ -7,16 +7,22 @@ The Open Oracle is a standard and SDK allowing reporters to sign key-value pairs
 
 First, you will need solc 0.5.9 installed. The binary package is faster, but you can use solcjs by running `yarn install solcjs@0.5.9 --dev`.
 
+To compile the contracts run:
+
+```
+yarn run saddle:compile --network test
+```
+
 To deploy the Open Oracle locally, you can run:
 
 ```
-yarn run saddle:deploy development Oracle
+yarn run saddle:deploy --network development Oracle
 ```
 
 Or you can add a view in `MyView.sol` and run:
 
 ```
-yarn run saddle:deploy development MyView arg1 arg2 ...
+yarn run saddle:deploy --network development MyView arg1 arg2 ...
 ```
 
 To run tests:

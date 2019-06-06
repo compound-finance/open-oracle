@@ -5,9 +5,11 @@ const options = {
   transactionBlockTimeout: 5
 }
 
-async function loadWeb3() {
+async function getWeb3() {
   console.log("loading development web3...");
   return new Web3(Web3.givenProvider || 'http://127.0.0.1:8545', undefined, options);
 }
 
-export default loadWeb3;
+module.exports = {
+	getWeb3
+};

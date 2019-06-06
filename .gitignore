@@ -1,4 +1,5 @@
 *node_modules*
 *.tsbuilt*
-.build/test
-.build/development
+.build/contracts.json
+.build/test.json
+.build/development.json

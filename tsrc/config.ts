@@ -1,5 +1,4 @@
 import Web3 from 'web3';
-import ganache from 'ganache-core';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -14,7 +13,9 @@ export async function loadConfig(network: string): Promise<Config> {
 }
 
 export async function loadWeb3(config: Config): Promise<Web3> {
-  return await import(path.join(process.cwd(), 'config', config.network));
+  const fn: any = await import(path.join(process.cwd(), 'config', config.network));
+
+  return await fn.getWeb3();
 }
 
 export async function loadAccount(config: Config, web3: Web3): Promise<string> {
