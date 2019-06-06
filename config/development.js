@@ -6,10 +6,16 @@ const options = {
 }
 
 async function getWeb3() {
-  console.log("loading development web3...");
-  return new Web3(Web3.givenProvider || 'http://127.0.0.1:8545', undefined, options);
+  return new Web3(process.env['provider'] || Web3.givenProvider || 'http://127.0.0.1:8545', undefined, options);
+}
+
+async function getAccount(web3) {
+  let [account, ...accounts] = await web3.eth.getAccounts();
+
+  return account;
 }
 
 module.exports = {
-	getWeb3
+  getWeb3,
+  getAccount
 };

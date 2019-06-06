@@ -5,7 +5,7 @@ The Open Oracle is a standard and SDK allowing reporters to sign key-value pairs
 
 ## Contracts
 
-First, you will need solc 0.5.9 installed. The binary package is faster, but you can use solcjs by running `yarn install solcjs@0.5.9 --dev`.
+First, you will need solc 0.5.9 installed. The binary package is faster, but you can use solcjs by running `yarn install solcjs@0.5.9 --dev`. Additionally, you will need TypeScript installed and will need to build the project by running `tsc`.
 
 To compile the contracts run:
 
