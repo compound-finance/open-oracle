@@ -13,11 +13,13 @@
   },
   "devDependencies": {
     "ganache-core": "^2.5.5",
-    "jest": "^24.8.0"
+    "jest": "^24.8.0",
+    "jest-junit": "^6.4.0",
+    "typescript": "^3.5.1"
   },
   "scripts": {
     "saddle:compile": "mkdir -p .build && solc --combined-json bin,abi --optimize contracts/*.sol > .build/contracts.json",
-    "saddle:test:run": "node --async-stack-traces --stack-trace-limit=1000 ./node_modules/jest-cli/bin/jest.js",
+    "saddle:test:run": "node --stack-trace-limit=1000 ./node_modules/jest-cli/bin/jest.js",
     "saddle:deploy": "yarn run saddle:compile && node ./.tsbuilt/deploy.js $@",
     "test": "yarn run saddle:compile && yarn run saddle:test:run"
   }

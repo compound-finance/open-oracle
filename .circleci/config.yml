@@ -1,0 +1,37 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: circleci/node:11
+    working_directory: ~/repo
+    steps:
+      - run:
+        |
+          sudo wget https://github.com/ethereum/solidity/releases/download/v0.5.9/solc-static-linux -O /usr/local/bin/solc
+          sudo chmod +x /usr/local/bin/solc
+      - checkout
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          - v1-dependencies-
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+      - attach_workspace:
+          at: ~/repo
+      - run: ~/repo/node_modules/.bin/tsc
+      - run: mkdir ~/junit
+      - run: JEST_JUNIT_OUTPUT=~/junit/test-results.xml yarn run test --ci --reporters=default --reporters=jest-junit
+      - store_test_results:
+          path: ~/junit
+      - store_artifacts:
+          path: ~/junit
+
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test
