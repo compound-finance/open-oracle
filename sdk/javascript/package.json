@@ -1,0 +1,28 @@
+{
+  "name": "open-oracle-reporter",
+  "version": "1.0.0",
+  "description": "The Open Oracle Reporter",
+  "main": "index.js",
+  "repository": "https://github.com/compound-finance/delfi",
+  "author": "Compound Labs, Inc.",
+  "license": "MIT",
+  "scripts": {
+    "start": "tsc && node ./.tsbuilt/index.js",
+    "test": "node ./node_modules/jest-cli/bin/jest.js"
+  },
+  "dependencies": {
+    "web3": "1.0.0-beta.55"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.13",
+    "jest": "^24.8.0",
+    "jest-junit": "^6.4.0",
+    "node-fetch": "^2.6.0",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.5.1"
+  },
+  "optionalDependencies": {
+    "@types/express": "^4.17.0",
+    "express": "^4.17.1"
+  }
+}

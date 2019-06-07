@@ -45,7 +45,7 @@ yarn run test
 
 This repository contains a set of SDKs for reporters to easily sign "reporter" data in any supported languages. We currently support the following languages:
 
-  * [TypeScript](./sdk/typescript/README.md) / JavaScript
+  * [JavaScript](./sdk/javascript/README.md) (in TypeScript)
   * [Elixir](./sdk/typescript/README.md)
 
 ## Poster
