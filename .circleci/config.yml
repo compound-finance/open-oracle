@@ -1,7 +1,7 @@
 version: 2.1
 
 jobs:
-  test:
+  test_oracle:
     docker:
       - image: circleci/node:11
     working_directory: ~/repo
@@ -20,18 +20,64 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
-      - attach_workspace:
-          at: ~/repo
       - run: ~/repo/node_modules/.bin/tsc
-      - run: mkdir ~/junit
-      - run: JEST_JUNIT_OUTPUT=~/junit/test-results.xml yarn run test --ci --reporters=default --reporters=jest-junit
+      - run: mkdir ~/junit-oracle
+      - run: JEST_JUNIT_OUTPUT=~/junit-oracle/test-results.xml yarn run test --ci --reporters=default --reporters=jest-junit
       - store_test_results:
-          path: ~/junit
+          path: ~/junit-oracle
       - store_artifacts:
-          path: ~/junit
+          path: ~/junit-oracle
+
+  test_poster:
+    docker:
+      - image: circleci/node:11
+    working_directory: ~/repo/poster
+    steps:
+      - checkout:
+          path: ~/repo
+      - restore_cache:
+          keys:
+          - v1-poster-dependencies-{{ checksum "package.json" }}
+          - v1-poster-dependencies-
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-poster-dependencies-{{ checksum "package.json" }}
+      - run: mkdir ~/junit-poster
+      - run: JEST_JUNIT_OUTPUT=~/junit-poster/test-results.xml yarn run test --ci --reporters=default --reporters=jest-junit
+      - store_test_results:
+          path: ~/junit-poster
+      - store_artifacts:
+          path: ~/junit-poster
+
+  test_reporter_javascript:
+    docker:
+      - image: circleci/node:11
+    working_directory: ~/repo/sdk/javascript
+    steps:
+      - checkout:
+          path: ~/repo
+      - restore_cache:
+          keys:
+          - v1-sdk-javascript-dependencies-{{ checksum "package.json" }}
+          - v1-sdk-javascript-dependencies-
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-sdk-javascript-dependencies-{{ checksum "package.json" }}
+      - run: mkdir ~/junit-sdk-javascript
+      - run: JEST_JUNIT_OUTPUT=~/junit-sdk-javascript/test-results.xml yarn run test --ci --reporters=default --reporters=jest-junit
+      - store_test_results:
+          path: ~/junit-sdk-javascript
+      - store_artifacts:
+          path: ~/junit-sdk-javascript
 
 workflows:
   version: 2
   test:
     jobs:
-      - test
+      - test_oracle
+      - test_poster
+      - test_reporter_javascript

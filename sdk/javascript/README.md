@@ -20,9 +20,7 @@ import Reporter from 'open-oracle-reporter';
 
 let typeSig = Reporter.annotateType('price', 'string', 'decimal');
 let encoded = Reporter.encode(typeSig, +new Date(), {'eth': 260.0, 'zrx': 0.58});
-let signature = Reporter.sign(encoded, '0x...');
-
-
+let signature = Reporter.sign(encoded, '0x...');```
 ```
 
 For example, in an express app:
@@ -44,9 +42,9 @@ You may also use the easy express adapter:
 ```typescript
 import Reporter from 'open-oracle-reporter';
 
-async funtion fetchPrices() {
+async function fetchPrices() {
 	return {'eth': 260.0, 'zrx': 0.58};
 }
 
-express.use(Reporter.express('prices.json', '0x...', fetchPrices));
+app.use(Reporter.express('/prices.json', '0x...', fetchPrices));
 ```
