@@ -14,12 +14,12 @@ async function configure() {
   let web3 = await loadWeb3(config);
   console.log(`Using network ${network} ${web3.currentProvider.host}`);
 
-  let account = loadAccount(config, web3);
+  let account = await loadAccount(config, web3);
 
   async function deploy(contract: string, args: any[]): Promise<Contract> {
     console.log(["Deploying", contract, args]);
 
-    return deployContract(web3, config.network, await account, contract, args);
+    return deployContract(web3, config.network, account, contract, args);
   }
 
   saddle = {

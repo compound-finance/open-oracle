@@ -8,7 +8,16 @@ import "./Oracle.sol";
  * @author Compound Labs, Inc.
  */
 contract View {
+    /**
+     * @notice The Oracle Data Contract backing this View
+     */
     Oracle public oracle;
+
+    /**
+     * @notice The static list of sources used by this View
+     * @dev Note that while it is possible to create a view with dynamic sources,
+     *  that would not conform to the Open Oracle Standard specification.
+     */
     address[] public sources;
 
     /**
