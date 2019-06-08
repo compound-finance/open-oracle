@@ -5,9 +5,16 @@ The Open Oracle is a standard and SDK allowing reporters to sign key-value pairs
 
 ## Contracts
 
-First, you will need solc 0.5.9 installed. The binary package is faster, but you can use solcjs by running `yarn install solcjs@0.5.9 --dev`. Additionally, you will need TypeScript installed and will need to build the project by running `tsc`.
+First, you will need solc 0.5.9 installed. The binary package is faster, but you can use solcjs by running `yarn install solcjs@0.5.9 --dev`.
+Additionally, you will need TypeScript installed and will need to build the project by running `tsc`.
 
-To compile the contracts run:
+To compile everything run:
+
+```
+yarn run compile
+```
+
+To compile just the contracts run:
 
 ```
 yarn run saddle:compile
@@ -19,10 +26,13 @@ To deploy the Open Oracle locally, you can run:
 yarn run saddle:deploy --network development Oracle
 ```
 
-Or you can add a view in `MyView.sol` and run:
+Note: you will need to be running an Ethereum node locally in order for this to work.
+E.g., start [ganache-cli](https://github.com/trufflesuite/ganache-cli) in another shell.
+
+You can add a view in `MyView.sol` and run (default is `network=development`):
 
 ```
-yarn run saddle:deploy --network development MyView arg1 arg2 ...
+yarn run saddle:deploy MyView arg1 arg2 ...
 ```
 
 To run tests:
