@@ -3,42 +3,38 @@ import Web3 from 'web3';
 const web3 = new Web3(null); // This is just for encoding, etc.
 
 interface TypeSignature {
-  name: string,
-  keyType: string,
-  valueType: string,
-  encoder: (any) => any,
-  magic: string
+  encValueType: string,
+  encoder: (any) => any
 };
 
-export function annotateType(name: string, keyType: string, valueType: string): TypeSignature {
+function annotateType(valueType: string): TypeSignature {
   let encoder = (x) => x;
-  let actualValueType = valueType;
+  let encValueType = valueType;
 
   if (valueType === 'decimal') {
-    encoder = (x) => Number(`${x}e18`);
-    actualValueType = 'uint256';
+    encoder = (x) => web3.utils.toBN('1000000000000000000').muln(x).toString();
+    encValueType = 'uint256';
   }
 
-  // Magic: kec(<name>:<input_type>:<output_type>), e.g. kec("price:string:uint256")
   return {
-    name,
-    keyType,
-    valueType: actualValueType,
-    encoder,
-    magic: web3.utils.keccak256(`${name}:${keyType}:${valueType}`)
+    encValueType,
+    encoder
   };
 }
 
-export function encode(typeSig: TypeSignature, timestamp: number, pairs: [any, any][] | object): string {
+export function encode(keyType: string, valueType: string, timestamp: number, pairs: [any, any][] | object): string {
+  let {encValueType, encoder} = annotateType(valueType);
+
   let actualPairs = Array.isArray(pairs) ? pairs : Object.entries(pairs);
   let pairsEncoded = actualPairs.map(([key, value]) => {
+    console.log([encValueType, encoder(value)]);
+
     return web3.eth.abi.encodeParameters(['bytes', 'bytes'], [
-    web3.eth.abi.encodeParameter(typeSig.keyType, key),
-    web3.eth.abi.encodeParameter(typeSig.valueType, typeSig.encoder(value))
+      web3.eth.abi.encodeParameter(keyType, key),
+      web3.eth.abi.encodeParameter(encValueType, encoder(value))
     ]);
   });
-  return web3.eth.abi.encodeParameters(['bytes32', 'uint256', 'bytes[]'], [
-    typeSig.magic,
+  return web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [
     timestamp,
     pairsEncoded
   ]);
