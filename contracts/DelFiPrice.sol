@@ -36,7 +36,7 @@ contract DelFiPrice is View {
      * @param value Price in USD * 1e18 as a uint
      * @return Reverts if not a DelFi price
      */
-    function price(bytes calldata key, bytes calldata value) external {
+    function price(bytes calldata key, bytes calldata value) external pure {
         (abi.decode(key, (string)), abi.decode(value, (uint)));
     }
 
@@ -78,7 +78,7 @@ contract DelFiPrice is View {
      * @param expiration_ The amount of time a price should be considered valid for
      * @return (median, count) The median price and the number of non-expired sources used
      */
-    function medianPrice(string memory symbol, address[] memory sources_, uint expiration_) public returns (uint median, uint count) {
+    function medianPrice(string memory symbol, address[] memory sources_, uint expiration_) public view returns (uint median, uint count) {
         uint[] memory postedPrices = new uint[](sources_.length);
         for (uint i = 0; i < sources_.length; i++) {
             (uint timestamp, bytes memory value) = oracle.get(namespace, name, sources_[i], bytes(symbol));

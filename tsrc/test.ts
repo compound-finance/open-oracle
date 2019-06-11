@@ -3,18 +3,31 @@ import {loadConfig, loadWeb3, loadAccount} from './config';
 import {deployContract} from './contract';
 import {Contract} from 'web3-eth-contract';
 
-// let web3; // share web3 amoung tests
-// let account; // share primary account
+import expect from 'expect';
 
-let saddle;
-
-async function configure() {
-  const network = 'test';
+export async function configure(network = 'test') { // XXX how to quickly switch to already running ganache?
   let config = await loadConfig(network);
   let web3 = await loadWeb3(config);
   console.log(`Using network ${network} ${web3.currentProvider.host}`);
 
   let account = await loadAccount(config, web3);
+
+  function address(n) {
+    return `0x${(n).toString(16).padStart(40, '0')}`;
+  }
+
+  function bytes(str) {
+    return web3.eth.abi.encodeParameter('string', str);
+  }
+
+  expect.extend({
+    numEquals(actual, expected) {
+      return {
+        pass: actual.toString() == expected.toString(),
+        message: () => `expected ${JSON.stringify(actual)} == ${JSON.stringify(expected)}`
+      }
+    }
+  });
 
   async function deploy(contract: string, args: any[]): Promise<Contract> {
     console.log(["Deploying", contract, args]);
@@ -22,18 +35,15 @@ async function configure() {
     return deployContract(web3, config.network, account, contract, args);
   }
 
-  saddle = {
+  return global['saddle'] = {
     account,
+    address,
+    bytes,
     deploy,
     web3
   };
 }
 
-global['beforeAll'](configure);
-global['beforeEach'](() => {
-  console.log("starting test");
-  global['saddle'] = saddle;
-});
-global['afterEach'](() => {
-  console.log("ending test");
-});
+if (global['beforeAll']) {
+  global['beforeAll'](configure);
+}
