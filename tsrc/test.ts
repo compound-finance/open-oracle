@@ -5,7 +5,7 @@ import {Contract} from 'web3-eth-contract';
 
 import expect from 'expect';
 
-export async function configure(network = 'test') { // XXX how to quickly switch to already running ganache?
+export async function configure(network = 'test') {
   let config = await loadConfig(network);
   let web3 = await loadWeb3(config);
   console.log(`Using network ${network} ${web3.currentProvider.host}`);
@@ -18,6 +18,10 @@ export async function configure(network = 'test') { // XXX how to quickly switch
 
   function bytes(str) {
     return web3.eth.abi.encodeParameter('string', str);
+  }
+
+  function uint256(int) {
+    return web3.eth.abi.encodeParameter('uint256', int);
   }
 
   expect.extend({
@@ -39,6 +43,7 @@ export async function configure(network = 'test') { // XXX how to quickly switch
     account,
     address,
     bytes,
+    uint256,
     deploy,
     web3
   };

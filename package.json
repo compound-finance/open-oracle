@@ -19,7 +19,7 @@
   },
   "scripts": {
     "saddle:compile": "mkdir -p .build && solc --combined-json bin,abi --optimize contracts/*.sol > .build/contracts.json",
-    "saddle:test:run": "npx jest",
+    "saddle:test:run": "node --stack-trace-limit=1000 ./node_modules/jest-cli/bin/jest.js",
     "saddle:deploy": "yarn run saddle:compile && node ./.tsbuilt/deploy.js $@",
     "compile": "tsc && yarn run saddle:compile",
     "test": "yarn run saddle:compile && yarn run saddle:test:run"

@@ -22,10 +22,6 @@ contract Oracle {
     mapping(address => mapping(string => mapping(address => mapping(bytes => Datum)))) private data;
 
     struct PutLocalVars {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        bytes32 hash;
         address source;
 
         uint timestamp;
@@ -49,9 +45,7 @@ contract Oracle {
         PutLocalVars memory vars;
 
         // Recover the source address
-        (vars.r, vars.s, vars.v) = abi.decode(signature, (bytes32, bytes32, uint8));
-        vars.hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(message)));
-        vars.source = ecrecover(vars.hash, vars.v, vars.r, vars.s);
+        vars.source = source(message, signature);
 
         // Decode all the data tuples
         (vars.timestamp, vars.pairs) = abi.decode(message, (uint256, bytes[]));
@@ -59,17 +53,17 @@ contract Oracle {
             (vars.key, vars.value) = abi.decode(vars.pairs[j], (bytes, bytes));
 
             // Only update if type check passes (does not revert)
-            vars.tsg = abi.encodePacked(name, "(bytes, bytes)");
+            vars.tsg = abi.encodePacked(name, "(bytes,bytes)");
             vars.fun = abi.encodeWithSignature(string(vars.tsg), vars.key, vars.value);
             (vars.success, ) = namespace.call(vars.fun);
             if (!vars.success) {
-                break;
+                continue;
             }
 
             // Only update if newer than stored, according to source
             Datum storage prior = data[namespace][name][vars.source][vars.key];
-            if (vars.timestamp > prior.timestamp) {
-                break;
+            if (prior.timestamp >= vars.timestamp) {
+                continue;
             }
 
             // Update storage
@@ -88,5 +82,19 @@ contract Oracle {
     function get(address namespace, string calldata name, address source, bytes calldata key) external view returns (uint256, bytes memory) {
         Datum storage datum = data[namespace][name][source][key];
         return (datum.timestamp, datum.value);
+    }
+
+    /**
+     * @notice Recovers the source address which signed a message
+     * @dev Comparing to a claimed address would add nothing,
+     *  as the caller could simply perform the recover and claim that address.
+     * @param message The data that was presumably signed
+     * @param signature The fingerprint of the data + private key
+     * @return The source address which signed the message, presumably
+     */
+    function source(bytes memory message, bytes memory signature) public pure returns (address) {
+        (bytes32 r, bytes32 s, uint8 v) = abi.decode(signature, (bytes32, bytes32, uint8));
+        bytes32 hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(message)));
+        return ecrecover(hash, v, r, s);
     }
 }
