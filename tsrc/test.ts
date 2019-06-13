@@ -24,6 +24,22 @@ export async function configure(network = 'test') {
     return web3.eth.abi.encodeParameter('uint256', int);
   }
 
+  // XXX shared lib?
+  function encode(timestamp, pairs) {
+    return web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [timestamp, pairs.map(([k, v]) => {
+      return web3.eth.abi.encodeParameters(['bytes', 'bytes'], [k, v])
+    })]);
+  }
+
+  // XXX maybe want to import signing here, shared with sdk, define there or at top level?
+  function sign(message, privateKey) {
+    const hash = web3.utils.keccak256(message);
+    const {r, s, v} = web3.eth.accounts.sign(hash, privateKey);
+    const signature = web3.eth.abi.encodeParameters(['bytes32', 'bytes32', 'uint8'], [r, s, v]);
+    const signatory = web3.eth.accounts.recover(hash, v, r, s);
+    return {hash, message, signature, signatory};
+  }
+
   expect.extend({
     numEquals(actual, expected) {
       return {
@@ -45,6 +61,8 @@ export async function configure(network = 'test') {
     bytes,
     uint256,
     deploy,
+    encode,
+    sign,
     web3
   };
 }

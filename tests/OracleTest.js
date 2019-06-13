@@ -9,9 +9,12 @@ describe('Oracle', () => {
       bytes,
       uint256,
       deploy,
+      encode,
+      sign,
       web3
     } = saddle; // XXX this kinda sucks
 
+    const privateKey = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10';
     const oracle = await deploy('Oracle', [], {from: account});
 
     // gets default data
@@ -28,21 +31,12 @@ describe('Oracle', () => {
     ).rejects.toThrow('revert');
 
     const delfi = await deploy('DelFiPrice', [oracle.address, [account]]);
-    const now = new Date() - 0;
+    const now = new Date - 0;
 
     // reverts with valid type check and garbage input
     await expect(
       oracle.methods.put(delfi.address, 'price', bytes('garbage msg'), bytes('garbage sig')).send({from: account})
     ).rejects.toThrow('revert');
-
-    // XXX maybe want to import signing here, shared with sdk, define there or at top level?
-    function sign(message, privateKey = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10') {
-      const hash = web3.utils.keccak256(message);
-      const {r, s, v} = web3.eth.accounts.sign(hash, privateKey);
-      const signature = web3.eth.abi.encodeParameters(['bytes32', 'bytes32', 'uint8'], [r, s, v]);
-      const signatory = web3.eth.accounts.recover(hash, v, r, s);
-      return {hash, message, signature, signatory};
-    }
 
     // succeeds with a proper type checker + message (no pairs) + signature
     const K = bytes('ETH'), V = uint256(7);
@@ -50,7 +44,7 @@ describe('Oracle', () => {
       message,
       signature,
       signatory
-    } = sign(web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [now, []]));
+    } = sign(encode(now, []), privateKey);
 
     // the source we recover in solidity should match
     expect(await oracle.methods.source(message, signature).call()).toEqual(signatory);
@@ -77,9 +71,7 @@ describe('Oracle', () => {
       message,
       signature,
       signatory
-    } = sign(web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [now, [
-      web3.eth.abi.encodeParameters(['bytes', 'bytes'], [K, V])
-    ]])));
+    } = sign(encode(now, [[K, V]]), privateKey));
 
     const wrote1 = await oracle.methods.put(delfi.address, 'price', message, signature).send({from: account, gas: 1000000});
     expect(wrote1.gasUsed).toBeLessThan(120000);
@@ -97,9 +89,7 @@ describe('Oracle', () => {
       message,
       signature,
       signatory
-    } = sign(web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [now - 1, [
-      web3.eth.abi.encodeParameters(['bytes', 'bytes'], [K, uint256(6)])
-    ]])));
+    } = sign(encode(now - 1, [[K, uint256(6)]]), privateKey));
 
     await oracle.methods.put(delfi.address, 'price', message, signature).send({from: account, gas: 1000000});
 
@@ -115,10 +105,10 @@ describe('Oracle', () => {
       message,
       signature,
       signatory
-    } = sign(web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [now, [
-      web3.eth.abi.encodeParameters(['bytes', 'bytes'], [bytes('ABC'), uint256(100)]),
-      web3.eth.abi.encodeParameters(['bytes', 'bytes'], [bytes('BTC'), uint256(9000)]),
-    ]])));
+    } = sign(encode(now, [
+      [bytes('ABC'), uint256(100)],
+      [bytes('BTC'), uint256(9000)],
+    ]), privateKey));
 
     const wrote2a = await oracle.methods.put(delfi.address, 'price', message, signature).send({from: account, gas: 1000000});
     expect(wrote2a.gasUsed).toBeLessThan(200000);
@@ -134,10 +124,10 @@ describe('Oracle', () => {
       message,
       signature,
       signatory
-    } = sign(web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [now + 1, [
-      web3.eth.abi.encodeParameters(['bytes', 'bytes'], [bytes('ABC'), uint256(100)]),
-      web3.eth.abi.encodeParameters(['bytes', 'bytes'], [bytes('BTC'), uint256(9000)]),
-    ]])));
+    } = sign(encode(now + 1, [
+      [bytes('ABC'), uint256(100)],
+      [bytes('BTC'), uint256(9000)],
+    ]), privateKey));
 
     const wrote2b = await oracle.methods.put(delfi.address, 'price', message, signature).send({from: account, gas: 1000000});
     expect(wrote2b.gasUsed).toBeLessThan(100000);
