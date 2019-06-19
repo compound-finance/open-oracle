@@ -27,7 +27,7 @@ interface Trx {
   gasPrice: number,
   gas: number,
   to: string,
-  value: string,
+  chainId: string,
   data: string
 }
 

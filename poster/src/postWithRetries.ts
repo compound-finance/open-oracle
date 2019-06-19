@@ -1,17 +1,17 @@
-const web3 = require('web3');
+const Web3 = require('web3');
 const pTimeout = require('p-timeout');
 
 // The purpose of this program is to successfully submit a transaction by
 // calling the provided function on the provided contract with the provided data
 
 // The core logic is around retries due to gas price
-export async function postWithRetries(transaction : Trx, signerKey : string) {
+async function postWithRetries(transaction : Trx, signerKey : string, web3Provider: string) {
   console.log("Running Open Oracle Poster...");
 
   const timeoutMessage = "Transaction receipt not available after 2 minutes"
 
   try {
-    let transactionPromise = signAndSend(transaction, signerKey);
+    let transactionPromise = signAndSend(transaction, signerKey, web3Provider);
 
     // If no receipt is available after 3 minutes, it is not likely to be mined
     // at current price in reasonable time frame.
@@ -22,7 +22,8 @@ export async function postWithRetries(transaction : Trx, signerKey : string) {
     if (["Returned error: replacement transaction underpriced",
          timeoutMessage].includes(e.message)
        ) {
-      return retry(transaction, signerKey);
+      transaction.gasPrice = Math.floor(transaction.gasPrice * 1.2);
+      return signAndSend(transaction, signerKey, web3Provider);
     } else {
       throw(e);
     }
@@ -30,16 +31,18 @@ export async function postWithRetries(transaction : Trx, signerKey : string) {
   console.log("Completed run of Open Oracle Poster");
 }
 
-async function retry(transaction : Trx, signerKey : string): Promise<TrxReceipt> {
-  transaction.gasPrice = Math.floor(transaction.gasPrice * 1.2);
-  return signAndSend(transaction, signerKey);
-}
-
-async function signAndSend(transaction : Trx, signerKey : string): Promise<TrxReceipt> {
-  let signedTransaction = web3
+async function signAndSend(transaction : Trx, signerKey : string, web3Provider :string ): Promise<TrxReceipt> {
+  const web3 = new Web3(web3Provider);
+  // set provider
+  let signedTransaction = await web3
     .eth
     .accounts
     .signTransaction(transaction, signerKey);
 
-  return web3.eth.sendSignedTransaction(signedTransaction);
+  return web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
+}
+
+export {
+  postWithRetries,
+  signAndSend
 }

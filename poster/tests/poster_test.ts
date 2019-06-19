@@ -2,7 +2,7 @@ import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads} from '../src/inde
 import AbiCoder from 'web3-eth-abi';
 require('sepia');
 
-describe('loading poster arguments from environment and https', () => {
+describe.skip('loading poster arguments from environment and https', () => {
   test('fetchGasPrice', async () => {
     let gasPrice = await fetchGasPrice();
     expect(gasPrice).toEqual(10_000_000_000);
@@ -32,7 +32,7 @@ describe('loading poster arguments from environment and https', () => {
   });
 });
 
-describe('building a function call', () => {
+describe.skip('building a function call', () => {
   test('findTypes', () => {
     let typeString =  "writePrices(bytes[],bytes[])"
     expect(findTypes(typeString)).toEqual(["bytes[]", "bytes[]"])
