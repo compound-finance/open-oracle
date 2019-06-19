@@ -36,7 +36,7 @@ contract DelFiPrice is View {
      * @param value Price in USD * 1e18 as a uint
      * @return Reverts if not a DelFi price
      */
-    function price(bytes calldata key, bytes calldata value) external {
+    function price(bytes calldata key, bytes calldata value) external pure {
         (abi.decode(key, (string)), abi.decode(value, (uint)));
     }
 
@@ -61,13 +61,9 @@ contract DelFiPrice is View {
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
 
-            // Calculate the median price
-            (uint median, uint count) = medianPrice(symbol, sources, expiration);
-
-            // Only update if a quorum is particpating
-            if (count > sources.length / 2) {
-                prices[symbol] = median;
-            }
+            // Calculate the median price and write to storage
+            (uint median,) = medianPrice(symbol, sources, expiration);
+            prices[symbol] = median;
         }
     }
 
@@ -78,11 +74,12 @@ contract DelFiPrice is View {
      * @param expiration_ The amount of time a price should be considered valid for
      * @return (median, count) The median price and the number of non-expired sources used
      */
-    function medianPrice(string memory symbol, address[] memory sources_, uint expiration_) public returns (uint median, uint count) {
+    function medianPrice(string memory symbol, address[] memory sources_, uint expiration_) public view returns (uint median, uint count) {
         uint[] memory postedPrices = new uint[](sources_.length);
         for (uint i = 0; i < sources_.length; i++) {
-            (uint timestamp, bytes memory value) = oracle.get(namespace, name, sources_[i], bytes(symbol));
-            if (block.timestamp - timestamp < expiration_) {
+            bytes memory key = abi.encode(symbol);
+            (uint timestamp, bytes memory value) = oracle.get(namespace, name, sources_[i], key);
+            if (block.timestamp < timestamp + expiration_) {
                 postedPrices[count] = abi.decode(value, (uint));
                 count++;
             }
