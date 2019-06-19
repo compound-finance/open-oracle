@@ -1,6 +1,4 @@
-//
 // --- open oracle interfaces ---
-//
 
 // In the view, there is a function that will write message values to the
 // the open oracle data contract if the posted values are more valid
@@ -8,14 +6,6 @@
 //
 // The view will also write to it's own storage cache an aggregated value
 // based on the state of data contract.
-//
-// The provided abi for an instance of the OpenOracleView must contain this
-// function.
-interface OpenOracleView {
-  methods: {
-    [key: string]: (OpenOraclePayload) => {send: ContractInteraction}
-  }
-};
 
 // A payload for an open oracle view comprises 2 fields:
 //  1. Abi encoded values to be written to the open oracle data contract
@@ -32,16 +22,13 @@ interface OpenOraclePayload {
 // ---- web3 interfaces ----
 //
 
-interface ContractMethod {
-  send: (TrxInfo) => Promise<TrxResult>;
-}
-
-// options for "send"
-interface TrxInfo {
-  from: string;
-  gas: number;
-  gasPrice: number;
-  [param: string]: any;
+// Interface for signable transaction 
+interface Trx {
+  gasPrice: number,
+  gas: number,
+  to: string,
+  value: string,
+  data: string
 }
 
 // The transaction receipt returned by myContract.myMethod.send promise,
@@ -52,19 +39,4 @@ interface TrxReceipt {
   events: {
     [event: string]: Event
   }
-}
-
-interface IO {
-  name: string,
-  type: string
-}
-
-interface ABI {
-  constant: boolean,
-  inputs: Array<IO>,
-  name: string,
-  outputs: Array<IO>,
-  payable: boolean,
-  stateMutability: string,
-  type: string
 }

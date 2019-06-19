@@ -1,0 +1,30 @@
+{
+  "statusCode": 200,
+  "headers": {
+    "x-powered-by": "Express",
+    "content-type": "application/json; charset=utf-8",
+    "content-length": "449",
+    "etag": "W/\"1c1-GZMDtX/kA/b4/VzsnFY3hvCYUgg\"",
+    "date": "Tue, 18 Jun 2019 22:35:42 GMT",
+    "connection": "close"
+  },
+  "url": "http://localhost:3000/",
+  "time": 23,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "Accept": [
+        "*/*"
+      ],
+      "User-Agent": [
+        "node-fetch/1.0 (+https://github.com/bitinn/node-fetch)"
+      ],
+      "Accept-Encoding": [
+        "gzip,deflate"
+      ],
+      "Connection": [
+        "close"
+      ]
+    }
+  }
+}

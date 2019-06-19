@@ -1,0 +1,31 @@
+{
+  "statusCode": 404,
+  "headers": {
+    "x-powered-by": "Express",
+    "content-security-policy": "default-src 'none'",
+    "x-content-type-options": "nosniff",
+    "content-type": "text/html; charset=utf-8",
+    "content-length": "150",
+    "date": "Tue, 18 Jun 2019 22:35:42 GMT",
+    "connection": "close"
+  },
+  "url": "http://localhost:3000/prices.json",
+  "time": 20,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "Accept": [
+        "*/*"
+      ],
+      "User-Agent": [
+        "node-fetch/1.0 (+https://github.com/bitinn/node-fetch)"
+      ],
+      "Accept-Encoding": [
+        "gzip,deflate"
+      ],
+      "Connection": [
+        "close"
+      ]
+    }
+  }
+}

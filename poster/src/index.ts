@@ -1,32 +1,49 @@
-import {run} from './postWithRetries';
+import {postWithRetries} from './postWithRetries';
+import fetch from 'node-fetch';
 import AbiCoder from 'web3-eth-abi';
 
-function main () {
-  // read all this from input args or env
-  // write tests
-  const address = loadViewAddress();
-  // construct abi from that method name
-  // const payload = loadPayload();
-  // const trxInfo = buildTrxData();
-  // const oracleView : OpenOracleView = new web3.eth.Contract(abi, address);
-  // run(oracleView.methods[method](payload), trxInfo);
+async function main () {
+  const viewAddress = getEnvVar("view-address");
+  const senderKey = getEnvVar("poster-key");
+  const sources = getEnvVar("sources").split(",");
+  const functionName = getEnvVar("view-function-name");
+
+  const payloads = await fetchPayloads(sources);
+  const gasPrice = await fetchGasPrice();
+  const trxData = buildTrxData(payloads, functionName);
+
+  const trx = <Trx> {
+    data: trxData,
+    to: viewAddress,
+    gasPrice: gasPrice,
+    gas: 1_000_000
+  }
+
+  return postWithRetries(trx, senderKey);
 }
 
-function loadViewAddress(env?: {[key: string]: string}) {
-  return getEnvVar("view-address", env)
+async function fetchPayloads(sources : string[]) : Promise<OpenOraclePayload[]> {
+  let sourcePromises = sources.map(async (source) => {
+    let response = await fetch(source);
+    return response.json();
+  });
+
+  return await Promise.all(sourcePromises)
 }
 
-function loadPayload() {
-  // let sources = getEnvVar("sources", env);
-  // fetch json from sources
+async function fetchGasPrice() : Promise<number> {
+  let source = "https://api.compound.finance/api/gas_prices/get_gas_price";
+  let response = await fetch(source);
+  let prices = await response.json();
+  let averagePrice = Number(prices["average"]["value"]);
+  return averagePrice;
 }
 
-function buildTrxData(params : OpenOraclePayload[], env?: {[key: string]: string}) {
-  const functionName = getEnvVar("view-function-name", env);
+function buildTrxData(payloads : OpenOraclePayload[], functionName : string) : string {
   const types = findTypes(functionName);
 
-  let messages = params.map(x => x.message);
-  let signatures = params.map(x => x.signature);
+  let messages = payloads.map(x => x.message);
+  let signatures = payloads.map(x => x.signature);
 
   // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
   return AbiCoder.encodeFunctionSignature(functionName) +
@@ -35,7 +52,15 @@ function buildTrxData(params : OpenOraclePayload[], env?: {[key: string]: string
     .replace('0x', '');
 }
 
-function getEnvVar(name: string, env?: {[key: string]: string}): string {
+function findTypes(functionName : string) : string[] {
+  let start = functionName.indexOf("(") + 1;
+  let types = functionName
+    .slice(start, functionName.lastIndexOf(")"))
+    .split(",");
+  return types
+}
+
+function getEnvVar(name : string, env? : Env): string {
   const theEnv = env !== undefined ? env : process.env;
 
   const result: string | undefined = theEnv[name];
@@ -47,23 +72,9 @@ function getEnvVar(name: string, env?: {[key: string]: string}): string {
   }
 }
 
-function findTypes(functionName : string) : string[] {
-  let start = functionName.indexOf("(") + 1;
-  let types = functionName
-    .slice(start, functionName.lastIndexOf(")"))
-    .split(",");
-  return types
-}
-
-// encodeFunctionCall(jsonInterface, params) {
-//   return (
-//     this.encodeFunctionSignature(jsonInterface) +
-//       this.encodeParameters(jsonInterface.inputs, params).replace('0x', '')
-//   );
-// }
-
 export {
   buildTrxData,
   findTypes,
-  loadViewAddress
+  fetchGasPrice,
+  fetchPayloads
 }

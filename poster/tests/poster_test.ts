@@ -1,25 +1,51 @@
-import {buildTrxData, findTypes, loadViewAddress} from '../src/index';
+import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads} from '../src/index';
 import AbiCoder from 'web3-eth-abi';
+require('sepia');
 
-describe('loading poster arguments from environment', () => {
-  test.only('loadViewAddress', () => {
-    let viewAddress = loadViewAddress({"view-address": "0xMYVIEW"});
-    expect(viewAddress).toEqual("0xMYVIEW");
+describe('loading poster arguments from environment and https', () => {
+  test('fetchGasPrice', async () => {
+    let gasPrice = await fetchGasPrice();
+    expect(gasPrice).toEqual(10_000_000_000);
   });
 
-  test('loadPayload', () => {
+  test('fetchPayloads', async () => {
     // hits the http endpoints, encodes a transaction
-  });
+    let payloads = await fetchPayloads("http://localhost:3000,http://localhost:3000/prices.json".split(","));
 
-  test.only('buildTrxData', () => {
+    expect(payloads).toEqual([
+      {
+        "encoded": "0xmessage",
+        "prices":  {
+          "eth": 260,
+          "zrx": 0.58,
+        },
+        "signature": "0xsignature",
+      },
+      {
+        "encoded": "0xmessage",
+        "prices":  {
+          "eth": 250,
+          "zrx": 1.58,
+        },
+        "signature": "0xsignature",
+      }]);
+  });
+});
+
+describe('building a function call', () => {
+  test('findTypes', () => {
+    let typeString =  "writePrices(bytes[],bytes[])"
+    expect(findTypes(typeString)).toEqual(["bytes[]", "bytes[]"])
+  })
+
+  test('buildTrxData', () => {
     let encodedMessage = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10'
 
     let signedMessage = '0x04a78a7b3013f6939da19eac6fd1ad5c5a20c41bcc5d828557442aad6f07598d029ae684620bec13e13d018cba0da5096626e83cfd4d5356d808d7437a0a5076000000000000000000000000000000000000000000000000000000000000001c'
 
     let data = buildTrxData(
       [{message: encodedMessage, signature: signedMessage}],
-      {"view-function-name": "writePrices(bytes[],bytes[])"}
-    );
+      "writePrices(bytes[],bytes[])");
 
     let assumedAbi = {
       "constant": false,
@@ -45,9 +71,4 @@ describe('loading poster arguments from environment', () => {
 
     expect(data).toEqual(officialWeb3Encoding);
   });
-
-  test.only('findTypes', () => {
-    let typeString =  "writePrices(bytes[],bytes[])"
-    expect(findTypes(typeString)).toEqual(["bytes[]", "bytes[]"])
-  })
-})
+});

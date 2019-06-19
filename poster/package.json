@@ -8,12 +8,13 @@
   "license": "MIT",
   "scripts": {
     "start": "node ./.tsbuilt/poster.js",
-    "test": "node ./node_modules/jest-cli/bin/jest.js"
+    "test": "VCR_MODE=playback node ./node_modules/jest-cli/bin/jest.js"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
     "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
+    "sepia": "^2.0.2",
     "ts-jest": "^24.0.2",
     "typescript": "^3.5.1"
   }
