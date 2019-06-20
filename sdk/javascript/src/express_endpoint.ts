@@ -6,13 +6,15 @@ export function endpoint(path: string, privateKey: string, keyName: string, keyT
   const app: express.Application = express();
 
   app.get(path, async (req, res) => {
-    let data = await getter();
-    let encoded = encode(keyType, valueType, +new Date(), getter())
-    let signature = sign(encoded, privateKey);
+    const pairs = await getter();
+    const {
+      message,
+      signature
+    } = sign(encode(keyType, valueType, +new Date(), pairs), privateKey);
     res.json({
-      encoded,
+      message,
       signature,
-      [keyName]: data
+      [keyName]: pairs
     });
   });
 

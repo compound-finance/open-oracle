@@ -1,14 +1,9 @@
 
 describe('View', () => {
-  it('is a valid oracle', async () => {
-    let oracle = await saddle.deploy('View', [], {from: saddle.account});
+  it('is a valid view', async () => {
+    const oracle = await saddle.deploy('Oracle', []);
+    const view = await saddle.deploy('View', [oracle.address, []]);
 
-    expect(await oracle.methods.name.call()).toEqual('55');
-  });
-
-  it('is still a valid oracle', async () => {
-    let oracle = await saddle.deploy('View', [], {from: saddle.account});
-
-    expect(await oracle.methods.name.call()).toEqual('66');
+    expect(await view.methods.oracle.call()).toEqual(oracle.address);
   });
 });

@@ -1,7 +1,6 @@
 describe('Oracle', () => {
   it('sanity checks the delfi price view', async () => {
     const {
-      account,
       address,
       bytes,
       uint256,
@@ -25,7 +24,7 @@ describe('Oracle', () => {
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf18',
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf19'
     ].map(web3.eth.accounts.privateKeyToAccount);
-    const oracle = await deploy('Oracle', [], {from: account});
+    const oracle = await deploy('Oracle', []);
     const delfi = await deploy('DelFiPrice', [oracle.address, sources.map(a => a.address)]);
     const now = new Date - 0;
 
@@ -44,7 +43,7 @@ describe('Oracle', () => {
         messages.push(message);
         signatures.push(signature);
       })
-      return delfi.methods.postPrices(messages, signatures, symbols).send({from: account, gas: 5000000});
+      return delfi.methods.postPrices(messages, signatures, symbols).send({gas: 5000000});
     }
 
     async function getPrice(symbol) {

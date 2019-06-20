@@ -27,6 +27,14 @@ open-oracle-reporter \
 	--value_type decimal
 ```
 
+Or to quickly test using yarn:
+
+```bash
+yarn run start \
+    --private_key 0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10 \
+    --script examples/fixed.js
+```
+
 ## Usage
 
 Once you've installed the Open Oracle SDK, you can sign a Open Oracle feed as follows:
@@ -34,8 +42,8 @@ Once you've installed the Open Oracle SDK, you can sign a Open Oracle feed as fo
 ```typescript
 import {encode, sign} from 'open-oracle-reporter';
 
-let encoded = Reporter.encode('string', 'decimal', +new Date(), {'eth': 260.0, 'zrx': 0.58});
-let signature = Reporter.sign(encoded, '0x...');
+let encoded = encode('string', 'decimal', +new Date(), {'eth': 260.0, 'zrx': 0.58});
+let signature = sign(encoded, '0x...');
 ```
 
 For example, in an express app:
