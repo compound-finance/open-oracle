@@ -15,7 +15,8 @@ interface OpenOraclePayload {
   message: string,
   // The signature of the attestor to these values. The values in 'message'
   // will be stored in a mapping under this signer's public address.
-  signature: string
+  signature: string,
+  prices: {[symbol: string]: string }
 };
 
 //

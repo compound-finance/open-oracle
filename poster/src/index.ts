@@ -7,6 +7,7 @@ async function main () {
   const senderKey = getEnvVar("poster-key");
   const sources = getEnvVar("sources").split(",");
   const functionName = getEnvVar("view-function-name");
+  const web3Provider = getEnvVar("web3-provider");
 
   const payloads = await fetchPayloads(sources);
   const gasPrice = await fetchGasPrice();
@@ -19,7 +20,7 @@ async function main () {
     gas: 1_000_000
   }
 
-  return postWithRetries(trx, senderKey);
+  return postWithRetries(trx, senderKey, web3Provider);
 }
 
 async function fetchPayloads(sources : string[]) : Promise<OpenOraclePayload[]> {
@@ -44,14 +45,16 @@ function buildTrxData(payloads : OpenOraclePayload[], functionName : string) : s
 
   let messages = payloads.map(x => x.message);
   let signatures = payloads.map(x => x.signature);
+  let symbols = new Set(payloads.map(x => Object.keys(x.prices)))
 
   // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
   return AbiCoder.encodeFunctionSignature(functionName) +
     AbiCoder
-    .encodeParameters(types, [messages, signatures])
+    .encodeParameters(types, [messages, signatures, ...symbols])
     .replace('0x', '');
 }
 
+// e.g. findTypes("postPrices(bytes[],bytes[],string[])")-> ["bytes[]","bytes[]","string[]"]
 function findTypes(functionName : string) : string[] {
   let start = functionName.indexOf("(") + 1;
   let types = functionName
@@ -60,10 +63,8 @@ function findTypes(functionName : string) : string[] {
   return types
 }
 
-function getEnvVar(name : string, env? : Env): string {
-  const theEnv = env !== undefined ? env : process.env;
-
-  const result: string | undefined = theEnv[name];
+function getEnvVar(name : string): string {
+  const result: string | undefined = process.env[name];
 
   if (result) {
     return result;

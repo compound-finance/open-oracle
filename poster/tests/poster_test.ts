@@ -2,7 +2,7 @@ import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads} from '../src/inde
 import AbiCoder from 'web3-eth-abi';
 require('sepia');
 
-describe.skip('loading poster arguments from environment and https', () => {
+describe('loading poster arguments from environment and https', () => {
   test('fetchGasPrice', async () => {
     let gasPrice = await fetchGasPrice();
     expect(gasPrice).toEqual(10_000_000_000);
@@ -32,10 +32,10 @@ describe.skip('loading poster arguments from environment and https', () => {
   });
 });
 
-describe.skip('building a function call', () => {
+describe('building a function call', () => {
   test('findTypes', () => {
-    let typeString =  "writePrices(bytes[],bytes[])"
-    expect(findTypes(typeString)).toEqual(["bytes[]", "bytes[]"])
+    let typeString =  "writePrices(bytes[],bytes[],string[])"
+    expect(findTypes(typeString)).toEqual(["bytes[]", "bytes[]", "string[]"])
   })
 
   test('buildTrxData', () => {
@@ -43,9 +43,12 @@ describe.skip('building a function call', () => {
 
     let signedMessage = '0x04a78a7b3013f6939da19eac6fd1ad5c5a20c41bcc5d828557442aad6f07598d029ae684620bec13e13d018cba0da5096626e83cfd4d5356d808d7437a0a5076000000000000000000000000000000000000000000000000000000000000001c'
 
+    let prices = {"eth": "250", "zrx": "300"}
+
     let data = buildTrxData(
-      [{message: encodedMessage, signature: signedMessage}],
-      "writePrices(bytes[],bytes[])");
+      [{message: encodedMessage, signature: signedMessage, prices: prices}],
+      "writePrices(bytes[],bytes[],string[])");
+    console.log("built")
 
     let assumedAbi = {
       "constant": false,
@@ -57,6 +60,10 @@ describe.skip('building a function call', () => {
         {
           "name": "whatever",
           "type": "bytes[]"
+        },
+        {
+          "name": "moar",
+          "type": "string[]"
         }
       ],
       "name": "writePrices",
@@ -67,7 +74,7 @@ describe.skip('building a function call', () => {
     };
 
     let officialWeb3Encoding =
-      AbiCoder.encodeFunctionCall(assumedAbi, [[encodedMessage], [signedMessage]]);
+      AbiCoder.encodeFunctionCall(assumedAbi, [[encodedMessage], [signedMessage], Object.keys(prices)]);
 
     expect(data).toEqual(officialWeb3Encoding);
   });
