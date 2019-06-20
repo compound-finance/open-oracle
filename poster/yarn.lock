@@ -2126,6 +2126,11 @@ leven@^2.1.0:
   resolved "https://registry.yarnpkg.com/leven/-/leven-2.1.0.tgz#c2e7a9f772094dee9d34202ae8acce4687875580"
   integrity sha1-wuep93IJTe6dNCAq6KzORoeHVYA=
 
+levenshtein@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/levenshtein/-/levenshtein-1.0.2.tgz#cd02e8b32075645ddcf5d059e02efa918f9fb3ec"
+  integrity sha1-zQLosyB1ZF3c9dBZ4C76kY+fs+w=
+
 levn@~0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/levn/-/levn-0.3.0.tgz#3b09924edf9f083c0490fdd4c0bc4421e04764ee"
@@ -2980,6 +2985,13 @@ semver@^6.0.0:
   version "6.1.1"
   resolved "https://registry.yarnpkg.com/semver/-/semver-6.1.1.tgz#53f53da9b30b2103cd4f15eab3a18ecbcb210c9b"
   integrity sha512-rWYq2e5iYW+fFe/oPPtYJxYgjBm8sC4rmoGdUOgBB7VnwKt6HrL793l2voH1UlsyYZpJ4g0wfjnTEO1s1NP2eQ==
+
+sepia@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/sepia/-/sepia-2.0.2.tgz#5310bb7357e7d47e5c2d20e54c02865dafec5285"
+  integrity sha1-UxC7c1fn1H5cLSDlTAKGXa/sUoU=
+  dependencies:
+    levenshtein "1.0.2"
 
 set-blocking@^2.0.0, set-blocking@~2.0.0:
   version "2.0.0"
