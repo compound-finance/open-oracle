@@ -8,7 +8,16 @@ const argv = yargs
     .alias('help', 'h')
     .argv;
 
-const [contractName, ...contractArgs] = argv._;
+const [contractName, ...contractArgsRaw] = argv._;
+const contractArgs = contractArgsRaw.map((arg) => {
+  if (/^\[.*\]$/.test(arg)) {
+    // turn arrays into arrays
+    return arg.substring(1, arg.length-1).split(",");
+  } else {
+    return arg;
+  }
+})
+
 
 if (!contractName || contractName.trim() === "") {
   throw "Please specify a contract to deploy.";
