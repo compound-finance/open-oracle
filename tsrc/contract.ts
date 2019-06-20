@@ -40,7 +40,7 @@ export async function deployContract(web3: Web3, network: string, from: string, 
   }
 
   const contractAbi = JSON.parse(contractBuild.abi);
-  const contract = new web3.eth.Contract(contractAbi, undefined, {from, gasPrice: '1', gas: 1e6, data: ''});
+  const contract = new web3.eth.Contract(contractAbi, undefined, {from, gasPrice: '3000000000', gas: 1e6, data: ''});
   return await contract.deploy({data: '0x' + contractBuild.bin, arguments: args}).send({from, gas: 2000000});
 }
 
