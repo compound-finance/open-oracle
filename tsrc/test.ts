@@ -27,7 +27,7 @@ export async function configure(network = 'test') {
   // XXX shared lib?
   function encode(timestamp, pairs) {
     return web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [timestamp, pairs.map(([k, v]) => {
-      return web3.eth.abi.encodeParameters(['bytes', 'bytes'], [k, v])
+      return web3.eth.abi.encodeParameters(['string', 'uint'], [k, v])
     })]);
   }
 
