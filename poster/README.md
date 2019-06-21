@@ -22,7 +22,10 @@ yarn add open-oracle-poster
 To run as a standalone:
 
 ```
-open-oracle-poster --poster-key=0x...
+start reporter
+ yarn run start --private_key=0x5763aa1cb4c9cd141a1b409d92e5c5b967a28e18c70eb4cd965374ad75bff356 --script="examples/fixed.js"
+
+ yarn run start --view-address=0xa543d9701bb291E8F75CE2747A8E094bF042009A --poster-key=0x5763aa1cb4c9cd141a1b409d92e5c5b967a28e18c70eb4cd965374ad75bff356 --sources=http://localhost:3000 --view-function-name=postPrices(bytes[],bytes[],string[]) --web3-provider=http://localhost:8545 
 ```
 
 Otherwise, you can include the DelFi poster in an app for configuration:
