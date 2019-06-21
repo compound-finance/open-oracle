@@ -5,7 +5,12 @@ pragma experimental ABIEncoderV2;
  * @title The Open Oracle Data Base Contract
  * @author Compound Labs, Inc.
  */
-contract OracleData {
+contract OpenOracleData {
+    /**
+     * @notice The event emitted when a source writes to its storage
+     */
+    //event Write(address indexed source, <Key> indexed key, uint timestamp, <Value> value);
+
     /**
      * @notice Write a bunch of signed datum to the authenticated storage mapping
      * @param message The payload containing the timestamp, and (key, value) pairs

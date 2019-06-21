@@ -1,14 +1,14 @@
 pragma solidity ^0.5.9;
 pragma experimental ABIEncoderV2;
 
-import "./OraclePriceData.sol";
-import "./OracleView.sol";
+import "./OpenOraclePriceData.sol";
+import "./OpenOracleView.sol";
 
 /**
  * @notice The DelFi Price Feed View
  * @author Compound Labs, Inc.
  */
-contract DelFiPrice is OracleView {
+contract DelFiPrice is OpenOracleView {
     /**
      * @notice The mapping of medianized prices per symbol
      */
@@ -19,7 +19,7 @@ contract DelFiPrice is OracleView {
      */
     uint public constant expiration = 48 hours;
 
-    constructor(OraclePriceData data_, address[] memory sources_) public OracleView(data_, sources_) {}
+    constructor(OpenOraclePriceData data_, address[] memory sources_) public OpenOracleView(data_, sources_) {}
 
     /**
      * @notice Primary entry point to post and recalculate prices
@@ -33,7 +33,7 @@ contract DelFiPrice is OracleView {
 
         // Post the messages, whatever they are
         for (uint i = 0; i < messages.length; i++) {
-            OraclePriceData(address(data)).put(messages[i], signatures[i]);
+            OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
         }
 
         // Recalculate the asset prices
@@ -56,7 +56,7 @@ contract DelFiPrice is OracleView {
     function medianPrice(string memory symbol, address[] memory sources_, uint expiration_) public view returns (uint median, uint count) {
         uint[] memory postedPrices = new uint[](sources_.length);
         for (uint i = 0; i < sources_.length; i++) {
-            (uint timestamp, uint price) = OraclePriceData(address(data)).get(sources_[i], symbol);
+            (uint timestamp, uint price) = OpenOraclePriceData(address(data)).get(sources_[i], symbol);
             if (block.timestamp < timestamp + expiration_) {
                 postedPrices[count] = price;
                 count++;

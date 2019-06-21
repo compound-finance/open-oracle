@@ -1,13 +1,18 @@
 pragma solidity ^0.5.9;
 pragma experimental ABIEncoderV2;
 
-import "./OracleData.sol";
+import "./OpenOracleData.sol";
 
 /**
  * @title The Open Oracle Price Data Contract
  * @author Compound Labs, Inc.
  */
-contract OraclePriceData is OracleData {
+contract OpenOraclePriceData is OpenOracleData {
+    /**
+     * @notice The event emitted when a source writes to its storage
+     */
+    event Write(address indexed source, string indexed key, uint timestamp, uint value);
+
     /**
      * @notice The fundamental unit of storage for a reporter source
      */
@@ -44,6 +49,7 @@ contract OraclePriceData is OracleData {
 
             // Update storage
             data[source][key] = Datum(timestamp, value);
+            emit Write(source, key, timestamp, value);
         }
     }
 

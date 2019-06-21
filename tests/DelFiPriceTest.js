@@ -1,4 +1,4 @@
-describe('Oracle', () => {
+describe('DelFiPrice', () => {
   it('sanity checks the delfi price view', async () => {
     const {
       address,
@@ -22,7 +22,7 @@ describe('Oracle', () => {
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf18',
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf19'
     ].map(web3.eth.accounts.privateKeyToAccount);
-    const priceData = await deploy('OraclePriceData', []);
+    const priceData = await deploy('OpenOraclePriceData', []);
     const delfi = await deploy('DelFiPrice', [priceData.address, sources.map(a => a.address)]);
     const now = new Date - 0;
 
@@ -78,7 +78,7 @@ describe('Oracle', () => {
         ['ETH', 255]
       ]
     ], ['ETH']);
-    expect(post2.gasUsed).toBeLessThan(240000);
+    expect(post2.gasUsed).toBeLessThan(250000);
 
     expect(await getPrice('BTC')).numEquals(0); // not added to list of symbols to update
     expect(await getPrice('ETH')).numEquals(257);
@@ -100,7 +100,7 @@ describe('Oracle', () => {
         ['ETH', 255]
       ]
     ], ['BTC', 'ETH']);
-    expect(post3a.gasUsed).toBeLessThan(300000);
+    expect(post3a.gasUsed).toBeLessThan(320000);
 
     expect(await getPrice('BTC')).numEquals(8500);
     expect(await getPrice('ETH')).numEquals(256);

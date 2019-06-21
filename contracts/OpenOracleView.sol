@@ -1,17 +1,17 @@
 pragma solidity ^0.5.9;
 pragma experimental ABIEncoderV2;
 
-import "./OracleData.sol";
+import "./OpenOracleData.sol";
 
 /**
  * @title The Open Oracle View Base Contract
  * @author Compound Labs, Inc.
  */
-contract OracleView {
+contract OpenOracleView {
     /**
      * @notice The Oracle Data Contract backing this View
      */
-    OracleData public data;
+    OpenOracleData public data;
 
     /**
      * @notice The static list of sources used by this View
@@ -26,7 +26,7 @@ contract OracleView {
      * @param data_ The address of the oracle data contract which is backing the view
      * @param sources_ The list of source addresses to include in the aggregate value
      */
-    constructor(OracleData data_, address[] memory sources_) public {
+    constructor(OpenOracleData data_, address[] memory sources_) public {
         data = data_;
         sources = sources_;
     }

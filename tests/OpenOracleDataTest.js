@@ -1,5 +1,5 @@
 
-describe('OracleData', () => {
+describe('OpenOracleData', () => {
   // XXX describe cant be async with jest :(
   //  all things considered, havent found a nice way to do setup
   it('sets up the oracle data and tests some stuff', async () => {
@@ -14,8 +14,8 @@ describe('OracleData', () => {
     } = saddle; // XXX this kinda sucks
 
     const privateKey = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10';
-    const oracleData = await deploy('OracleData', [], {from: account});
-    const priceData = await deploy('OraclePriceData', [], {from: account});
+    const oracleData = await deploy('OpenOracleData', [], {from: account});
+    const priceData = await deploy('OpenOraclePriceData', [], {from: account});
 
     // gets default data
     let {
@@ -61,7 +61,7 @@ describe('OracleData', () => {
     } = sign(encode(now, [[K, V]]), privateKey));
 
     const wrote1 = await priceData.methods.put(message, signature).send({from: account, gas: 1000000});
-    expect(wrote1.gasUsed).toBeLessThan(80000);
+    expect(wrote1.gasUsed).toBeLessThan(82000);
 
     // reads 1 pair
     ({
@@ -98,7 +98,7 @@ describe('OracleData', () => {
     ]), privateKey));
 
     const wrote2a = await priceData.methods.put(message, signature).send({from: account, gas: 1000000});
-    expect(wrote2a.gasUsed).toBeLessThan(125000);
+    expect(wrote2a.gasUsed).toBeLessThan(130000);
 
     ({
       0: timestamp,
@@ -117,7 +117,7 @@ describe('OracleData', () => {
     ]), privateKey));
 
     const wrote2b = await priceData.methods.put(message, signature).send({from: account, gas: 1000000});
-    expect(wrote2b.gasUsed).toBeLessThan(65000);
+    expect(wrote2b.gasUsed).toBeLessThan(70000);
 
   }, 30000);
 });
