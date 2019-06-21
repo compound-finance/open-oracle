@@ -2,8 +2,6 @@ describe('Oracle', () => {
   it('sanity checks the delfi price view', async () => {
     const {
       address,
-      bytes,
-      uint256,
       deploy,
       encode,
       sign,
@@ -24,8 +22,8 @@ describe('Oracle', () => {
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf18',
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf19'
     ].map(web3.eth.accounts.privateKeyToAccount);
-    const oracle = await deploy('Oracle', []);
-    const delfi = await deploy('DelFiPrice', [oracle.address, sources.map(a => a.address)]);
+    const priceData = await deploy('OraclePriceData', []);
+    const delfi = await deploy('DelFiPrice', [priceData.address, sources.map(a => a.address)]);
     const now = new Date - 0;
 
     // Reads a price of an asset that doesn't exist yet
@@ -38,7 +36,7 @@ describe('Oracle', () => {
           message,
           signature,
           signatory
-        } = sign(encode(timestamp, prices.map(([symbol, price]) => [bytes(symbol), uint256(price)])), signers[i].privateKey);
+        } = sign(encode(timestamp, prices.map(([symbol, price]) => [symbol, price])), signers[i].privateKey);
         expect(signatory).toEqual(signers[i].address);
         messages.push(message);
         signatures.push(signature);
@@ -54,7 +52,7 @@ describe('Oracle', () => {
     /** Posts nothing **/
 
     const post0 = await postPrices(now, [], ['ETH'])
-    expect(post0.gasUsed).toBeLessThan(100000);
+    expect(post0.gasUsed).toBeLessThan(60000);
     expect(await getPrice('ETH')).numEquals(0);
 
 
@@ -63,7 +61,7 @@ describe('Oracle', () => {
     const post1 = await postPrices(now, [
       [['ETH', 257]]
     ], ['ETH']);
-    expect(post1.gasUsed).toBeLessThan(200000);
+    expect(post1.gasUsed).toBeLessThan(135000);
 
     expect(await getPrice('ETH')).numEquals(257);
 
@@ -80,7 +78,7 @@ describe('Oracle', () => {
         ['ETH', 255]
       ]
     ], ['ETH']);
-    expect(post2.gasUsed).toBeLessThan(500000);
+    expect(post2.gasUsed).toBeLessThan(240000);
 
     expect(await getPrice('BTC')).numEquals(0); // not added to list of symbols to update
     expect(await getPrice('ETH')).numEquals(257);
@@ -102,7 +100,7 @@ describe('Oracle', () => {
         ['ETH', 255]
       ]
     ], ['BTC', 'ETH']);
-    expect(post3a.gasUsed).toBeLessThan(500000);
+    expect(post3a.gasUsed).toBeLessThan(300000);
 
     expect(await getPrice('BTC')).numEquals(8500);
     expect(await getPrice('ETH')).numEquals(256);

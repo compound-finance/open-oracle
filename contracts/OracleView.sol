@@ -1,17 +1,17 @@
 pragma solidity ^0.5.9;
 pragma experimental ABIEncoderV2;
 
-import "./Oracle.sol";
+import "./OracleData.sol";
 
 /**
  * @title The Open Oracle View Base Contract
  * @author Compound Labs, Inc.
  */
-contract View {
+contract OracleView {
     /**
      * @notice The Oracle Data Contract backing this View
      */
-    Oracle public oracle;
+    OracleData public data;
 
     /**
      * @notice The static list of sources used by this View
@@ -23,11 +23,11 @@ contract View {
     /**
      * @notice Construct a view given the oracle backing address and the list of sources
      * @dev According to the protocol, Views must be immutable to be considered conforming.
-     * @param oracle_ The address of the oracle data contract which is backing the view
+     * @param data_ The address of the oracle data contract which is backing the view
      * @param sources_ The list of source addresses to include in the aggregate value
      */
-    constructor(Oracle oracle_, address[] memory sources_) public {
-        oracle = oracle_;
+    constructor(OracleData data_, address[] memory sources_) public {
+        data = data_;
         sources = sources_;
     }
 }
