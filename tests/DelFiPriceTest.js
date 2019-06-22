@@ -1,13 +1,13 @@
+const {
+  address,
+  bytes,
+  encode,
+  sign,
+  uint256
+} = require('./Helpers');
+
 describe('DelFiPrice', () => {
   it('sanity checks the delfi price view', async () => {
-    const {
-      address,
-      deploy,
-      encode,
-      sign,
-      web3
-    } = saddle; // XXX this kinda sucks
-
     const sources = [
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10',
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf11',
@@ -15,6 +15,7 @@ describe('DelFiPrice', () => {
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf13',
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf14',
     ].map(web3.eth.accounts.privateKeyToAccount);
+
     const nonSources = [
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf15',
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf16',
@@ -22,12 +23,13 @@ describe('DelFiPrice', () => {
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf18',
       '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf19'
     ].map(web3.eth.accounts.privateKeyToAccount);
+
     const priceData = await deploy('OpenOraclePriceData', []);
     const delfi = await deploy('DelFiPrice', [priceData.address, sources.map(a => a.address)]);
     const now = new Date - 0;
 
     // Reads a price of an asset that doesn't exist yet
-    expect(await delfi.methods.prices('ETH').call()).numEquals(0);
+    expect(await call(delfi.methods.prices('ETH'))).numEquals(0);
 
     async function postPrices(timestamp, priceses, symbols, signers = sources) {
       const messages = [], signatures = [];
@@ -40,14 +42,13 @@ describe('DelFiPrice', () => {
         expect(signatory).toEqual(signers[i].address);
         messages.push(message);
         signatures.push(signature);
-      })
-      return delfi.methods.postPrices(messages, signatures, symbols).send({gas: 5000000});
+      });
+      return send(delfi.methods.postPrices(messages, signatures, symbols), {gas: 5000000});
     }
 
     async function getPrice(symbol) {
-      return delfi.methods.prices(symbol).call()
+      return call(delfi.methods.prices(symbol))
     }
-
 
     /** Posts nothing **/
 
