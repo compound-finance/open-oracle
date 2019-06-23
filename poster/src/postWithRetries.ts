@@ -6,9 +6,9 @@ async function postWithRetries(transaction : Trx, signerKey : string, web3) {
   } catch (e) {
     // If higher gas price will help, try again. Otherwise, really throw.
     if (e.message === "Returned error: replacement transaction underpriced") {
-      return await replaceTransaction(transaction, signerKey, web3);
+      return replaceTransaction(transaction, signerKey, web3);
     } else if (/Error: Timeout exceeded during the transaction confirmation process. Be aware the transaction could still get confirmed!/.test(e.error)){
-      return await replaceTransaction(transaction, signerKey, web3);
+      return replaceTransaction(transaction, signerKey, web3);
     } else {
       throw(e)
     }
@@ -27,7 +27,7 @@ async function signAndSend(transaction : Trx, signerKey : string, web3 ): Promis
 
 async function replaceTransaction(transaction : Trx, signerKey : string, web3 ): Promise<TrxReceipt> {
   transaction.gasPrice = Math.floor(transaction.gasPrice * 0.2);
-  return await signAndSend(transaction, signerKey, web3);
+  return signAndSend(transaction, signerKey, web3);
 }
 
 export {
