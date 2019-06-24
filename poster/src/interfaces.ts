@@ -10,9 +10,9 @@
 // A payload for an open oracle view comprises 2 fields:
 //  1. Abi encoded values to be written to the open oracle data contract
 //  2. The attestor's signature on a hash of that message
-interface OpenOraclePayload {
+interface DelFiReporterPayload {
   // ABI encoded values to be written to the open oracle data contract.
-  message: string,
+  encoded: string,
   // The signature of the attestor to these values. The values in 'message'
   // will be stored in a mapping under this signer's public address.
   signature: string,
@@ -28,7 +28,6 @@ interface Trx {
   gasPrice: number,
   gas: number,
   to: string,
-  chainId: string,
   data: string
 }
 
@@ -40,4 +39,8 @@ interface TrxReceipt {
   events: {
     [event: string]: Event
   }
+}
+
+interface Event {
+  returnValues: { [key: string]: any }
 }

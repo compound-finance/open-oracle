@@ -7,8 +7,8 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "scripts": {
-    "start": "node ./.tsbuilt/poster.js",
-    "test": "VCR_MODE=playback node ./node_modules/jest-cli/bin/jest.js"
+    "start": "node ./.tsbuilt/index.js",
+    "test": "VCR_MODE=cache node ./node_modules/jest-cli/bin/jest.js"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",

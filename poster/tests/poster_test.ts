@@ -1,11 +1,11 @@
-import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads} from '../src/index';
+import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads} from '../src/poster';
 import AbiCoder from 'web3-eth-abi';
 require('sepia');
 
 describe('loading poster arguments from environment and https', () => {
   test('fetchGasPrice', async () => {
     let gasPrice = await fetchGasPrice();
-    expect(gasPrice).toEqual(10_000_000_000);
+    expect(gasPrice).toEqual(10000000000);
   });
 
   test('fetchPayloads', async () => {
@@ -46,9 +46,8 @@ describe('building a function call', () => {
     let prices = {"eth": "250", "zrx": "300"}
 
     let data = buildTrxData(
-      [{message: encodedMessage, signature: signedMessage, prices: prices}],
+      [{encoded: encodedMessage, signature: signedMessage, prices: prices}],
       "writePrices(bytes[],bytes[],string[])");
-    console.log("built")
 
     let assumedAbi = {
       "constant": false,
