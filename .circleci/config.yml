@@ -20,9 +20,9 @@ jobs:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
-      - run: ~/repo/node_modules/.bin/tsc
       - run: mkdir ~/junit-oracle
-      - run: JEST_JUNIT_OUTPUT=~/junit-oracle/test-results.xml yarn run test --ci --reporters=default --reporters=jest-junit
+      - run: npx saddle compile
+      - run: JEST_JUNIT_OUTPUT=~/junit-oracle/test-results.xml npx saddle test -- --ci --reporters=default --reporters=jest-junit
       - store_test_results:
           path: ~/junit-oracle
       - store_artifacts:
