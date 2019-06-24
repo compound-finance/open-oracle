@@ -1,5 +1,5 @@
 import {main} from './poster';
-const Web3 = require('web3');
+import Web3 from 'web3';
 import yargs from 'yargs';
 
 async function run() {
@@ -15,29 +15,27 @@ async function run() {
     .demandOption(['poster_key', 'sources', 'view_function_name', 'web3_provider', 'view_address'], 'Provide all the arguments')
     .argv;
 
+  const web3 = await new Web3(argv.web3_provider, undefined, {});
 
-  const web3 = await new Web3(argv.web3_provider, null, {});
-
-  // posting promise will reject and retry once
-  // afer this timeout
+  // posting promise will reject and retry once with higher gas after this timeout
   web3.eth.transactionPollingTimeout = argv.timeout;
 
   if (argv.web3_provider === "http://127.0.0.1:8545") {
     // confirm immediately in dev
     web3.eth.transactionConfirmationBlocks = 1
 
-    // monkey patch web3 since ganache does not implement
-    // this rpc
-    web3.eth._currentProvider.originalSend = web3.eth._currentProvider.send;
-    web3.eth._currentProvider.send = async function (method, parameters ) {
+    // monkey patch web3 since ganache does not implement eth_chainId
+    // https://github.com/trufflesuite/ganache-core/issues/339
+    // https://github.com/tcichowicz/ganache-core/commit/15d740cc5bdca86c87c3c9fd79bbce5f785b105e
+    const originalSend = web3.eth.currentProvider.send;
+    web3.eth.currentProvider.send = async function (method, parameters) {
       if (method === "eth_chainId") {
-        return "0x" + Number(3).toString(16) 
+        return "0x" + Number(1337).toString(16) 
       } else {
-        return web3.eth._currentProvider.originalSend(method, parameters);
+        return originalSend.call(web3.eth.currentProvider, method, parameters);
       }
     }
   }
-
 
   return await main(argv.sources, argv.poster_key, argv.view_address, argv.view_function_name, web3);
 }

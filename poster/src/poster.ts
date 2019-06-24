@@ -1,14 +1,14 @@
 import {postWithRetries} from './postWithRetries';
 import fetch from 'node-fetch';
 import AbiCoder from 'web3-eth-abi';
+import Web3 from 'web3';
 
 async function main(sources : string,
                     senderKey : string,
                     viewAddress : string,
                     functionName : string,
-                    web3 ) {
+                    web3 : Web3 ) {
   const payloads = await fetchPayloads(sources.split(","));
-  console.log(payloads)
   const gasPrice = await fetchGasPrice();
   const trxData = buildTrxData(payloads, functionName);
 
@@ -55,11 +55,39 @@ function buildTrxData(payloads : DelFiReporterPayload[], functionName : string) 
 
 // e.g. findTypes("postPrices(bytes[],bytes[],string[])")-> ["bytes[]","bytes[]","string[]"]
 function findTypes(functionName : string) : string[] {
-  let start = functionName.indexOf("(") + 1;
-  let types = functionName
-    .slice(start, functionName.lastIndexOf(")"))
-    .split(",");
-  return types
+  // this unexported function from ethereumjs-abi is copy pasted from source
+  // see https://github.com/ethereumjs/ethereumjs-abi/blob/master/lib/index.js#L81
+  let parseSignature = function (sig) {
+    var tmp = /^(\w+)\((.*)\)$/.exec(sig) || [];
+
+    if (tmp.length !== 3) {
+      throw new Error('Invalid method signature')
+    }
+
+    var args = /^(.+)\):\((.+)$/.exec(tmp[2])
+
+    if (args !== null && args.length === 3) {
+      return {
+        method: tmp[1],
+        args: args[1].split(','),
+        retargs: args[2].split(',')
+      }
+    } else {
+      var params = tmp[2].split(',')
+      if (params.length === 1 && params[0] === '') {
+        // Special-case (possibly naive) fixup for functions that take no arguments.
+        // TODO: special cases are always bad, but this makes the function return
+        // match what the calling functions expect
+        params = []
+      }
+      return {
+        method: tmp[1],
+        args: params
+      }
+    }
+  }
+
+  return parseSignature(functionName).args;
 }
 
 function getEnvVar(name : string): string {

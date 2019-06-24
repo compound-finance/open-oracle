@@ -1,5 +1,7 @@
-async function postWithRetries(transaction : Trx, signerKey : string, web3) {
-  console.log("Running Open Oracle Poster...");
+import Web3 from 'web3';
+ 
+async function postWithRetries(transaction : Trx, signerKey : string, web3 : Web3) {
+     console.log("Running Open Oracle Poster...");
 
   try {
     return signAndSend(transaction, signerKey, web3);
@@ -10,9 +12,10 @@ async function postWithRetries(transaction : Trx, signerKey : string, web3) {
     } else if (/Error: Timeout exceeded during the transaction confirmation process. Be aware the transaction could still get confirmed!/.test(e.error)){
       return replaceTransaction(transaction, signerKey, web3);
     } else {
-      throw(e)
+      throw(e);
     }
   }
+
   console.log("Completed run of Open Oracle Poster");
 }
 

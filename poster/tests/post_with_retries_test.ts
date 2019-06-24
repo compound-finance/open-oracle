@@ -1,11 +1,11 @@
 import {postWithRetries, signAndSend} from '../src/postWithRetries';
-const Web3 = require('web3');
+import Web3 from 'web3';
 require('sepia');
 
 describe('posting', () => {
   test('signs and sends', async () => {
     const provider = "http://localhost:8545";
-    const web3 = await new Web3(provider, null, { });
+    const web3 = await new Web3(provider, undefined, { });
     web3.eth.transactionConfirmationBlocks = 1
 
     let senderKey = "0x7f888bbe5b812b1f8439df461d9335b30edc0f24ad65d23334e61bf107f45bb5"
