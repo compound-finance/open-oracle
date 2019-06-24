@@ -32,11 +32,17 @@ async function fetchPayloads(sources : string[]) : Promise<DelFiReporterPayload[
 }
 
 async function fetchGasPrice() : Promise<number> {
+  try {
   let source = "https://api.compound.finance/api/gas_prices/get_gas_price";
   let response = await fetch(source);
   let prices = await response.json();
   let averagePrice = Number(prices["average"]["value"]);
   return averagePrice;
+  } catch (e) {
+    // use 3 gwei if api is unreachable for some reason
+    console.error(e);
+    return 3_000_000_000;
+  }
 }
 
 function buildTrxData(payloads : DelFiReporterPayload[], functionName : string) : string {
