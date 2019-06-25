@@ -16,7 +16,9 @@
     "ganache-core": "^2.5.5",
     "jest": "^24.8.0",
     "jest-cli": "^24.8.0",
-    "jest-junit": "^6.4.0"
+    "jest-junit": "^6.4.0",
+    "node-docker-api": "^1.1.22",
+    "tar-fs": "^2.0.0"
   },
   "scripts": {
     "test": "npx saddle compile && npx saddle test"
