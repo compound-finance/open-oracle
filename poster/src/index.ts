@@ -4,21 +4,19 @@ import yargs from 'yargs';
 
 async function run() {
   const argv = yargs
-    .option('sources', {alias: 's', description: 'sources to pull price messages from', type: 'string'})
-    .option('poster_key', {alias: 'k', description: 'Private key (try: `file:<file> or env:<env>`', type: 'string'})
-    .option('view_function_name', {alias: 'f', description: 'Function signature for the view', type: 'string'})
+    .option('sources', {alias: 's', description: 'sources to pull price messages from, a list of https endpoints created by open oracle reporters serving open oracle payloads as json', type: 'string'})
+    .option('poster_key', {alias: 'k', description: 'Private key holding enough gas to post (try: `file:<file> or env:<env>)`', type: 'string'})
+    .option('view_function_name', {alias: 'f', description: 'Function signature for the view (e.g. postPrices(bytes[],bytes[],string[]))', type: 'string'})
     .option('web3_provider', {description: 'Web 3 provider', type: 'string'})
-    .option('view_address', {description: 'address of view', type: 'string'})
-    .option('timeout', {alias: 't', description: 'how many secondsto wait before retrying', type: 'number', default: 180})
+    .option('view_address', {description: 'address of open oracle view to post through', type: 'string'})
+    .option('timeout', {alias: 't', description: 'how many seconds to wait before retrying with more gas', type: 'number', default: 180})
     .help()
     .alias('help', 'h')
     .demandOption(['poster_key', 'sources', 'view_function_name', 'web3_provider', 'view_address'], 'Provide all the arguments')
     .argv;
 
-  const web3 = await new Web3(argv.web3_provider, undefined, {});
-
   // posting promise will reject and retry once with higher gas after this timeout
-  web3.eth.transactionPollingTimeout = argv.timeout;
+  const web3 = await new Web3(argv.web3_provider, undefined, {transactionPollingTimeout: argv.timeout});
 
   if (argv.web3_provider === "http://127.0.0.1:8545") {
     // confirm immediately in dev

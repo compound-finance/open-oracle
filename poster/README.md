@@ -19,21 +19,30 @@ yarn add open-oracle-poster
 
 ## Running
 
-To run as a standalone:
+The poster requires 5 arguments to run, with one optional argument.
+  --sources, -s             sources to pull price messages from, a list of https endpoints created by open oracle reporters serving open oracle payloads as json
+  --poster_key, -k          Private key holding enough gas to post (try: `file:<file> or env:<env>)`
+  --view_function_name, -f  Function signature for the view (e.g. postPrices(bytes[],bytes[],string[]))
+  --web3_provider           Web 3 provider
+  --view_address            address of open oracle view to post through
+  --timeout, -t             how many seconds to wait before retrying with more gas, defaults to 180
 
+To run as standalone from this project's root, simply invoke the start script.
 ```
-TODO: make this more clear, as these are just notes from starting to integrate
-# start reporter
- yarn run start --private_key=0x5763aa1cb4c9cd141a1b409d92e5c5b967a28e18c70eb4cd965374ad75bff356 --script="examples/fixed.js"
-
- yarn run start --view_address=0xa543d9701bb291E8F75CE2747A8E094bF042009A --poster_key=0x5763aa1cb4c9cd141a1b409d92e5c5b967a28e18c70eb4cd965374ad75bff356 --sources=http://localhost:3000 --view_function_name='postPrices(bytes[],bytes[],string[])' --web3_provider=http://localhost:8545
+ yarn run start --view_address=0xViewAddress --poster_key=0xWalletWithGas --sources=http://localhost:3000 --view_function_name='postPrices(bytes[],bytes[],string[])' --web3_provider=http://127.0.0.1:8545
 ```
 
 Otherwise, you can include the DelFi poster in an app for configuration:
 
 ```typescript
 import poster from 'delfi-poster';
+import Web3 from 'web3';
 
-// sources = [list of reporter urls]
-poster.main();
+// sample arguments, fill these in with real data :)
+// let sources = [list of sources];
+// let posterKey = ...a key to a wallet holding eth for gas;
+// let viewAddress = "0xOraclePriceData";
+// let viewFunctionName = ...view function signature e.g. 'postPrices(bytes[],bytes[],string[])';
+// let web3Provider = new Web3("web3Node.com", undefined, {transactionPollingTimeout: 180});
+await poster.main(sources, posterKey, viewAddress, viewFunctionName, web3Provider);
 ```
