@@ -41,7 +41,7 @@ import Web3 from 'web3';
 // sample arguments, fill these in with real data :)
 // let sources = [list of sources];
 // let posterKey = ...a key to a wallet holding eth for gas;
-// let viewAddress = "0xOraclePriceData";
+// let viewAddress = "0xDelfiPriceView";
 // let viewFunctionName = ...view function signature e.g. 'postPrices(bytes[],bytes[],string[])';
 // let web3Provider = new Web3("web3Node.com", undefined, {transactionPollingTimeout: 180});
 await poster.main(sources, posterKey, viewAddress, viewFunctionName, web3Provider);
