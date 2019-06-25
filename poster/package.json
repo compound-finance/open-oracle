@@ -12,10 +12,15 @@
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
+    "@types/node": "^12.0.10",
     "jest": "^24.8.0",
     "jest-junit": "^6.4.0",
     "sepia": "^2.0.2",
     "ts-jest": "^24.0.2",
     "typescript": "^3.5.1"
+  },
+  "dependencies": {
+    "web3": "^1.0.0-beta.55",
+    "yargs": "^13.2.4"
   }
 }
