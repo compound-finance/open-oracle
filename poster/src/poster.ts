@@ -1,18 +1,19 @@
 import {postWithRetries} from './postWithRetries';
 import fetch from 'node-fetch';
-import { AbiCoder } from 'web3-eth-abi';
 import Web3 from 'web3';
+import {AbiCoder} from 'web3-eth-abi';
+import {TransactionConfig} from 'web3-core';
 
 async function main(sources : string,
                     senderKey : string,
                     viewAddress : string,
-                    functionName : string,
-                    web3 : Web3 ) {
+                    functionSig : string,
+                    web3 : Web3) {
   const payloads = await fetchPayloads(sources.split(","));
   const gasPrice = await fetchGasPrice();
-  const trxData = buildTrxData(payloads, functionName);
+  const trxData = buildTrxData(payloads, functionSig);
 
-  const trx = <Trx> {
+  const trx = <TransactionConfig> {
     data: trxData,
     to: viewAddress,
     gasPrice: gasPrice,
@@ -24,44 +25,49 @@ async function main(sources : string,
 
 async function fetchPayloads(sources : string[]) : Promise<DelFiReporterPayload[]> {
   let sourcePromises = sources.map(async (source) => {
-    let response = await fetch(source);
-    return response.json();
+    try {
+      let response = await fetch(source);
+      return response.json();
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
   });
 
-  return await Promise.all(sourcePromises)
+  return (await Promise.all(sourcePromises)).filter(x => x != null);
 }
 
 async function fetchGasPrice() : Promise<number> {
   try {
-  let source = "https://api.compound.finance/api/gas_prices/get_gas_price";
-  let response = await fetch(source);
-  let prices = await response.json();
-  let averagePrice = Number(prices["average"]["value"]);
-  return averagePrice;
+    let source = "https://api.compound.finance/api/gas_prices/get_gas_price";
+    let response = await fetch(source);
+    let prices = await response.json();
+    let averagePrice = Number(prices["average"]["value"]);
+    return averagePrice;
   } catch (e) {
     // use 3 gwei if api is unreachable for some reason
-    console.error(e);
+    console.warn(`Failed to fetch gas price`, e);
     return 3_000_000_000;
   }
 }
 
-function buildTrxData(payloads : DelFiReporterPayload[], functionName : string) : string {
-  const types = findTypes(functionName);
+function buildTrxData(payloads : DelFiReporterPayload[], functionSig : string) : string {
+  const types = findTypes(functionSig);
 
-  let messages = payloads.map(x => x.encoded);
+  let messages = payloads.map(x => x.message);
   let signatures = payloads.map(x => x.signature);
-  let symbols = new Set(payloads.map(x => Object.keys(x.prices)))
+  let symbols = new Set(payloads.map(x => Object.keys(x.prices)).flat())
 
   // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
   const coder = new AbiCoder();
-  return coder.encodeFunctionSignature(functionName) +
+  return coder.encodeFunctionSignature(functionSig) +
     coder
-    .encodeParameters(types, [messages, signatures, ...symbols])
+    .encodeParameters(types, [messages, signatures, [...symbols]])
     .replace('0x', '');
 }
 
 // e.g. findTypes("postPrices(bytes[],bytes[],string[])")-> ["bytes[]","bytes[]","string[]"]
-function findTypes(functionName : string) : string[] {
+function findTypes(functionSig : string) : string[] {
   // this unexported function from ethereumjs-abi is copy pasted from source
   // see https://github.com/ethereumjs/ethereumjs-abi/blob/master/lib/index.js#L81
   let parseSignature = function (sig) {
@@ -94,7 +100,7 @@ function findTypes(functionName : string) : string[] {
     }
   }
 
-  return parseSignature(functionName).args;
+  return parseSignature(functionSig).args;
 }
 
 function getEnvVar(name : string): string {

@@ -14,7 +14,7 @@ describe('loading poster arguments from environment and https', () => {
 
     expect(payloads).toEqual([
       {
-        "encoded": "0xmessage",
+        "message": "0xmessage",
         "prices":  {
           "eth": 260,
           "zrx": 0.58,
@@ -22,7 +22,7 @@ describe('loading poster arguments from environment and https', () => {
         "signature": "0xsignature",
       },
       {
-        "encoded": "0xmessage",
+        "message": "0xmessage",
         "prices":  {
           "eth": 250,
           "zrx": 1.58,
@@ -39,14 +39,14 @@ describe('building a function call', () => {
   });
 
   test('buildTrxData', () => {
-    let encodedMessage = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10';
+    let message = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10';
 
-    let signedMessage = '0x04a78a7b3013f6939da19eac6fd1ad5c5a20c41bcc5d828557442aad6f07598d029ae684620bec13e13d018cba0da5096626e83cfd4d5356d808d7437a0a5076000000000000000000000000000000000000000000000000000000000000001c';
+    let signature = '0x04a78a7b3013f6939da19eac6fd1ad5c5a20c41bcc5d828557442aad6f07598d029ae684620bec13e13d018cba0da5096626e83cfd4d5356d808d7437a0a5076000000000000000000000000000000000000000000000000000000000000001c';
 
     let prices = {"eth": "250", "zrx": "300"};
 
     let data = buildTrxData(
-      [{encoded: encodedMessage, signature: signedMessage, prices: prices}],
+      [{message, signature, prices: prices}],
       "writePrices(bytes[],bytes[],string[])");
 
     let assumedAbi = {
@@ -73,7 +73,7 @@ describe('building a function call', () => {
     };
 
     // @ts-ignore-start
-    let officialWeb3Encoding = new AbiCoder().encodeFunctionCall(assumedAbi, [[encodedMessage], [signedMessage], Object.keys(prices)]);
+    let officialWeb3Encoding = new AbiCoder().encodeFunctionCall(assumedAbi, [[message], [signature], Object.keys(prices)]);
     // @ts-ignore-end
 
     expect(data).toEqual(officialWeb3Encoding);

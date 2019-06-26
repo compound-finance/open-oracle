@@ -1,36 +1,33 @@
 import Web3 from 'web3';
- 
-async function postWithRetries(transaction : Trx, signerKey : string, web3 : Web3) {
-     console.log("Running Open Oracle Poster...");
+import {TransactionConfig, TransactionReceipt} from 'web3-core';
 
-  try {
-    return signAndSend(transaction, signerKey, web3);
-  } catch (e) {
-    // If higher gas price will help, try again. Otherwise, really throw.
-    if (e.message === "Returned error: replacement transaction underpriced") {
-      return replaceTransaction(transaction, signerKey, web3);
-    } else if (/Error: Timeout exceeded during the transaction confirmation process. Be aware the transaction could still get confirmed!/.test(e.error)){
-      return replaceTransaction(transaction, signerKey, web3);
-    } else {
-      throw(e);
+async function postWithRetries(transaction: TransactionConfig, signerKey: string, web3: Web3, retries: number = 3) {
+  for (let i = 0; i < retries; i++) {
+    console.log(`Running Open Oracle Poster (attempt ${i})...`);
+    try {
+      return await signAndSend(transaction, signerKey, web3);
+    } catch (e) {
+      // If higher gas price will help, try again. Otherwise, really throw.
+      if (e.message === "Returned error: replacement transaction underpriced") {
+        transaction.gasPrice = Math.floor(Number(transaction.gasPrice) * 0.2);
+      } else if (/Error: Timeout exceeded during the transaction confirmation process. Be aware the transaction could still get confirmed!/.test(e.error)){
+        transaction.gasPrice = Math.floor(Number(transaction.gasPrice) * 0.2);
+      } else {
+        console.warn(e);
+        await(new Promise(okay => setTimeout(okay, 3000)));
+      }
     }
   }
-
-  console.log("Completed run of Open Oracle Poster");
+  console.error(`Failed to run Open Oracle Poster ${retries} times, giving up`);
 }
 
-async function signAndSend(transaction : Trx, signerKey : string, web3 ): Promise<TrxReceipt> {
+async function signAndSend(transaction: TransactionConfig, signerKey: string, web3: Web3): Promise<TransactionReceipt> {
   let signedTransaction = await web3
     .eth
     .accounts
     .signTransaction(transaction, signerKey);
 
-  return await web3.eth.sendSignedTransaction(signedTransaction.rawTransaction);
-}
-
-async function replaceTransaction(transaction : Trx, signerKey : string, web3 ): Promise<TrxReceipt> {
-  transaction.gasPrice = Math.floor(transaction.gasPrice * 0.2);
-  return signAndSend(transaction, signerKey, web3);
+  return web3.eth.sendSignedTransaction(signedTransaction.rawTransaction || '');
 }
 
 export {
