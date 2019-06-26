@@ -10,7 +10,7 @@ test('integration test', async () => {
   }
 
   const port = 10123;
-  const app = await endpoint(privateKey, await fetchPrices).listen(port);
+  const app = endpoint(privateKey, fetchPrices).listen(port);
   const response = await fetch(`http://localhost:${port}/prices.json`);
 
   expect(response.ok).toBe(true);
