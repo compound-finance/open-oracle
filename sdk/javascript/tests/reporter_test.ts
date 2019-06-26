@@ -1,5 +1,6 @@
 import {decode, encode, sign} from '../src/reporter';
 
+
 test('encode', async () => {
   let encoded = encode('string', 'decimal', 12345678, {"eth": 5.0, "zrx": 10.0});
   let decoded = decode('string', 'decimal', encoded);

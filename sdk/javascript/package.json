@@ -8,7 +8,7 @@
   "license": "MIT",
   "scripts": {
     "start": "tsc && node ./.tsbuilt/index.js",
-    "test": "node ./node_modules/jest-cli/bin/jest.js"
+    "test": "jest"
   },
   "dependencies": {
     "web3": "1.0.0-beta.55"

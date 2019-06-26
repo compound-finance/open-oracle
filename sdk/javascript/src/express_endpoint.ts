@@ -19,6 +19,7 @@ export function endpoint(
       res.json({
         message,
         signature,
+        timestamp: timestamp,
         [name]: pairs
       });
     });

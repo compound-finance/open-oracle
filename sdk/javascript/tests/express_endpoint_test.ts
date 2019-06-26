@@ -3,14 +3,14 @@ import {endpoint} from '../src/express_endpoint';
 
 test('integration test', async () => {
   const privateKey = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10';
-  const timestamp = +new Date(2019, 6, 20);
+  const timestamp = 1563606000000;
 
   async function fetchPrices(): Promise<[number, object]> {
     return [timestamp, {'eth': 260.0, 'zrx': 0.58}];
   }
 
   const port = 10123;
-  const app = endpoint(privateKey, fetchPrices).listen(port);
+  const app = await endpoint(privateKey, await fetchPrices).listen(port);
   const response = await fetch(`http://localhost:${port}/prices.json`);
 
   expect(response.ok).toBe(true);
@@ -20,6 +20,7 @@ test('integration test', async () => {
       eth: 260,
       zrx: 0.58,
     },
+    timestamp: timestamp,
     signature: "0xafb2aeb4bdf9d1fca04858d0db0f6023a94d1f6b6ce637641020044249f079002a680b038c6b0c6fe9d89bb6b7a4b1c74de9792db342d0223d6ba944f1d54361000000000000000000000000000000000000000000000000000000000000001c"
   });
 });
