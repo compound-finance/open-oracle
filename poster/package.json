@@ -8,7 +8,7 @@
   "license": "MIT",
   "scripts": {
     "start": "node ./.tsbuilt/index.js",
-    "test": "VCR_MODE=cache node ./node_modules/jest-cli/bin/jest.js"
+    "test": "VCR_MODE=cache jest"
   },
   "devDependencies": {
     "@types/jest": "^24.0.13",
@@ -20,6 +20,7 @@
     "typescript": "^3.5.1"
   },
   "dependencies": {
+    "node-fetch": "^2.6.0",
     "web3": "^1.0.0-beta.55",
     "yargs": "^13.2.4"
   }
