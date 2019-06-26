@@ -1,4 +1,6 @@
 .build
 .circleci
 .git
+poster
+sdk
 node_modules

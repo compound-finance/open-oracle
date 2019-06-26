@@ -1,0 +1,21 @@
+
+version: '3'
+services:
+  ganache:
+    image: trufflesuite/ganache-cli
+    ports:
+    - "8545:18545"
+  alpine:
+    image: appropriate/curl
+    command: sleep 99999999
+    depends_on:
+      - ganache
+  # open_oracle:
+  #   build: .
+  #   command: exit 1
+  #   environment:
+  #     PROVIDER: http://localhost:1111
+  #   depends_on:
+  #     - ganache
+  #   networks: 
+  #     - backend

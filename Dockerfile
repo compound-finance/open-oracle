@@ -1,13 +1,20 @@
 FROM ethereum/solc:0.5.9-alpine
-
 WORKDIR /open-oracle
-ADD ./package.json /open-oracle/package.json
+RUN apk update && apk add --no-cache --virtual .gyp \
+	python \
+	make \
+	g++ \
+	yarn \
+	nodejs \
+	git
+
+RUN yarn global add node-gyp npx
+COPY package.json package.json
+
 RUN yarn install
 
 ENV PROVIDER PROVIDER
-ADD ./contracts /open-oracle/contracts
+ADD contracts contracts
 
-RUN saddle deploy OpenOraclePriceData
-RUN saddle deploy OpenOracleView
-
-CMD /bin/sh
+ENTRYPOINT /bin/sh
+CMD sleep 99999999

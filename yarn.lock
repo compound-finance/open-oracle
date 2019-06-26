@@ -2108,6 +2108,11 @@ diffie-hellman@^5.0.0:
     miller-rabin "^4.0.0"
     randombytes "^2.0.0"
 
+docker-compose@^0.17.5:
+  version "0.17.5"
+  resolved "https://registry.yarnpkg.com/docker-compose/-/docker-compose-0.17.5.tgz#22723aae86862e0fb8b3f88d70d2a6d65a32ffb3"
+  integrity sha512-/2+l37r51x0lPdDp3qtcIsLlw0I+snhUrZ7h4LCuNmpPBTd7pz20XU5Umj933bFo1P+Mn1sgH3Njm1mL2cw7nA==
+
 docker-modem@^0.3.1:
   version "0.3.7"
   resolved "https://registry.yarnpkg.com/docker-modem/-/docker-modem-0.3.7.tgz#3f510d09f5d334dc2134228f92bd344671227df4"
@@ -4832,6 +4837,11 @@ node-fetch@2.1.2:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.1.2.tgz#ab884e8e7e57e38a944753cec706f788d1768bb5"
   integrity sha1-q4hOjn5X44qUR1POxwb3iNF2i7U=
+
+node-fetch@^2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/node-fetch/-/node-fetch-2.6.0.tgz#e633456386d4aa55863f676a7ab0daa8fdecb0fd"
+  integrity sha512-8dG4H5ujfvFiqDmVu9fQ5bOHUC15JMjMY/Zumv26oOvvVJjM67KF8koCWIabKQ1GJIa9r2mMZscBq/TbdOcmNA==
 
 node-fetch@~1.7.1:
   version "1.7.3"
