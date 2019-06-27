@@ -13,6 +13,7 @@
     "yargs": "^13.2.4"
   },
   "devDependencies": {
+    "docker-compose": "^0.17.5",
     "ganache-core": "^2.5.5",
     "jest": "^24.8.0",
     "jest-cli": "^24.8.0",

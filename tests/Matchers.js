@@ -3,7 +3,7 @@ expect.extend({
   numEquals(actual, expected) {
     return {
       pass: actual.toString() == expected.toString(),
-      message: () => `expected ${JSON.stringify(actual)} == ${JSON.stringify(expected)}`
+      message: () => `expected ${JSON.stringify(actual)} (${actual.toString()}) == ${JSON.stringify(expected)} (${expected.toString()})`
     }
   }
 });
