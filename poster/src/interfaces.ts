@@ -12,35 +12,9 @@
 //  2. The attestor's signature on a hash of that message
 interface DelFiReporterPayload {
   // ABI encoded values to be written to the open oracle data contract.
-  encoded: string,
+  message: string,
   // The signature of the attestor to these values. The values in 'message'
   // will be stored in a mapping under this signer's public address.
   signature: string,
   prices: {[symbol: string]: string }
 };
-
-//
-// ---- web3 interfaces ----
-//
-
-// Interface for signable transaction 
-interface Trx {
-  gasPrice: number,
-  gas: number,
-  to: string,
-  data: string
-}
-
-// The transaction receipt returned by myContract.myMethod.send promise,
-// indicating the transaction has been successfully mined.
-// https://web3js.readthedocs.io/en/1.0/web3-eth-contract.html?highlight=send#contract-events-return
-interface TrxReceipt {
-  transactionHash: string,
-  events: {
-    [event: string]: Event
-  }
-}
-
-interface Event {
-  returnValues: { [key: string]: any }
-}

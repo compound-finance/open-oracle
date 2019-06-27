@@ -1,0 +1,47 @@
+version: '3'
+services:
+  ganache:
+    image: trufflesuite/ganache-cli
+    command: ganache -d
+    ports:
+      - "9999:8545"
+
+  deployer:
+    build: .
+    command: "sh -c '
+      npx saddle deploy OpenOraclePriceData;
+      npx saddle deploy DelFiPrice 0xe78A0F7E598Cc8b0Bb87894B0F60dD2a88d6a8Ab [0x90f8bf6a479f320ead074411a4b0e7944ea8c9c1,0xffcf8fdee72ac11b5c542428b35eef5769c409f0]
+    '"
+    environment:
+      - PROVIDER=http://ganache:8545
+    depends_on:
+      - ganache
+
+  reporter-1:
+    build: sdk/javascript
+    command: npm run start --
+      --private_key 0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10
+      --script examples/fixed.js
+    ports:
+      - "3001:3000"
+
+  reporter-2:
+    build: sdk/javascript
+    command: npm run start --
+      --private_key 0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf11
+      --script examples/fixed.js
+    ports:
+      - "3002:3000"
+
+  poster:
+    build: poster
+    command: npm run start --
+      --poster_key 0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d
+      --sources http://reporter-1:3000/prices.json,http://reporter-2:3000/prices.json
+      --view_address 0x5b1869D9A4C187F2EAa108f3062412ecf0526b24
+      --web3_provider http://ganache:8545
+    depends_on:
+      - ganache
+      - reporter-1
+      - reporter-2
+    restart: always

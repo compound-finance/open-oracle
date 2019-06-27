@@ -29,7 +29,7 @@ The poster requires 5 arguments to run, with one optional argument.
 
 To run as standalone from this project's root, simply invoke the start script.
 ```
- yarn run start --view_address=0xViewAddress --poster_key=0xWalletWithGas --sources=http://localhost:3000 --view_function_name='postPrices(bytes[],bytes[],string[])' --web3_provider=http://127.0.0.1:8545
+ yarn run start --view_address=0xViewAddress --poster_key=0xWalletWithGas --sources=http://localhost:3000/prices.json
 ```
 
 Otherwise, you can include the DelFi poster in an app for configuration:
