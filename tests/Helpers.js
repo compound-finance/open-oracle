@@ -16,7 +16,7 @@ function uint256(int) {
 
 function encode(timestamp, pairs) {
   return web3.eth.abi.encodeParameters(['uint256', 'bytes[]'], [timestamp, pairs.map(([k, v]) => {
-    return web3.eth.abi.encodeParameters(['string', 'uint'], [k, v])
+    return web3.eth.abi.encodeParameters(['string', 'uint256'], [k, v])
   })]);
 }
 
