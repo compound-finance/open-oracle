@@ -16,7 +16,12 @@ export function fancyParameterDecoder(paramType: string): [string, (any) => any]
 
   if (paramType == 'decimal') {
     actualParamType = 'uint256';
-    actualParamDec = (x) => x / 1e18;
+    actualParamDec = (x) => x / 1e6;
+  }
+
+  if (paramType == 'symbol') {
+    actualParamType = 'string';
+    actualParamDec = (x) => x; // we don't know what the original case was anymore
   }
 
   return [actualParamType, actualParamDec];
@@ -40,7 +45,12 @@ export function fancyParameterEncoder(paramType: string): [string, (any) => any]
   // Decimals are encoded as uints with 18 decimals of precision on-chain.
   if (paramType === 'decimal') {
     actualParamType = 'uint256';
-    actualParamEnc = (x) => web3.utils.toBN('1000000000000000000').muln(x).toString();
+    actualParamEnc = (x) => web3.utils.toBN(1e6).muln(x).toString();
+  }
+
+  if (paramType == 'symbol') {
+    actualParamType = 'string';
+    actualParamEnc = (x) => x.toUpperCase();
   }
 
   return [actualParamType, actualParamEnc];

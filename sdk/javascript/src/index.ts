@@ -11,7 +11,7 @@ const argv = yargs
   .option('script', {alias: 's', description: 'Script for data', type: 'string'})
   .option('name', {alias: 'n', description: 'Name for data feed', type: 'string', default: 'prices'})
   .option('path', {alias: 'u', description: 'Path for endpoint', type: 'string', default: '/prices.json'})
-  .option('key_type', {description: 'Key type to encode', type: 'string', default: 'string'})
+  .option('key_type', {description: 'Key type to encode', type: 'string', default: 'symbol'})
   .option('value_type', {description: 'Value type to encode', type: 'string', default: 'decimal'})
   .help()
   .alias('help', 'h')
