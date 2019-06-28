@@ -1,4 +1,4 @@
-pragma solidity ^0.5.9;
+pragma solidity ^0.5.10;
 pragma experimental ABIEncoderV2;
 
 import "./OpenOraclePriceData.sol";
@@ -33,7 +33,8 @@ contract DelFiPrice is OpenOracleView {
 
         // Post the messages, whatever they are
         for (uint i = 0; i < messages.length; i++) {
-            OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
+            // Call in such a way so as to trap errors in writing (and ignore)
+            address(data).call(abi.encodeWithSignature("put(bytes,bytes)", messages[i], signatures[i]));
         }
 
         // Recalculate the asset prices

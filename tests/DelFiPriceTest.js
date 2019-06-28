@@ -149,5 +149,9 @@ describe('DelFiPrice', () => {
     expect(await getPrice('BTC')).numEquals(8500);
     expect(await getPrice('ETH')).numEquals(256);
 
+    /** Does not revert on invalid message **/
+
+    const postGarbage = await send(delfi.methods.postPrices(['0xabc'], ['0x123'], []), {gas: 5000000});
+    expect(postGarbage.gasUsed).toBeLessThan(30000);
   }, 30000);
 });
