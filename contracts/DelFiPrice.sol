@@ -14,11 +14,6 @@ contract DelFiPrice is OpenOracleView {
      */
     mapping(string => uint) public prices;
 
-    /**
-     * @notice The amount of time a price remains valid for (included in median)
-     */
-    uint public constant expiration = 48 hours;
-
     constructor(OpenOraclePriceData data_, address[] memory sources_) public OpenOracleView(data_, sources_) {}
 
     /**
@@ -42,8 +37,7 @@ contract DelFiPrice is OpenOracleView {
             string memory symbol = symbols[i];
 
             // Calculate the median price and write to storage
-            (uint median,) = medianPrice(symbol, sources, expiration);
-            prices[symbol] = median;
+            prices[symbol] = medianPrice(symbol, sources);
         }
     }
 
@@ -51,20 +45,17 @@ contract DelFiPrice is OpenOracleView {
      * @notice Calculates the median price over any set of sources
      * @param symbol The symbol to calculate the median price of
      * @param sources_ The sources to use when calculating the median price
-     * @param expiration_ The amount of time a price should be considered valid for
-     * @return (median, count) The median price and the number of non-expired sources used
+     * @return median The median price over the set of sources
      */
-    function medianPrice(string memory symbol, address[] memory sources_, uint expiration_) public view returns (uint median, uint count) {
-        uint[] memory postedPrices = new uint[](sources_.length);
-        for (uint i = 0; i < sources_.length; i++) {
+    function medianPrice(string memory symbol, address[] memory sources_) public view returns (uint median) {
+        uint N = sources_.length;
+        uint[] memory postedPrices = new uint[](N);
+        for (uint i = 0; i < N; i++) {
             (uint timestamp, uint price) = OpenOraclePriceData(address(data)).get(sources_[i], symbol);
-            if (block.timestamp < timestamp + expiration_) {
-                postedPrices[count] = price;
-                count++;
-            }
+            postedPrices[i] = price;
         }
-        uint[] memory sortedPrices = sort(postedPrices, count);
-        return (sortedPrices[count / 2], count);
+        uint[] memory sortedPrices = sort(postedPrices);
+        return sortedPrices[N / 2];
     }
 
     /**
@@ -72,10 +63,10 @@ contract DelFiPrice is OpenOracleView {
      * @param array Array of integers to sort
      * @return The sorted array of integers
      */
-    function sort(uint[] memory array, uint count) private pure returns (uint[] memory) {
-        require(count <= array.length, "count must be <= array length");
-        for (uint i = 0; i < count; i++) {
-            for (uint j = i + 1; j < count; j++) {
+    function sort(uint[] memory array) private pure returns (uint[] memory) {
+        uint N = array.length;
+        for (uint i = 0; i < N; i++) {
+            for (uint j = i + 1; j < N; j++) {
                 if (array[i] > array[j]) {
                     uint tmp = array[i];
                     array[i] = array[j];
