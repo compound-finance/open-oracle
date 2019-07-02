@@ -8,6 +8,7 @@ const root = path.join(__dirname, '..');
 describe.only('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     await compose.upAll({cwd: root, log: true});
+    await new Promise(ok => setTimeout(ok, 1000));
 
     const web3 = new Web3('http://localhost:9999');
     const accounts = await web3.eth.getAccounts();
