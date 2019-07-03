@@ -15,9 +15,9 @@ contract OpenOracleData {
      * @notice Write a bunch of signed datum to the authenticated storage mapping
      * @param message The payload containing the timestamp, and (key, value) pairs
      * @param signature The cryptographic signature of the message payload, authorizing the source to write
-     * @return The kind and the keys that were written
+     * @return The keys that were written
      */
-    //function put(bytes calldata message, bytes calldata signature) external returns (string, <Key>[]);
+    //function put(bytes calldata message, bytes calldata signature) external returns (<Key> memory []);
 
     /**
      * @notice Read a single key with a pre-defined type signature from an authenticated source

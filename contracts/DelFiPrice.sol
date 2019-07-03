@@ -31,8 +31,7 @@ contract DelFiPrice is OpenOracleView {
 
         // Post the messages, whatever they are
         for (uint i = 0; i < messages.length; i++) {
-            (string memory kind, string[] memory keys) = OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
-            require(keccak256(abi.encodePacked(kind)) == keccak256(abi.encodePacked("prices")), "Kind of data must be 'prices'");
+            string[] memory keys = OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
             symbolses[i] = keys;
             maxSymbols += keys.length;
         }

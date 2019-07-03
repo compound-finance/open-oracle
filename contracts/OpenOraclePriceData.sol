@@ -11,7 +11,7 @@ contract OpenOraclePriceData is OpenOracleData {
     /**
      * @notice The event emitted when a source writes to its storage
      */
-    event Write(address indexed source, string indexed key, string kind, uint timestamp, uint value);
+    event Write(address indexed source, string indexed key, uint timestamp, uint value);
 
     /**
      * @notice The fundamental unit of storage for a reporter source
@@ -31,14 +31,17 @@ contract OpenOraclePriceData is OpenOracleData {
      * @notice Write a bunch of signed datum to the authenticated storage mapping
      * @param message The payload containing the timestamp, and (key, value) pairs
      * @param signature The cryptographic signature of the message payload, authorizing the source to write
-     * @return The kind and the keys that were written
+     * @return The keys that were written
      */
-    function put(bytes calldata message, bytes calldata signature) external returns (string memory, string[] memory) {
+    function put(bytes calldata message, bytes calldata signature) external returns (string[] memory) {
         // Recover the source address
         address source = source(message, signature);
 
-        // Decode all the data tuples
+        // Decode the top-level message and check the kind
         (string memory kind, uint timestamp, bytes[] memory pairs) = abi.decode(message, (string, uint, bytes[]));
+        require(keccak256(abi.encodePacked(kind)) == keccak256(abi.encodePacked("prices")), "Kind of data must be 'prices'");
+
+        // Decode all the data tuples
         string[] memory keys = new string[](pairs.length);
         for (uint j = 0; j < pairs.length; j++) {
             (string memory key, uint value) = abi.decode(pairs[j], (string, uint));
@@ -51,13 +54,13 @@ contract OpenOraclePriceData is OpenOracleData {
 
             // Update storage
             data[source][key] = Datum(timestamp, value);
-            emit Write(source, key, kind, timestamp, value);
+            emit Write(source, key, timestamp, value);
 
             // Add to return value
             keys[j] = key;
         }
 
-        return (kind, keys);
+        return keys;
     }
 
     /**
