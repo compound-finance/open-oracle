@@ -22,7 +22,7 @@ yarn add open-oracle-poster
 The poster requires 5 arguments to run, with one optional argument.
   --sources, -s             sources to pull price messages from, a list of https endpoints created by open oracle reporters serving open oracle payloads as json
   --poster_key, -k          Private key holding enough gas to post (try: `file:<file> or env:<env>)`
-  --view_function_name, -f  Function signature for the view (e.g. postPrices(bytes[],bytes[],string[]))
+  --view_function, -f  		Function signature for the view (e.g. postPrices(bytes[],bytes[]))
   --web3_provider           Web 3 provider
   --view_address            address of open oracle view to post through
   --timeout, -t             how many seconds to wait before retrying with more gas, defaults to 180
@@ -42,7 +42,7 @@ import Web3 from 'web3';
 // let sources = [list of sources];
 // let posterKey = ...a key to a wallet holding eth for gas;
 // let viewAddress = "0xDelfiPriceView";
-// let viewFunctionName = ...view function signature e.g. 'postPrices(bytes[],bytes[],string[])';
+// let viewFunction = ...view function signature e.g. 'postPrices(bytes[],bytes[])';
 // let web3Provider = new Web3("web3Node.com", undefined, {transactionPollingTimeout: 180});
-await poster.main(sources, posterKey, viewAddress, viewFunctionName, web3Provider);
+await poster.main(sources, posterKey, viewAddress, viewFunction, web3Provider);
 ```

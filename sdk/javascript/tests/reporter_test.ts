@@ -1,12 +1,12 @@
 import {decode, encode, sign} from '../src/reporter';
 
 test('encode', async () => {
-  let encoded = encode('symbol', 'decimal', 12345678, {"eth": 5.0, "zrx": 10.0});
-  let decoded = decode('symbol', 'decimal', encoded);
-  let [timestamp, pairs] = decoded;
+  let encoded = encode('prices', 12345678, {"eth": 5.0, "zrx": 10.0});
+  let [kind, timestamp, pairs] = decode(encoded);
 
+  expect(kind).toEqual('prices');
   expect(timestamp.toString()).toEqual("12345678"); // XXX saddle not in this module: use numEquals
-  expect(pairs).toEqual([['ETH', 5.0], ['ZRX', 10.0]]);
+  expect(pairs.map(([k, v]) => [k, Number(v.toString())])).toEqual([['ETH', 5.0], ['ZRX', 10.0]]);
 });
 
 test('sign', async () => {

@@ -1,10 +1,12 @@
 const {
   address,
-  bytes,
+  bytes
+} = require('./Helpers');
+
+const {
   encode,
   sign,
-  uint256
-} = require('./Helpers');
+} = require('../sdk/javascript/.tsbuilt/reporter');
 
 describe('OpenOracleData', () => {
   // XXX describe cant be async with jest :(
@@ -32,7 +34,7 @@ describe('OpenOracleData', () => {
       message,
       signature,
       signatory
-    } = sign(encode(now, []), privateKey);
+    } = sign(encode('prices', now, []), privateKey);
 
     // the source we recover in solidity should match
     expect(await call(oracleData.methods.source(message, signature))).toEqual(signatory);
@@ -56,10 +58,10 @@ describe('OpenOracleData', () => {
       message,
       signature,
       signatory
-    } = sign(encode(now, [[K, V]]), privateKey));
+    } = sign(encode('prices', now, [[K, V]]), privateKey));
 
     const wrote1 = await send(priceData.methods.put(message, signature), {gas: 1000000});
-    expect(wrote1.gasUsed).toBeLessThan(82000);
+    expect(wrote1.gasUsed).toBeLessThan(86000);
 
     // reads 1 pair
     ({
@@ -74,7 +76,7 @@ describe('OpenOracleData', () => {
       message,
       signature,
       signatory
-    } = sign(encode(now - 1, [[K, 6]]), privateKey));
+    } = sign(encode('prices', now - 1, [[K, 6]]), privateKey));
 
     await send(priceData.methods.put(message, signature), {gas: 1000000});
 
@@ -90,13 +92,13 @@ describe('OpenOracleData', () => {
       message,
       signature,
       signatory
-    } = sign(encode(now, [
+    } = sign(encode('prices', now, [
       ['ABC', 100],
       ['BTC', 9000],
     ]), privateKey));
 
     const wrote2a = await send(priceData.methods.put(message, signature), {gas: 1000000});
-    expect(wrote2a.gasUsed).toBeLessThan(130000);
+    expect(wrote2a.gasUsed).toBeLessThan(135000);
 
     ({
       0: timestamp,
@@ -109,13 +111,13 @@ describe('OpenOracleData', () => {
       message,
       signature,
       signatory
-    } = sign(encode(now + 1, [
+    } = sign(encode('prices', now + 1, [
       ['ABC', 100],
       ['BTC', 9000],
     ]), privateKey));
 
     const wrote2b = await send(priceData.methods.put(message, signature), {gas: 1000000});
-    expect(wrote2b.gasUsed).toBeLessThan(70000);
+    expect(wrote2b.gasUsed).toBeLessThan(75000);
 
   }, 30000);
 });

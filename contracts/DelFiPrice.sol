@@ -21,19 +21,45 @@ contract DelFiPrice is OpenOracleView {
      * @dev We let anyone pay to post anything, but only sources count for prices.
      * @param messages The messages to post to the oracle
      * @param signatures The signatures for the corresponding messages
-     * @param symbols The symbols to update the prices of
      */
-    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
+    function postPrices(bytes[] calldata messages, bytes[] calldata signatures) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
+
+        // Initialize the list of symbol lists
+        string[][] memory symbolses = new string[][](messages.length);
+        uint maxSymbols = 0;
 
         // Post the messages, whatever they are
         for (uint i = 0; i < messages.length; i++) {
-            // Call in such a way so as to trap errors in writing (and ignore)
-            address(data).call(abi.encodeWithSignature("put(bytes,bytes)", messages[i], signatures[i]));
+            (string memory kind, string[] memory keys) = OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
+            require(keccak256(abi.encodePacked(kind)) == keccak256(abi.encodePacked("prices")), "Kind of data must be 'prices'");
+            symbolses[i] = keys;
+            maxSymbols += keys.length;
+        }
+
+        // Intialize the symbol set to update
+        string[] memory symbols = new string[](maxSymbols);
+        uint numSymbols = 0;
+
+        // Calculate the unique symbol set
+        for (uint i = 0; i < symbolses.length; i++) {
+            for (uint j = 0; j < symbolses[i].length; j++) {
+                bool found = false;
+                for (uint k = 0; k < symbols.length; k++) {
+                    if (keccak256(abi.encodePacked(symbols[k])) == keccak256(abi.encodePacked(symbolses[i][j]))) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    symbols[numSymbols] = symbolses[i][j];
+                    numSymbols++;
+                }
+            }
         }
 
         // Recalculate the asset prices
-        for (uint i = 0; i < symbols.length; i++) {
+        for (uint i = 0; i < numSymbols; i++) {
             string memory symbol = symbols[i];
 
             // Calculate the median price and write to storage
@@ -51,7 +77,7 @@ contract DelFiPrice is OpenOracleView {
         uint N = sources_.length;
         uint[] memory postedPrices = new uint[](N);
         for (uint i = 0; i < N; i++) {
-            (uint timestamp, uint price) = OpenOraclePriceData(address(data)).get(sources_[i], symbol);
+            ( , uint price) = OpenOraclePriceData(address(data)).get(sources_[i], symbol);
             postedPrices[i] = price;
         }
         uint[] memory sortedPrices = sort(postedPrices);

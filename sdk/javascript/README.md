@@ -22,9 +22,8 @@ open-oracle-reporter \
 	--port 3000 \
 	--private_key file:./private_key \
 	--script ./fetchPrices.js \
+    --kind prices \
 	--path /prices.json \
-	--key_type symbol \
-	--value_type decimal
 ```
 
 Or to quickly test using yarn:
@@ -42,7 +41,7 @@ Once you've installed the Open Oracle SDK, you can sign a Open Oracle feed as fo
 ```typescript
 import {encode, sign} from 'open-oracle-reporter';
 
-let encoded = encode('symbol', 'decimal', Math.floor(+new Date / 1000), {'eth': 260.0, 'zrx': 0.58});
+let encoded = encode('prices', Math.floor(+new Date / 1000), {'eth': 260.0, 'zrx': 0.58});
 let signature = sign(encoded, '0x...');
 ```
 
@@ -68,5 +67,5 @@ async function fetchPrices(now) {
 	return [now, {'eth': 260.0, 'zrx': 0.58}];
 }
 
-app.use(endpoint('/prices.json', '0x...', 'prices', 'symbol', 'decimal', fetchPrices));
+app.use(endpoint('0x...', fetchPrices, 'prices', '/prices.json'));
 ```

@@ -9,14 +9,15 @@ contract OpenOracleData {
     /**
      * @notice The event emitted when a source writes to its storage
      */
-    //event Write(address indexed source, <Key> indexed key, uint timestamp, <Value> value);
+    //event Write(address indexed source, <Key> indexed key, string kind, uint timestamp, <Value> value);
 
     /**
      * @notice Write a bunch of signed datum to the authenticated storage mapping
      * @param message The payload containing the timestamp, and (key, value) pairs
      * @param signature The cryptographic signature of the message payload, authorizing the source to write
+     * @return The kind and the keys that were written
      */
-    //function put(bytes calldata message, bytes calldata signature) external;
+    //function put(bytes calldata message, bytes calldata signature) external returns (string, <Key>[]);
 
     /**
      * @notice Read a single key with a pre-defined type signature from an authenticated source
