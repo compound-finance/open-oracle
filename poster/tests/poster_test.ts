@@ -45,9 +45,7 @@ describe('building a function call', () => {
 
     let prices = {"eth": "250", "zrx": "300"};
 
-    let data = buildTrxData(
-      [{message, signature, prices: prices}],
-      "writePrices(bytes[],bytes[],string[])");
+    let data = buildTrxData([{message, signature, prices: prices}], "writePrices(bytes[],bytes[])");
 
     let assumedAbi = {
       "constant": false,
@@ -59,10 +57,6 @@ describe('building a function call', () => {
         {
           "name": "whatever",
           "type": "bytes[]"
-        },
-        {
-          "name": "moar",
-          "type": "string[]"
         }
       ],
       "name": "writePrices",
@@ -73,7 +67,7 @@ describe('building a function call', () => {
     };
 
     // @ts-ignore-start
-    let officialWeb3Encoding = new AbiCoder().encodeFunctionCall(assumedAbi, [[message], [signature], Object.keys(prices)]);
+    let officialWeb3Encoding = new AbiCoder().encodeFunctionCall(assumedAbi, [[message], [signature]]);
     // @ts-ignore-end
 
     expect(data).toEqual(officialWeb3Encoding);

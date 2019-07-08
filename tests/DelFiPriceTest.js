@@ -1,10 +1,7 @@
 const {
-  address,
-  bytes,
   encode,
   sign,
-  uint256
-} = require('./Helpers');
+} = require('../sdk/javascript/.tsbuilt/reporter');
 
 describe('DelFiPrice', () => {
   it('sanity checks the delfi price view', async () => {
@@ -31,19 +28,19 @@ describe('DelFiPrice', () => {
     // Reads a price of an asset that doesn't exist yet
     expect(await call(delfi.methods.prices('ETH'))).numEquals(0);
 
-    async function postPrices(timestamp, priceses, symbols, signers = sources) {
+    async function postPrices(timestamp, priceses, signers = sources) {
       const messages = [], signatures = [];
       priceses.forEach((prices, i) => {
         let {
           message,
           signature,
           signatory
-        } = sign(encode(timestamp, prices.map(([symbol, price]) => [symbol, price])), signers[i].privateKey);
+        } = sign(encode('prices', timestamp, prices.map(([symbol, price]) => [symbol, price])), signers[i].privateKey);
         expect(signatory).toEqual(signers[i].address);
         messages.push(message);
         signatures.push(signature);
       });
-      return send(delfi.methods.postPrices(messages, signatures, symbols), {gas: 5000000});
+      return send(delfi.methods.postPrices(messages, signatures), {gas: 5000000});
     }
 
     async function getPrice(symbol) {
@@ -52,7 +49,7 @@ describe('DelFiPrice', () => {
 
     /** Posts nothing **/
 
-    const post0 = await postPrices(now, [], ['ETH'])
+    const post0 = await postPrices(now, [])
     expect(post0.gasUsed).toBeLessThan(60000);
     expect(await getPrice('ETH')).numEquals(0);
 
@@ -61,7 +58,7 @@ describe('DelFiPrice', () => {
 
     const post1 = await postPrices(now, [
       [['ETH', 257]]
-    ], ['ETH']);
+    ]);
     expect(post1.gasUsed).toBeLessThan(135000);
 
     expect(await getPrice('ETH')).numEquals(0);
@@ -78,8 +75,8 @@ describe('DelFiPrice', () => {
         ['BTC', 8000],
         ['ETH', 255]
       ]
-    ], ['ETH']);
-    expect(post2.gasUsed).toBeLessThan(260000);
+    ]);
+    expect(post2.gasUsed).toBeLessThan(320000);
 
     expect(await getPrice('BTC')).numEquals(0); // not added to list of symbols to update
     expect(await getPrice('ETH')).numEquals(0);
@@ -100,8 +97,8 @@ describe('DelFiPrice', () => {
         ['BTC', 8000],
         ['ETH', 255]
       ]
-    ], ['BTC', 'ETH']);
-    expect(post3a.gasUsed).toBeLessThan(340000);
+    ]);
+    expect(post3a.gasUsed).toBeLessThan(390000);
 
     expect(await getPrice('BTC')).numEquals(8000);
     expect(await getPrice('ETH')).numEquals(255);
@@ -122,7 +119,7 @@ describe('DelFiPrice', () => {
         ['BTC', 8000],
         ['ETH', 255]
       ]
-    ], ['BTC', 'ETH']);
+    ]);
     expect(post3b.gasUsed).toBeLessThan(post3a.gasUsed * 0.8);
 
     expect(await getPrice('BTC')).numEquals(8000);
@@ -144,14 +141,13 @@ describe('DelFiPrice', () => {
         ['BTC', 18000],
         ['ETH', 1255]
       ]
-    ], ['BTC', 'ETH'], nonSources);
+    ], nonSources);
 
     expect(await getPrice('BTC')).numEquals(8000);
     expect(await getPrice('ETH')).numEquals(255);
 
-    /** Does not revert on invalid message **/
+    /** Does revert on invalid message **/
 
-    const postGarbage = await send(delfi.methods.postPrices(['0xabc'], ['0x123'], []), {gas: 5000000});
-    expect(postGarbage.gasUsed).toBeLessThan(30000);
+    await expect(send(delfi.methods.postPrices(['0xabc'], ['0x123']), {gas: 5000000})).rejects.toRevert();
   }, 30000);
 });

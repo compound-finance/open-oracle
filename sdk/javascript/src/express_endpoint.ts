@@ -4,10 +4,8 @@ import {encode, sign} from './reporter';
 export function endpoint(
   privateKey: string,
   getter: (number) => Promise<[number, object]>,
-  name: string = 'prices',
-  path: string = `/${name}.json`,
-  keyType: string = 'symbol',
-  valueType: string = 'decimal'
+  kind: string = 'prices',
+  path: string = `/${kind}.json`
 ): express.Application {
   return express()
     .get(path, async (req, res) => {
@@ -15,12 +13,12 @@ export function endpoint(
       const {
         message,
         signature
-      } = sign(encode(keyType, valueType, timestamp, pairs), privateKey);
+      } = sign(encode(kind, timestamp, pairs), privateKey);
       res.json({
         message,
         signature,
         timestamp: timestamp,
-        [name]: pairs
+        [kind]: pairs
       });
     });
 }
