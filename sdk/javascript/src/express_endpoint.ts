@@ -42,13 +42,10 @@ export function endpoint(
     .get(path, async (req, res) => {
       const [timestamp, pairs] = await getter(Math.floor(+new Date / 1000));
       const filtered = filter(pairs, req.query);
-      const {
-        message,
-        signature
-      } = sign(encode(kind, timestamp, filtered), privateKey);
+      const signed = sign(encode(kind, timestamp, filtered), privateKey);
       res.json({
-        message,
-        signature,
+        messages: signed.map(s => s.message),
+        signatures: signed.map(s => s.signature),
         timestamp: timestamp,
         [kind]: filtered
       });

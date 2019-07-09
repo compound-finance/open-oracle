@@ -34,16 +34,16 @@ export function fancyParameterDecoder(paramType: string): [string, (any) => any]
   return [actualParamType, actualParamDec];
 }
 
-export function decode(message: string): [string, number, [any, any][]] {
-  const {0: kind, 1: timestamp, 2: pairsEncoded} = web3.eth.abi.decodeParameters(['string', 'uint256', 'bytes[]'], message);
+export function decode(kind: string, messages: string[]): [number, any, any][] {
   const [keyType, valueType] = getKeyAndValueType(kind);
-  const pairs = pairsEncoded.map((enc) => {
-    const [kType, kDec] = fancyParameterDecoder(keyType);
-    const [vType, vDec] = fancyParameterDecoder(valueType);
-    const {0: key, 1: value} = web3.eth.abi.decodeParameters([kType, vType], enc);
-    return [kDec(key), vDec(value)]
+  const [kType, kDec] = fancyParameterDecoder(keyType);
+  const [vType, vDec] = fancyParameterDecoder(valueType);
+  return messages.map((message): [number, any, any] => {
+    const {0: kind_, 1: timestamp, 2: key, 3: value} = web3.eth.abi.decodeParameters(['string', 'uint256', kType, vType], message);
+    if (kind_ != kind)
+      throw new Error(`Expected data of kind ${kind}, got ${kind_}`);
+    return [timestamp, key, value];
   });
-  return [kind, timestamp, pairs];
 }
 
 export function fancyParameterEncoder(paramType: string): [string, (any) => any] {
@@ -64,21 +64,23 @@ export function fancyParameterEncoder(paramType: string): [string, (any) => any]
   return [actualParamType, actualParamEnc];
 }
 
-export function encode(kind: string, timestamp: number, pairs: [any, any][] | object): string {
+export function encode(kind: string, timestamp: number, pairs: [any, any][] | object): string[] {
   const [keyType, valueType] = getKeyAndValueType(kind);
+  const [kType, kEnc] = fancyParameterEncoder(keyType);
+  const [vType, vEnc] = fancyParameterEncoder(valueType);
   const actualPairs = Array.isArray(pairs) ? pairs : Object.entries(pairs);
-  const pairsEncoded = actualPairs.map(([key, value]) => {
-    const [kType, kEnc] = fancyParameterEncoder(keyType);
-    const [vType, vEnc] = fancyParameterEncoder(valueType);
-    return web3.eth.abi.encodeParameters([kType, vType], [kEnc(key), vEnc(value)]);
+  return actualPairs.map(([key, value]) => {
+    return web3.eth.abi.encodeParameters(['string', 'uint256', kType, vType], [kind, timestamp, kEnc(key), vEnc(value)]);
   });
-  return web3.eth.abi.encodeParameters(['string', 'uint256', 'bytes[]'], [kind, timestamp, pairsEncoded]);
 }
 
-export function sign(message: string, privateKey: string): SignedMessage {
-  const hash = web3.utils.keccak256(message);
-  const {r, s, v} = web3.eth.accounts.sign(hash, privateKey);
-  const signature = web3.eth.abi.encodeParameters(['bytes32', 'bytes32', 'uint8'], [r, s, v]);
-  const signatory = web3.eth.accounts.recover(hash, v, r, s);
-  return {hash, message, signature, signatory};
+export function sign(messages: string | string[], privateKey: string): SignedMessage[] {
+  const actualMessages = Array.isArray(messages) ? messages : [messages];
+  return actualMessages.map((message) => {
+    const hash = web3.utils.keccak256(message);
+    const {r, s, v} = web3.eth.accounts.sign(hash, privateKey);
+    const signature = web3.eth.abi.encodeParameters(['bytes32', 'bytes32', 'uint8'], [r, s, v]);
+    const signatory = web3.eth.accounts.recover(hash, v, r, s);
+    return {hash, message, signature, signatory};
+  });
 }
