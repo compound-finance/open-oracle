@@ -22,7 +22,7 @@ export function fancyParameterDecoder(paramType: string): [string, (any) => any]
   let actualParamType = paramType, actualParamDec = (x) => x;
 
   if (paramType == 'decimal') {
-    actualParamType = 'uint256';
+    actualParamType = 'uint64';
     actualParamDec = (x) => x / 1e6;
   }
 
@@ -39,7 +39,7 @@ export function decode(kind: string, messages: string[]): [number, any, any][] {
   const [kType, kDec] = fancyParameterDecoder(keyType);
   const [vType, vDec] = fancyParameterDecoder(valueType);
   return messages.map((message): [number, any, any] => {
-    const {0: kind_, 1: timestamp, 2: key, 3: value} = web3.eth.abi.decodeParameters(['string', 'uint256', kType, vType], message);
+    const {0: kind_, 1: timestamp, 2: key, 3: value} = web3.eth.abi.decodeParameters(['string', 'uint64', kType, vType], message);
     if (kind_ != kind)
       throw new Error(`Expected data of kind ${kind}, got ${kind_}`);
     return [timestamp, key, value];
@@ -52,7 +52,7 @@ export function fancyParameterEncoder(paramType: string): [string, (any) => any]
   // We add a decimal type for reporter convenience.
   // Decimals are encoded as uints with 18 decimals of precision on-chain.
   if (paramType === 'decimal') {
-    actualParamType = 'uint256';
+    actualParamType = 'uint64';
     actualParamEnc = (x) => web3.utils.toBN(1e6).muln(x).toString();
   }
 
@@ -70,7 +70,7 @@ export function encode(kind: string, timestamp: number, pairs: [any, any][] | ob
   const [vType, vEnc] = fancyParameterEncoder(valueType);
   const actualPairs = Array.isArray(pairs) ? pairs : Object.entries(pairs);
   return actualPairs.map(([key, value]) => {
-    return web3.eth.abi.encodeParameters(['string', 'uint256', kType, vType], [kind, timestamp, kEnc(key), vEnc(value)]);
+    return web3.eth.abi.encodeParameters(['string', 'uint64', kType, vType], [kind, timestamp, kEnc(key), vEnc(value)]);
   });
 }
 
