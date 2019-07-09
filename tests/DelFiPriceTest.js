@@ -74,7 +74,9 @@ describe('DelFiPrice', () => {
     const post1 = await postPrices(now, [
       [['ETH', 257]]
     ], ['ETH']);
-    expect(post1.gasUsed).toBeLessThan(105000);
+    expect(post1.gasUsed).toBeLessThan(106000);
+    expect(post1.events.Price.returnValues.symbol).toBe('ETH');
+    expect(post1.events.Price.returnValues.price).numEquals(0);
     console.log('1', post1.gasUsed);
     expect(await getPrice('ETH')).numEquals(0);
 
@@ -91,7 +93,7 @@ describe('DelFiPrice', () => {
         ['ETH', 255]
       ]
     ], ['BTC', 'ETH']);
-    expect(post2.gasUsed).toBeLessThan(260000);
+    expect(post2.gasUsed).toBeLessThan(265000);
     console.log('2', post2.gasUsed);
     expect(await getPrice('BTC')).numEquals(0); // not added to list of symbols to update
     expect(await getPrice('ETH')).numEquals(0);
@@ -113,7 +115,11 @@ describe('DelFiPrice', () => {
         ['ETH', 255]
       ]
     ], ['BTC', 'ETH']);
-    expect(post3a.gasUsed).toBeLessThan(335000);
+    expect(post3a.gasUsed).toBeLessThan(341000);
+    expect(post3a.events.Price[0].returnValues.symbol).toBe('BTC');
+    expect(post3a.events.Price[0].returnValues.price).numEquals(8000e6);
+    expect(post3a.events.Price[1].returnValues.symbol).toBe('ETH');
+    expect(post3a.events.Price[1].returnValues.price).numEquals(255e6);
     console.log('3a', post3a.gasUsed);
     expect(await getPrice('BTC')).numEquals(8000e6);
     expect(await getPrice('ETH')).numEquals(255e6);
@@ -135,7 +141,7 @@ describe('DelFiPrice', () => {
         ['ETH', 255]
       ]
     ], ['BTC', 'ETH']);
-    expect(post3b.gasUsed).toBeLessThan(275000);
+    expect(post3b.gasUsed).toBeLessThan(281000);
     console.log('3b', post3b.gasUsed);
     expect(await getPrice('BTC')).numEquals(8000e6);
     expect(await getPrice('ETH')).numEquals(255e6);
@@ -302,7 +308,7 @@ describe('DelFiPrice', () => {
     ];
 
     const postA = await postPrices(now, big, big[0].map(([k]) => k));
-    expect(postA.gasUsed).toBeLessThan(5.3e6);
+    expect(postA.gasUsed).toBeLessThan(5.4e6);
 
     const postB = await postPrices(now + 1, big, big[0].map(([k]) => k));
     expect(postB.gasUsed).toBeLessThan(3.7e6);

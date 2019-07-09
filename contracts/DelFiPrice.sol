@@ -10,6 +10,11 @@ import "./OpenOracleView.sol";
  */
 contract DelFiPrice is OpenOracleView {
     /**
+     * @notice The event emitted when a price is written to storage
+     */
+    event Price(string symbol, uint64 price);
+
+    /**
      * @notice The mapping of medianized prices per symbol
      */
     mapping(string => uint64) public prices;
@@ -34,8 +39,10 @@ contract DelFiPrice is OpenOracleView {
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
 
-            // Calculate the median price and write to storage
-            prices[symbol] = medianPrice(symbol, sources);
+            // Calculate the median price, write to storage, and emit an event
+            uint64 price = medianPrice(symbol, sources);
+            prices[symbol] = price;
+            emit Price(symbol, price);
         }
     }
 
