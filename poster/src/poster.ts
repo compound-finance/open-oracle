@@ -54,8 +54,8 @@ async function fetchGasPrice() : Promise<number> {
 function buildTrxData(payloads : DelFiReporterPayload[], functionSig : string) : string {
   const types = findTypes(functionSig);
 
-  let messages = payloads.map(x => x.message);
-  let signatures = payloads.map(x => x.signature);
+  let messages = payloads.reduce((a: string[], x) => a.concat(x.messages), []);
+  let signatures = payloads.reduce((a: string[], x) => a.concat(x.signatures), []);
 
   // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
   const coder = new AbiCoder();

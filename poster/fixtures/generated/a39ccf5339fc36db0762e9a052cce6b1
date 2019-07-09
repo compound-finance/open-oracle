@@ -1,1 +1,1 @@
-{"message":"0xmessage","signature":"0xsignature","prices":{"eth":250,"zrx":1.58}}
+{"messages":["0xmessage"],"signatures":["0xsignature"],"prices":{"eth":250,"zrx":1.58}}

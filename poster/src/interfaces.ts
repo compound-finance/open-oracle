@@ -12,9 +12,9 @@
 //  2. The attestor's signature on a hash of that message
 interface DelFiReporterPayload {
   // ABI encoded values to be written to the open oracle data contract.
-  message: string,
+  messages: string[],
   // The signature of the attestor to these values. The values in 'message'
   // will be stored in a mapping under this signer's public address.
-  signature: string,
+  signatures: string[],
   prices: {[symbol: string]: string }
 };

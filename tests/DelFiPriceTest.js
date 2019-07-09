@@ -31,14 +31,12 @@ describe('DelFiPrice', () => {
     async function postPrices(timestamp, priceses, signers = sources) {
       const messages = [], signatures = [];
       priceses.forEach((prices, i) => {
-        let {
-          message,
-          signature,
-          signatory
-        } = sign(encode('prices', timestamp, prices.map(([symbol, price]) => [symbol, price])), signers[i].privateKey);
-        expect(signatory).toEqual(signers[i].address);
-        messages.push(message);
-        signatures.push(signature);
+        const signed = sign(encode('prices', timestamp, prices.map(([symbol, price]) => [symbol, price])), signers[i].privateKey);
+        for (let {message, signature, signatory} of signed) {
+          expect(signatory).toEqual(signers[i].address);
+          messages.push(message);
+          signatures.push(signature);
+        }
       });
       return send(delfi.methods.postPrices(messages, signatures), {gas: 5000000});
     }
@@ -76,7 +74,7 @@ describe('DelFiPrice', () => {
         ['ETH', 255]
       ]
     ]);
-    expect(post2.gasUsed).toBeLessThan(320000);
+    expect(post2.gasUsed).toBeLessThan(340000);
 
     expect(await getPrice('BTC')).numEquals(0); // not added to list of symbols to update
     expect(await getPrice('ETH')).numEquals(0);
@@ -98,10 +96,10 @@ describe('DelFiPrice', () => {
         ['ETH', 255]
       ]
     ]);
-    expect(post3a.gasUsed).toBeLessThan(390000);
+    expect(post3a.gasUsed).toBeLessThan(410000);
 
-    expect(await getPrice('BTC')).numEquals(8000);
-    expect(await getPrice('ETH')).numEquals(255);
+    expect(await getPrice('BTC')).numEquals(8000e6);
+    expect(await getPrice('ETH')).numEquals(255e6);
 
 
     /** Posts again with fresher timestamp, gas should still be cheaper **/
@@ -122,8 +120,8 @@ describe('DelFiPrice', () => {
     ]);
     expect(post3b.gasUsed).toBeLessThan(post3a.gasUsed * 0.8);
 
-    expect(await getPrice('BTC')).numEquals(8000);
-    expect(await getPrice('ETH')).numEquals(255);
+    expect(await getPrice('BTC')).numEquals(8000e6);
+    expect(await getPrice('ETH')).numEquals(255e6);
 
 
     /** Posts a price from non-sources, median does not change **/
@@ -143,8 +141,8 @@ describe('DelFiPrice', () => {
       ]
     ], nonSources);
 
-    expect(await getPrice('BTC')).numEquals(8000);
-    expect(await getPrice('ETH')).numEquals(255);
+    expect(await getPrice('BTC')).numEquals(8000e6);
+    expect(await getPrice('ETH')).numEquals(255e6);
 
     /** Does revert on invalid message **/
 

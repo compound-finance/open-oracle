@@ -17,7 +17,7 @@ contract OpenOracleData {
      * @param signature The cryptographic signature of the message payload, authorizing the source to write
      * @return The keys that were written
      */
-    //function put(bytes calldata message, bytes calldata signature) external returns (<Key> memory []);
+    //function put(bytes calldata message, bytes calldata signature) external returns (<Key> memory);
 
     /**
      * @notice Read a single key with a pre-defined type signature from an authenticated source
