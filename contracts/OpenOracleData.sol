@@ -9,7 +9,7 @@ contract OpenOracleData {
     /**
      * @notice The event emitted when a source writes to its storage
      */
-    //event Write(address indexed source, <Key> indexed key, string kind, uint timestamp, <Value> value);
+    //event Write(address indexed source, <Key> indexed key, string kind, uint64 timestamp, <Value> value);
 
     /**
      * @notice Write a bunch of signed datum to the authenticated storage mapping

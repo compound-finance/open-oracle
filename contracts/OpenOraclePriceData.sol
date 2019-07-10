@@ -5,20 +5,21 @@ import "./OpenOracleData.sol";
 
 /**
  * @title The Open Oracle Price Data Contract
+ * @notice Values stored in this contract should represent a USD price with 6 decimals precision
  * @author Compound Labs, Inc.
  */
 contract OpenOraclePriceData is OpenOracleData {
     /**
      * @notice The event emitted when a source writes to its storage
      */
-    event Write(address indexed source, string indexed key, uint timestamp, uint value);
+    event Write(address indexed source, string key, uint64 timestamp, uint64 value);
 
     /**
      * @notice The fundamental unit of storage for a reporter source
      */
     struct Datum {
-        uint timestamp;
-        uint value;
+        uint64 timestamp;
+        uint64 value;
     }
 
     /**
@@ -38,7 +39,7 @@ contract OpenOraclePriceData is OpenOracleData {
         address source = source(message, signature);
 
         // Decode the message and check the kind
-        (string memory kind, uint timestamp, string memory key, uint value) = abi.decode(message, (string, uint, string, uint));
+        (string memory kind, uint64 timestamp, string memory key, uint64 value) = abi.decode(message, (string, uint64, string, uint64));
         require(keccak256(abi.encodePacked(kind)) == keccak256(abi.encodePacked("prices")), "Kind of data must be 'prices'");
 
         // Only update if newer than stored, according to source
@@ -55,10 +56,20 @@ contract OpenOraclePriceData is OpenOracleData {
      * @notice Read a single key from an authenticated source
      * @param source The verifiable author of the data
      * @param key The selector for the value to return
-     * @return The claimed Unix timestamp for the data and the encoded value (defaults to (0, 0))
+     * @return The claimed Unix timestamp for the data and the price value (defaults to (0, 0))
      */
-    function get(address source, string calldata key) external view returns (uint, uint) {
+    function get(address source, string calldata key) external view returns (uint64, uint64) {
         Datum storage datum = data[source][key];
         return (datum.timestamp, datum.value);
+    }
+
+    /**
+     * @notice Read only the value for a single key from an authenticated source
+     * @param source The verifiable author of the data
+     * @param key The selector for the value to return
+     * @return The price value (defaults to 0)
+     */
+    function getPrice(address source, string calldata key) external view returns (uint64) {
+        return data[source][key].value;
     }
 }
