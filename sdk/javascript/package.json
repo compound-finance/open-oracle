@@ -1,13 +1,15 @@
 {
   "name": "open-oracle-reporter",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The Open Oracle Reporter",
-  "main": "index.js",
+  "main": ".tsbuilt/index.js",
+  "types": ".tsbuilt/index.js",
   "repository": "https://github.com/compound-finance/delfi",
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "scripts": {
-    "start": "tsc && node ./.tsbuilt/index.js",
+    "start": "tsc && node ./.tsbuilt/cli.js",
+    "prepare": "tsc",
     "test": "jest"
   },
   "dependencies": {
