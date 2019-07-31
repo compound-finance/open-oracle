@@ -6,14 +6,14 @@ async function run() {
   const argv = yargs
     .env('POSTER')
     .option('sources', {alias: 's', description: 'Sources to pull price messages from, a list of https endpoints created by open oracle reporters serving open oracle payloads as json', type: 'string'})
-    .option('poster_key', {alias: 'k', description: 'Private key holding enough gas to post (try: `file:<file> or env:<env>)`', type: 'string'})
-    .option('view_address', {alias: 'a', description: 'Address of open oracle view to post through', type: 'string'})
-    .option('view_function', {alias: 'f', description: 'Function signature for the view', type: 'string', default: 'postPrices(bytes[],bytes[],string[])'})
+    .option('poster-key', {alias: 'k', description: 'Private key holding enough gas to post (try: `file:<file> or env:<env>)`', type: 'string'})
+    .option('view-address', {alias: 'a', description: 'Address of open oracle view to post through', type: 'string'})
+    .option('view-function', {alias: 'f', description: 'Function signature for the view', type: 'string', default: 'postPrices(bytes[],bytes[],string[])'})
     .option('web3_provider', {description: 'Web 3 provider', type: 'string', default: 'http://127.0.0.1:8545'})
     .option('timeout', {alias: 't', description: 'How many seconds to wait before retrying with more gas', type: 'number', default: 180})
     .help()
     .alias('help', 'h')
-    .demandOption(['poster_key', 'sources', 'view_function', 'web3_provider', 'view_address'], 'Provide all the arguments')
+    .demandOption(['poster-key', 'sources', 'view-function', 'web3-provider', 'view-address'], 'Provide all the arguments')
     .argv;
 
   // posting promise will reject and retry once with higher gas after this timeout
@@ -37,7 +37,7 @@ async function run() {
   }
 
   try {
-    await main(argv.sources, argv.poster_key, argv.view_address, argv.view_function, web3);
+    await main(argv.sources as string, argv.poster_key as string, argv.view_address as string, argv.view_function as string, web3);
   } catch (e) {
     console.error(`Poster failed to run`, e);
   }
