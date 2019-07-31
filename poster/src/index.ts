@@ -1,3 +1,4 @@
+#! /usr/bin/env node
 import {main} from './poster';
 import Web3 from 'web3';
 import yargs from 'yargs';
