@@ -4,6 +4,7 @@ import yargs from 'yargs';
 
 async function run() {
   const argv = yargs
+    .env('POSTER')
     .option('sources', {alias: 's', description: 'Sources to pull price messages from, a list of https endpoints created by open oracle reporters serving open oracle payloads as json', type: 'string'})
     .option('poster_key', {alias: 'k', description: 'Private key holding enough gas to post (try: `file:<file> or env:<env>)`', type: 'string'})
     .option('view_address', {alias: 'a', description: 'Address of open oracle view to post through', type: 'string'})

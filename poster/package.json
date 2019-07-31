@@ -1,8 +1,9 @@
 {
   "name": "open-oracle-poster",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A Customizable Poster for the Compound Open Oracle",
   "main": ".tsbuilt/poster.js",
+  "bin": ".tsbuilt/index.js",
   "repository": "https://compound.finance/open-oracle",
   "author": "Compound Labs, Inc.",
   "license": "MIT",
