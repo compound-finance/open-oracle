@@ -1,6 +1,6 @@
 {
   "name": "open-oracle-poster",
-  "version": "1.0.0",
+  "version": "1.0.3",
   "description": "A Customizable Poster for the Compound Open Oracle",
   "main": ".tsbuilt/poster.js",
   "repository": "https://compound.finance/open-oracle",
