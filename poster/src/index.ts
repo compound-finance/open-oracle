@@ -38,7 +38,7 @@ async function run() {
   }
 
   try {
-    await main(argv.sources as string, argv.posterKey as string, argv.viewAddress, argv.viewFunction as string, web3);
+    await main(argv.sources, argv.posterKey, argv.viewAddress, argv.viewFunction, web3);
   } catch (e) {
     console.error(`Poster failed to run`, e);
   }
