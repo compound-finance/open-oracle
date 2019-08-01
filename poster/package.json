@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "node-fetch": "^2.6.0",
-    "web3": "^1.0.0-beta.55",
+    "web3": "1.0.0-beta.55",
     "yargs": "^13.2.4"
   }
 }
