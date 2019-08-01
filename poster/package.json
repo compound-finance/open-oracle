@@ -1,6 +1,6 @@
 {
   "name": "open-oracle-poster",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "A Customizable Poster for the Compound Open Oracle",
   "main": ".tsbuilt/poster.js",
   "bin": ".tsbuilt/index.js",
