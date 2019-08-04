@@ -11,7 +11,8 @@ async function run() {
     .option('viewAddress', {alias: 'a', description: 'Address of open oracle view to post through', type: 'string'})
     .option('viewFunction', {alias: 'f', description: 'Function signature for the view', type: 'string', default: 'postPrices(bytes[],bytes[],string[])'})
     .option('web3Provider', {description: 'Web 3 provider', type: 'string', default: 'http://127.0.0.1:8545'})
-    .option('timeout', {alias: 't', description: 'How many seconds to wait before retrying with more gas', type: 'number', default: 180})
+    .option('timeout', {alias: 't', description: 'how many seconds to wait before retrying with more gas', type: 'number', default: 180})
+    .option('gasLimit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
     .help()
     .alias('help', 'h')
     .demandOption(['posterKey', 'sources', 'viewFunction', 'web3Provider', 'viewAddress'], 'Provide all the arguments')
@@ -38,7 +39,8 @@ async function run() {
   }
 
   try {
-    await main(argv.sources, argv.posterKey, argv.viewAddress, argv.viewFunction, web3);
+    web3.eth.transactionConfirmationBlocks = 10
+    await main(argv.sources, argv.posterKey, argv.viewAddress, argv.viewFunction, argv.gasLimit, web3);
   } catch (e) {
     console.error(`Poster failed to run`, e);
   }

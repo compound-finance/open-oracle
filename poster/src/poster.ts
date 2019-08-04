@@ -8,16 +8,18 @@ async function main(sources : string,
                     senderKey : string,
                     viewAddress : string,
                     functionSig : string,
+                    gas: number,
                     web3 : Web3) {
   const payloads = await fetchPayloads(sources.split(","));
   const gasPrice = await fetchGasPrice();
   const trxData = buildTrxData(payloads, functionSig);
 
+  console.log(gas, 'gassss')
   const trx = <TransactionConfig> {
     data: trxData,
     to: viewAddress,
     gasPrice: gasPrice,
-    gas: 1_000_000
+    gas: gas
   }
 
   return await postWithRetries(trx, senderKey, web3);
