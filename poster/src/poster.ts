@@ -14,7 +14,6 @@ async function main(sources : string,
   const gasPrice = await fetchGasPrice();
   const trxData = buildTrxData(payloads, functionSig);
 
-  console.log(gas, 'gassss')
   const trx = <TransactionConfig> {
     data: trxData,
     to: viewAddress,
