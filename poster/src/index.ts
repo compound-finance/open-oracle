@@ -21,6 +21,7 @@ async function run() {
   // posting promise will reject and retry once with higher gas after this timeout
   const web3 = await new Web3(argv.web3Provider, undefined, {transactionPollingTimeout: argv.timeout});
 
+  web3.eth.transactionConfirmationBlocks = 10;
   if (argv.web3Provider.match(/.*:8545$/)) {
     // confirm immediately in dev
     web3.eth.transactionConfirmationBlocks = 1
@@ -39,7 +40,6 @@ async function run() {
   }
 
   try {
-    web3.eth.transactionConfirmationBlocks = 10
     await main(argv.sources, argv.posterKey, argv.viewAddress, argv.viewFunction, argv.gasLimit, web3);
   } catch (e) {
     console.error(`Poster failed to run`, e);
