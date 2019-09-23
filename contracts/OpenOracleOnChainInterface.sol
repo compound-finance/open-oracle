@@ -1,5 +1,6 @@
 pragma solidity ^0.5.0;
 
+
 /*This contract is the interface between the OpenOracle and onChain prices.
 Examples of onchain price:
 	ETH/USD - DAI/ETH price on DEXes
@@ -12,8 +13,8 @@ Examples of onchain price:
 
 */
 
-contract onChainPrice{
 
 
-
+interface OpenOracleOnChainInterface{
+	function getCurrentValue(string calldata _symbol) external returns(bool,uint,uint); //_didGet,_value,_timestampRetrieved
 }
