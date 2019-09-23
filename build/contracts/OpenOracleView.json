@@ -1,0 +1,719 @@
+{
+  "contractName": "OpenOracleView",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "data",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "sources",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "data_",
+          "type": "address"
+        },
+        {
+          "name": "sources_",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.8+commit.23d335f2\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":true,\"inputs\":[],\"name\":\"data\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"sources\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"data_\",\"type\":\"address\"},{\"name\":\"sources_\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"}],\"devdoc\":{\"author\":\"Compound Labs, Inc.\\r\",\"methods\":{\"constructor\":{\"details\":\"According to the protocol, Views must be immutable to be considered conforming.\\r\",\"params\":{\"data_\":\"The address of the oracle data contract which is backing the view\\r\",\"sources_\":\"The list of source addresses to include in the aggregate value\\r\"}}},\"title\":\"The Open Oracle View Base Contract\\r\"},\"userdoc\":{\"methods\":{\"constructor\":\"Construct a view given the oracle backing address and the list of sources\\r\"}}},\"settings\":{\"compilationTarget\":{\"/C/company/code/open-oracle/contracts/OpenOracleView.sol\":\"OpenOracleView\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/C/company/code/open-oracle/contracts/OpenOracleData.sol\":{\"keccak256\":\"0x50a9175bf520a60d9e97f6b680c6d2e5d88ba9326a351a7660794269cf25b95a\",\"urls\":[\"bzzr://3e1df4e6b857e85f250a1b9e4a521a869df96831e421e2248dcff06f5079e1cb\"]},\"/C/company/code/open-oracle/contracts/OpenOracleView.sol\":{\"keccak256\":\"0xc78e4a4a7f05ea329a4c9d10d49ac8208b84722f99989e30acd52fdb018d3f65\",\"urls\":[\"bzzr://492b149a736b78d5fde3be120d3fc3930ce2b08b4158217996716c5911385d23\"]}},\"version\":1}",
+  "bytecode": "0x608060405234801561001057600080fd5b506040516105613803806105618339810180604052610032919081019061020a565b816000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055508060019080519060200190610088929190610090565b505050610325565b828054828255906000526020600020908101928215610109579160200282015b828111156101085782518260006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550916020019190600101906100b0565b5b509050610116919061011a565b5090565b61015a91905b8082111561015657600081816101000a81549073ffffffffffffffffffffffffffffffffffffffff021916905550600101610120565b5090565b90565b60008151905061016c816102f7565b92915050565b600082601f83011261018357600080fd5b81516101966101918261028b565b61025e565b915081818352602084019350602081019050838560208402820111156101bb57600080fd5b60005b838110156101eb57816101d1888261015d565b8452602084019350602083019250506001810190506101be565b5050505092915050565b6000815190506102048161030e565b92915050565b6000806040838503121561021d57600080fd5b600061022b858286016101f5565b925050602083015167ffffffffffffffff81111561024857600080fd5b61025485828601610172565b9150509250929050565b6000604051905081810181811067ffffffffffffffff8211171561028157600080fd5b8060405250919050565b600067ffffffffffffffff8211156102a257600080fd5b602082029050602081019050919050565b60006102be826102d7565b9050919050565b60006102d0826102b3565b9050919050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b610300816102b3565b811461030b57600080fd5b50565b610317816102c5565b811461032257600080fd5b50565b61022d806103346000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c806373d4a13a1461003b578063a3663d3714610059575b600080fd5b610043610089565b6040516100509190610161565b60405180910390f35b610073600480360361006e91908101906100ff565b6100ae565b6040516100809190610146565b60405180910390f35b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600181815481106100bb57fe5b906000526020600020016000915054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000813590506100f9816101dc565b92915050565b60006020828403121561011157600080fd5b600061011f848285016100ea565b91505092915050565b6101318161017c565b82525050565b610140816101b8565b82525050565b600060208201905061015b6000830184610128565b92915050565b60006020820190506101766000830184610137565b92915050565b60006101878261018e565b9050919050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000819050919050565b60006101c3826101ca565b9050919050565b60006101d58261018e565b9050919050565b6101e5816101ae565b81146101f057600080fd5b5056fea265627a7a72305820ba4df0b08a15808e4ca82f2f1db2b8aa24b2083fcefd87c4c424b9e961c1d1ec6c6578706572696d656e74616cf50037",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b50600436106100365760003560e01c806373d4a13a1461003b578063a3663d3714610059575b600080fd5b610043610089565b6040516100509190610161565b60405180910390f35b610073600480360361006e91908101906100ff565b6100ae565b6040516100809190610146565b60405180910390f35b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b600181815481106100bb57fe5b906000526020600020016000915054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6000813590506100f9816101dc565b92915050565b60006020828403121561011157600080fd5b600061011f848285016100ea565b91505092915050565b6101318161017c565b82525050565b610140816101b8565b82525050565b600060208201905061015b6000830184610128565b92915050565b60006020820190506101766000830184610137565b92915050565b60006101878261018e565b9050919050565b600073ffffffffffffffffffffffffffffffffffffffff82169050919050565b6000819050919050565b60006101c3826101ca565b9050919050565b60006101d58261018e565b9050919050565b6101e5816101ae565b81146101f057600080fd5b5056fea265627a7a72305820ba4df0b08a15808e4ca82f2f1db2b8aa24b2083fcefd87c4c424b9e961c1d1ec6c6578706572696d656e74616cf50037",
+  "sourceMap": "184:919:4:-;;;972:128;8:9:-1;5:2;;;30:1;27;20:12;5:2;972:128:4;;;;;;;;;;;;;;;;;;;;;;;;1058:5;1051:4;;:12;;;;;;;;;;;;;;;;;;1084:8;1074:7;:18;;;;;;;;;;;;:::i;:::-;;972:128;;184:919;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;;;:::o;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::o;5:134:-1:-;;89:6;83:13;74:22;;101:33;128:5;101:33;;;68:71;;;;;164:722;;292:3;285:4;277:6;273:17;269:27;259:2;;310:1;307;300:12;259:2;340:6;334:13;362:80;377:64;434:6;377:64;;;362:80;;;353:89;;459:5;484:6;477:5;470:21;514:4;506:6;502:17;492:27;;536:4;531:3;527:14;520:21;;589:6;636:3;628:4;620:6;616:17;611:3;607:27;604:36;601:2;;;653:1;650;643:12;601:2;678:1;663:217;688:6;685:1;682:13;663:217;;;746:3;768:48;812:3;800:10;768:48;;;763:3;756:61;840:4;835:3;831:14;824:21;;868:4;863:3;859:14;852:21;;720:160;710:1;707;703:9;698:14;;663:217;;;667:14;252:634;;;;;;;;894:178;;1000:6;994:13;985:22;;1012:55;1061:5;1012:55;;;979:93;;;;;1079:572;;;1258:2;1246:9;1237:7;1233:23;1229:32;1226:2;;;1274:1;1271;1264:12;1226:2;1309:1;1326:86;1404:7;1395:6;1384:9;1380:22;1326:86;;;1316:96;;1288:130;1470:2;1459:9;1455:18;1449:25;1494:18;1486:6;1483:30;1480:2;;;1526:1;1523;1516:12;1480:2;1546:89;1627:7;1618:6;1607:9;1603:22;1546:89;;;1536:99;;1428:213;1220:431;;;;;;1658:256;;1720:2;1714:9;1704:19;;1758:4;1750:6;1746:17;1857:6;1845:10;1842:22;1821:18;1809:10;1806:34;1803:62;1800:2;;;1878:1;1875;1868:12;1800:2;1898:10;1894:2;1887:22;1698:216;;;;;1921:258;;2080:18;2072:6;2069:30;2066:2;;;2112:1;2109;2102:12;2066:2;2141:4;2133:6;2129:17;2121:25;;2169:4;2163;2159:15;2151:23;;2003:176;;;;2186:91;;2248:24;2266:5;2248:24;;;2237:35;;2231:46;;;;2284:113;;2368:24;2386:5;2368:24;;;2357:35;;2351:46;;;;2404:121;;2477:42;2470:5;2466:54;2455:65;;2449:76;;;;2532:117;2601:24;2619:5;2601:24;;;2594:5;2591:35;2581:2;;2640:1;2637;2630:12;2581:2;2575:74;;2656:161;2747:46;2787:5;2747:46;;;2740:5;2737:57;2727:2;;2808:1;2805;2798:12;2727:2;2721:96;;184:919:4;;;;;;;",
+  "deployedSourceMap": "184:919:4:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;184:919:4;;;;;;;;;;;;;;;;;;;;;;;;292:26;;;:::i;:::-;;;;;;;;;;;;;;;;564:24;;;;;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;292:26;;;;;;;;;;;;;:::o;564:24::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::o;5:130:-1:-;;85:6;72:20;63:29;;97:33;124:5;97:33;;;57:78;;;;;142:241;;246:2;234:9;225:7;221:23;217:32;214:2;;;262:1;259;252:12;214:2;297:1;314:53;359:7;350:6;339:9;335:22;314:53;;;304:63;;276:97;208:175;;;;;390:113;473:24;491:5;473:24;;;468:3;461:37;455:48;;;510:170;615:59;668:5;615:59;;;610:3;603:72;597:83;;;687:213;;805:2;794:9;790:18;782:26;;819:71;887:1;876:9;872:17;863:6;819:71;;;776:124;;;;;907:257;;1047:2;1036:9;1032:18;1024:26;;1061:93;1151:1;1140:9;1136:17;1127:6;1061:93;;;1018:146;;;;;1171:91;;1233:24;1251:5;1233:24;;;1222:35;;1216:46;;;;1269:121;;1342:42;1335:5;1331:54;1320:65;;1314:76;;;;1397:72;;1459:5;1448:16;;1442:27;;;;1476:165;;1577:59;1630:5;1577:59;;;1564:72;;1558:83;;;;1648:130;;1749:24;1767:5;1749:24;;;1736:37;;1730:48;;;;1785:117;1854:24;1872:5;1854:24;;;1847:5;1844:35;1834:2;;1893:1;1890;1883:12;1834:2;1828:74;",
+  "source": "pragma solidity ^0.5.0;\r\npragma experimental ABIEncoderV2;\r\n\r\nimport \"./OpenOracleData.sol\";\r\n\r\n/**\r\n * @title The Open Oracle View Base Contract\r\n * @author Compound Labs, Inc.\r\n */\r\ncontract OpenOracleView {\r\n    /**\r\n     * @notice The Oracle Data Contract backing this View\r\n     */\r\n    OpenOracleData public data;\r\n\r\n    /**\r\n     * @notice The static list of sources used by this View\r\n     * @dev Note that while it is possible to create a view with dynamic sources,\r\n     *  that would not conform to the Open Oracle Standard specification.\r\n     */\r\n    address[] public sources;\r\n\r\n    /**\r\n     * @notice Construct a view given the oracle backing address and the list of sources\r\n     * @dev According to the protocol, Views must be immutable to be considered conforming.\r\n     * @param data_ The address of the oracle data contract which is backing the view\r\n     * @param sources_ The list of source addresses to include in the aggregate value\r\n     */\r\n    constructor(OpenOracleData data_, address[] memory sources_) public {\r\n        data = data_;\r\n        sources = sources_;\r\n    }\r\n}\r\n",
+  "sourcePath": "C:\\company\\code\\open-oracle\\contracts\\OpenOracleView.sol",
+  "ast": {
+    "absolutePath": "/C/company/code/open-oracle/contracts/OpenOracleView.sol",
+    "exportedSymbols": {
+      "OpenOracleView": [
+        761
+      ]
+    },
+    "id": 762,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 736,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:4"
+      },
+      {
+        "id": 737,
+        "literals": [
+          "experimental",
+          "ABIEncoderV2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "25:33:4"
+      },
+      {
+        "absolutePath": "/C/company/code/open-oracle/contracts/OpenOracleData.sol",
+        "file": "./OpenOracleData.sol",
+        "id": 738,
+        "nodeType": "ImportDirective",
+        "scope": 762,
+        "sourceUnit": 578,
+        "src": "62:30:4",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": "@title The Open Oracle View Base Contract\r\n@author Compound Labs, Inc.\r",
+        "fullyImplemented": true,
+        "id": 761,
+        "linearizedBaseContracts": [
+          761
+        ],
+        "name": "OpenOracleView",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "constant": false,
+            "id": 740,
+            "name": "data",
+            "nodeType": "VariableDeclaration",
+            "scope": 761,
+            "src": "292:26:4",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_contract$_OpenOracleData_$577",
+              "typeString": "contract OpenOracleData"
+            },
+            "typeName": {
+              "contractScope": null,
+              "id": 739,
+              "name": "OpenOracleData",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 577,
+              "src": "292:14:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                "typeString": "contract OpenOracleData"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 743,
+            "name": "sources",
+            "nodeType": "VariableDeclaration",
+            "scope": 761,
+            "src": "564:24:4",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_array$_t_address_$dyn_storage",
+              "typeString": "address[]"
+            },
+            "typeName": {
+              "baseType": {
+                "id": 741,
+                "name": "address",
+                "nodeType": "ElementaryTypeName",
+                "src": "564:7:4",
+                "stateMutability": "nonpayable",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                }
+              },
+              "id": 742,
+              "length": null,
+              "nodeType": "ArrayTypeName",
+              "src": "564:9:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                "typeString": "address[]"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 759,
+              "nodeType": "Block",
+              "src": "1040:60:4",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 753,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 751,
+                      "name": "data",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 740,
+                      "src": "1051:4:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                        "typeString": "contract OpenOracleData"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 752,
+                      "name": "data_",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 745,
+                      "src": "1058:5:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                        "typeString": "contract OpenOracleData"
+                      }
+                    },
+                    "src": "1051:12:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                      "typeString": "contract OpenOracleData"
+                    }
+                  },
+                  "id": 754,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1051:12:4"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 757,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 755,
+                      "name": "sources",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 743,
+                      "src": "1074:7:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_array$_t_address_$dyn_storage",
+                        "typeString": "address[] storage ref"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 756,
+                      "name": "sources_",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 748,
+                      "src": "1084:8:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
+                        "typeString": "address[] memory"
+                      }
+                    },
+                    "src": "1074:18:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage",
+                      "typeString": "address[] storage ref"
+                    }
+                  },
+                  "id": 758,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1074:18:4"
+                }
+              ]
+            },
+            "documentation": "@notice Construct a view given the oracle backing address and the list of sources\r\n@dev According to the protocol, Views must be immutable to be considered conforming.\r\n@param data_ The address of the oracle data contract which is backing the view\r\n@param sources_ The list of source addresses to include in the aggregate value\r",
+            "id": 760,
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 749,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 745,
+                  "name": "data_",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 760,
+                  "src": "984:20:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                    "typeString": "contract OpenOracleData"
+                  },
+                  "typeName": {
+                    "contractScope": null,
+                    "id": 744,
+                    "name": "OpenOracleData",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 577,
+                    "src": "984:14:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                      "typeString": "contract OpenOracleData"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 748,
+                  "name": "sources_",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 760,
+                  "src": "1006:25:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
+                    "typeString": "address[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 746,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "1006:7:4",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 747,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "1006:9:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                      "typeString": "address[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "983:49:4"
+            },
+            "returnParameters": {
+              "id": 750,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1040:0:4"
+            },
+            "scope": 761,
+            "src": "972:128:4",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 762,
+        "src": "184:919:4"
+      }
+    ],
+    "src": "0:1105:4"
+  },
+  "legacyAST": {
+    "absolutePath": "/C/company/code/open-oracle/contracts/OpenOracleView.sol",
+    "exportedSymbols": {
+      "OpenOracleView": [
+        761
+      ]
+    },
+    "id": 762,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 736,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:4"
+      },
+      {
+        "id": 737,
+        "literals": [
+          "experimental",
+          "ABIEncoderV2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "25:33:4"
+      },
+      {
+        "absolutePath": "/C/company/code/open-oracle/contracts/OpenOracleData.sol",
+        "file": "./OpenOracleData.sol",
+        "id": 738,
+        "nodeType": "ImportDirective",
+        "scope": 762,
+        "sourceUnit": 578,
+        "src": "62:30:4",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": "@title The Open Oracle View Base Contract\r\n@author Compound Labs, Inc.\r",
+        "fullyImplemented": true,
+        "id": 761,
+        "linearizedBaseContracts": [
+          761
+        ],
+        "name": "OpenOracleView",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "constant": false,
+            "id": 740,
+            "name": "data",
+            "nodeType": "VariableDeclaration",
+            "scope": 761,
+            "src": "292:26:4",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_contract$_OpenOracleData_$577",
+              "typeString": "contract OpenOracleData"
+            },
+            "typeName": {
+              "contractScope": null,
+              "id": 739,
+              "name": "OpenOracleData",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 577,
+              "src": "292:14:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                "typeString": "contract OpenOracleData"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 743,
+            "name": "sources",
+            "nodeType": "VariableDeclaration",
+            "scope": 761,
+            "src": "564:24:4",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_array$_t_address_$dyn_storage",
+              "typeString": "address[]"
+            },
+            "typeName": {
+              "baseType": {
+                "id": 741,
+                "name": "address",
+                "nodeType": "ElementaryTypeName",
+                "src": "564:7:4",
+                "stateMutability": "nonpayable",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                }
+              },
+              "id": 742,
+              "length": null,
+              "nodeType": "ArrayTypeName",
+              "src": "564:9:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                "typeString": "address[]"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 759,
+              "nodeType": "Block",
+              "src": "1040:60:4",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 753,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 751,
+                      "name": "data",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 740,
+                      "src": "1051:4:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                        "typeString": "contract OpenOracleData"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 752,
+                      "name": "data_",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 745,
+                      "src": "1058:5:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                        "typeString": "contract OpenOracleData"
+                      }
+                    },
+                    "src": "1051:12:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                      "typeString": "contract OpenOracleData"
+                    }
+                  },
+                  "id": 754,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1051:12:4"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 757,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 755,
+                      "name": "sources",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 743,
+                      "src": "1074:7:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_array$_t_address_$dyn_storage",
+                        "typeString": "address[] storage ref"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 756,
+                      "name": "sources_",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 748,
+                      "src": "1084:8:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
+                        "typeString": "address[] memory"
+                      }
+                    },
+                    "src": "1074:18:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage",
+                      "typeString": "address[] storage ref"
+                    }
+                  },
+                  "id": 758,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1074:18:4"
+                }
+              ]
+            },
+            "documentation": "@notice Construct a view given the oracle backing address and the list of sources\r\n@dev According to the protocol, Views must be immutable to be considered conforming.\r\n@param data_ The address of the oracle data contract which is backing the view\r\n@param sources_ The list of source addresses to include in the aggregate value\r",
+            "id": 760,
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 749,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 745,
+                  "name": "data_",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 760,
+                  "src": "984:20:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                    "typeString": "contract OpenOracleData"
+                  },
+                  "typeName": {
+                    "contractScope": null,
+                    "id": 744,
+                    "name": "OpenOracleData",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 577,
+                    "src": "984:14:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_OpenOracleData_$577",
+                      "typeString": "contract OpenOracleData"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 748,
+                  "name": "sources_",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 760,
+                  "src": "1006:25:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_address_$dyn_memory_ptr",
+                    "typeString": "address[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 746,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "1006:7:4",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 747,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "1006:9:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$dyn_storage_ptr",
+                      "typeString": "address[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "983:49:4"
+            },
+            "returnParameters": {
+              "id": 750,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1040:0:4"
+            },
+            "scope": 761,
+            "src": "972:128:4",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 762,
+        "src": "184:919:4"
+      }
+    ],
+    "src": "0:1105:4"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.8+commit.23d335f2.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.0.16",
+  "updatedAt": "2019-09-23T01:07:00.347Z",
+  "devdoc": {
+    "author": "Compound Labs, Inc.\r",
+    "methods": {
+      "constructor": {
+        "details": "According to the protocol, Views must be immutable to be considered conforming.\r",
+        "params": {
+          "data_": "The address of the oracle data contract which is backing the view\r",
+          "sources_": "The list of source addresses to include in the aggregate value\r"
+        }
+      }
+    },
+    "title": "The Open Oracle View Base Contract\r"
+  },
+  "userdoc": {
+    "methods": {
+      "constructor": "Construct a view given the oracle backing address and the list of sources\r"
+    }
+  }
+}

@@ -1,0 +1,3568 @@
+{
+  "contractName": "TellorStorage",
+  "abi": [],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.8+commit.23d335f2\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"details\":\"Contains all the variables/structs used by Tellor\\r\",\"methods\":{},\"title\":\"Tellor Oracle Storage Library\\r\"},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/C/company/code/open-oracle/contracts/Tellor/libraries/TellorStorage.sol\":\"TellorStorage\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/C/company/code/open-oracle/contracts/Tellor/libraries/TellorStorage.sol\":{\"keccak256\":\"0x3517d1cecb0e449924d673e3fe3bd681bd151973f920d9c716f3baf6499826c7\",\"urls\":[\"bzzr://af89a9f762f67c69fba2cdc517311981663f72e3dd8b597c27aa0d47a4f8560b\"]}},\"version\":1}",
+  "bytecode": "0x604c6023600b82828239805160001a607314601657fe5b30600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea165627a7a7230582067a09d81ccbc8456f856f4b7907d6cb3990b779133b750c2d96a1944eeea63cd0029",
+  "deployedBytecode": "0x73000000000000000000000000000000000000000030146080604052600080fdfea165627a7a7230582067a09d81ccbc8456f856f4b7907d6cb3990b779133b750c2d96a1944eeea63cd0029",
+  "sourceMap": "139:7025:13:-;;132:2:-1;166:7;155:9;146:7;137:37;255:7;249:14;246:1;241:23;235:4;232:33;222:2;;269:9;222:2;293:9;290:1;283:20;323:4;314:7;306:22;347:7;338;331:24",
+  "deployedSourceMap": "139:7025:13:-;;;;;;;;",
+  "source": "pragma solidity ^0.5.0;\r\n\r\n/**\r\n * @title Tellor Oracle Storage Library\r\n * @dev Contains all the variables/structs used by Tellor\r\n */\r\n\r\nlibrary TellorStorage {\r\n    //Internal struct for use in proof-of-work submission\r\n    struct Details {\r\n        uint value;\r\n        address miner;\r\n    }\r\n\r\n    struct Dispute {\r\n        bytes32 hash;//unique hash of dispute: keccak256(_miner,_requestId,_timestamp)\r\n        int tally;//current tally of votes for - against measure\r\n        bool executed;//is the dispute settled\r\n        bool disputeVotePassed;//did the vote pass?\r\n        bool isPropFork; //true for fork proposal NEW\r\n        address reportedMiner; //miner who alledgedly submitted the 'bad value' will get disputeFee if dispute vote fails\r\n        address reportingParty;//miner reporting the 'bad value'-pay disputeFee will get reportedMiner's stake if dispute vote passes\r\n        address proposedForkAddress;//new fork address (if fork proposal)\r\n        mapping(bytes32 => uint) disputeUintVars;\r\n        //Each of the variables below is saved in the mapping disputeUintVars for each disputeID\r\n        //e.g. TellorStorageStruct.DisputeById[disputeID].disputeUintVars[keccak256(\"requestId\")]\r\n        //These are the variables saved in this mapping:\r\n            // uint keccak256(\"requestId\");//apiID of disputed value\r\n            // uint keccak256(\"timestamp\");//timestamp of distputed value\r\n            // uint keccak256(\"value\"); //the value being disputed\r\n            // uint keccak256(\"minExecutionDate\");//7 days from when dispute initialized\r\n            // uint keccak256(\"numberOfVotes\");//the number of parties who have voted on the measure\r\n            // uint keccak256(\"blockNumber\");// the blocknumber for which votes will be calculated from\r\n            // uint keccak256(\"minerSlot\"); //index in dispute array\r\n            // uint keccak256(\"quorum\"); //quorum for dispute vote NEW\r\n            // uint keccak256(\"fee\"); //fee paid corresponding to dispute\r\n        mapping (address => bool) voted; //mapping of address to whether or not they voted\r\n    }\r\n\r\n    struct StakeInfo {\r\n        uint currentStatus;//0-not Staked, 1=Staked, 2=LockedForWithdraw 3= OnDispute\r\n        uint startDate; //stake start date\r\n    }\r\n\r\n    //Internal struct to allow balances to be queried by blocknumber for voting purposes\r\n    struct  Checkpoint {\r\n        uint128 fromBlock;// fromBlock is the block number that the value was generated from\r\n        uint128 value;// value is the amount of tokens at a specific block number\r\n    }\r\n\r\n    struct Request {\r\n        string queryString;//id to string api\r\n        string dataSymbol;//short name for api request\r\n        bytes32 queryHash;//hash of api string and granularity e.g. keccak256(abi.encodePacked(_sapi,_granularity))\r\n        uint[]  requestTimestamps; //array of all newValueTimestamps requested\r\n        mapping(bytes32 => uint) apiUintVars;\r\n        //Each of the variables below is saved in the mapping apiUintVars for each api request\r\n        //e.g. requestDetails[_requestId].apiUintVars[keccak256(\"totalTip\")]\r\n        //These are the variables saved in this mapping:\r\n            // uint keccak256(\"granularity\"); //multiplier for miners\r\n            // uint keccak256(\"requestQPosition\"); //index in requestQ\r\n            // uint keccak256(\"totalTip\");//bonus portion of payout\r\n        mapping(uint => uint) minedBlockNum;//[apiId][minedTimestamp]=>block.number\r\n        mapping(uint => uint) finalValues;//This the time series of finalValues stored by the contract where uint UNIX timestamp is mapped to value\r\n        mapping(uint => bool) inDispute;//checks if API id is in dispute or finalized.\r\n        mapping(uint => address[5]) minersByValue;\r\n        mapping(uint => uint[5])valuesByTimestamp;\r\n    }\r\n\r\n    struct TellorStorageStruct {\r\n        bytes32 currentChallenge; //current challenge to be solved\r\n        uint[51]  requestQ; //uint50 array of the top50 requests by payment amount\r\n        uint[]  newValueTimestamps; //array of all timestamps requested\r\n        Details[5]  currentMiners; //This struct is for organizing the five mined values to find the median\r\n        mapping(bytes32 => address) addressVars;\r\n        //Address fields in the Tellor contract are saved the addressVars mapping\r\n        //e.g. addressVars[keccak256(\"tellorContract\")] = address\r\n        //These are the variables saved in this mapping:\r\n            // address keccak256(\"tellorContract\");//Tellor address\r\n            // address  keccak256(\"_owner\");//Tellor Owner address\r\n            // address  keccak256(\"_deity\");//Tellor Owner that can do things at will\r\n        mapping(bytes32 => uint) uintVars; \r\n        //uint fields in the Tellor contract are saved the uintVars mapping\r\n        //e.g. uintVars[keccak256(\"decimals\")] = uint\r\n        //These are the variables saved in this mapping:\r\n            // keccak256(\"decimals\");    //18 decimal standard ERC20\r\n            // keccak256(\"disputeFee\");//cost to dispute a mined value\r\n            // keccak256(\"disputeCount\");//totalHistoricalDisputes\r\n            // keccak256(\"total_supply\"); //total_supply of the token in circulation\r\n            // keccak256(\"stakeAmount\");//stakeAmount for miners (we can cut gas if we just hardcode it in...or should it be variable?)\r\n            // keccak256(\"stakerCount\"); //number of parties currently staked\r\n            // keccak256(\"timeOfLastNewValue\"); // time of last challenge solved\r\n            // keccak256(\"difficulty\"); // Difficulty of current block\r\n            // keccak256(\"currentTotalTips\"); //value of highest api/timestamp PayoutPool\r\n            // keccak256(\"currentRequestId\"); //API being mined--updates with the ApiOnQ Id\r\n            // keccak256(\"requestCount\"); // total number of requests through the system\r\n            // keccak256(\"slotProgress\");//Number of miners who have mined this value so far\r\n            // keccak256(\"miningReward\");//Mining Reward in PoWo tokens given to all miners per value\r\n            // keccak256(\"timeTarget\"); //The time between blocks (mined Oracle values)\r\n        mapping(bytes32 => mapping(address=>bool)) minersByChallenge;//This is a boolean that tells you if a given challenge has been completed by a given miner\r\n        mapping(uint => uint) requestIdByTimestamp;//minedTimestamp to apiId\r\n        mapping(uint => uint) requestIdByRequestQIndex; //link from payoutPoolIndex (position in payout pool array) to apiId\r\n        mapping(uint => Dispute) disputesById;//disputeId=> Dispute details\r\n        mapping (address => Checkpoint[]) balances; //balances of a party given blocks\r\n        mapping(address => mapping (address => uint)) allowed; //allowance for a given party and approver\r\n        mapping(address => StakeInfo)  stakerDetails;//mapping from a persons address to their staking info\r\n        mapping(uint => Request) requestDetails;//mapping of apiID to details\r\n        mapping(bytes32 => uint) requestIdByQueryHash;// api bytes32 gets an id = to count of requests array\r\n        mapping(bytes32 => uint) disputeIdByDisputeHash;//maps a hash to an ID for each dispute\r\n    }\r\n}\r\n",
+  "sourcePath": "C:\\company\\code\\open-oracle\\contracts\\Tellor\\libraries\\TellorStorage.sol",
+  "ast": {
+    "absolutePath": "/C/company/code/open-oracle/contracts/Tellor/libraries/TellorStorage.sol",
+    "exportedSymbols": {
+      "TellorStorage": [
+        5738
+      ]
+    },
+    "id": 5739,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 5592,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:13"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "library",
+        "documentation": "@title Tellor Oracle Storage Library\r\n@dev Contains all the variables/structs used by Tellor\r",
+        "fullyImplemented": true,
+        "id": 5738,
+        "linearizedBaseContracts": [
+          5738
+        ],
+        "name": "TellorStorage",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "canonicalName": "TellorStorage.Details",
+            "id": 5597,
+            "members": [
+              {
+                "constant": false,
+                "id": 5594,
+                "name": "value",
+                "nodeType": "VariableDeclaration",
+                "scope": 5597,
+                "src": "253:10:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 5593,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "253:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5596,
+                "name": "miner",
+                "nodeType": "VariableDeclaration",
+                "scope": 5597,
+                "src": "274:13:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 5595,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "274:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Details",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "227:68:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.Dispute",
+            "id": 5622,
+            "members": [
+              {
+                "constant": false,
+                "id": 5599,
+                "name": "hash",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "329:12:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bytes32",
+                  "typeString": "bytes32"
+                },
+                "typeName": {
+                  "id": 5598,
+                  "name": "bytes32",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "329:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5601,
+                "name": "tally",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "417:9:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_int256",
+                  "typeString": "int256"
+                },
+                "typeName": {
+                  "id": 5600,
+                  "name": "int",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "417:3:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int256",
+                    "typeString": "int256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5603,
+                "name": "executed",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "483:13:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 5602,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "483:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5605,
+                "name": "disputeVotePassed",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "531:22:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 5604,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "531:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5607,
+                "name": "isPropFork",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "584:15:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 5606,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "584:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5609,
+                "name": "reportedMiner",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "639:21:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 5608,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "639:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5611,
+                "name": "reportingParty",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "762:22:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 5610,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "762:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5613,
+                "name": "proposedForkAddress",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "897:27:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 5612,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "897:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5617,
+                "name": "disputeUintVars",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "972:40:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5616,
+                  "keyType": {
+                    "id": 5614,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "980:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "972:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5615,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "991:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5621,
+                "name": "voted",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "2005:31:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_address_$_t_bool_$",
+                  "typeString": "mapping(address => bool)"
+                },
+                "typeName": {
+                  "id": 5620,
+                  "keyType": {
+                    "id": 5618,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2014:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "2005:25:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_address_$_t_bool_$",
+                    "typeString": "mapping(address => bool)"
+                  },
+                  "valueType": {
+                    "id": 5619,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2025:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Dispute",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "303:1791:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.StakeInfo",
+            "id": 5627,
+            "members": [
+              {
+                "constant": false,
+                "id": 5624,
+                "name": "currentStatus",
+                "nodeType": "VariableDeclaration",
+                "scope": 5627,
+                "src": "2130:18:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 5623,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2130:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5626,
+                "name": "startDate",
+                "nodeType": "VariableDeclaration",
+                "scope": 5627,
+                "src": "2217:14:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 5625,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2217:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "StakeInfo",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "2102:156:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.Checkpoint",
+            "id": 5632,
+            "members": [
+              {
+                "constant": false,
+                "id": 5629,
+                "name": "fromBlock",
+                "nodeType": "VariableDeclaration",
+                "scope": 5632,
+                "src": "2386:17:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint128",
+                  "typeString": "uint128"
+                },
+                "typeName": {
+                  "id": 5628,
+                  "name": "uint128",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2386:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint128",
+                    "typeString": "uint128"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5631,
+                "name": "value",
+                "nodeType": "VariableDeclaration",
+                "scope": 5632,
+                "src": "2480:13:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint128",
+                  "typeString": "uint128"
+                },
+                "typeName": {
+                  "id": 5630,
+                  "name": "uint128",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2480:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint128",
+                    "typeString": "uint128"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Checkpoint",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "2356:204:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.Request",
+            "id": 5670,
+            "members": [
+              {
+                "constant": false,
+                "id": 5634,
+                "name": "queryString",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2594:18:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_string_storage_ptr",
+                  "typeString": "string"
+                },
+                "typeName": {
+                  "id": 5633,
+                  "name": "string",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2594:6:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_storage_ptr",
+                    "typeString": "string"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5636,
+                "name": "dataSymbol",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2641:17:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_string_storage_ptr",
+                  "typeString": "string"
+                },
+                "typeName": {
+                  "id": 5635,
+                  "name": "string",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2641:6:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_storage_ptr",
+                    "typeString": "string"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5638,
+                "name": "queryHash",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2697:17:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bytes32",
+                  "typeString": "bytes32"
+                },
+                "typeName": {
+                  "id": 5637,
+                  "name": "bytes32",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2697:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5641,
+                "name": "requestTimestamps",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2814:25:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                  "typeString": "uint256[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 5639,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2814:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 5640,
+                  "length": null,
+                  "nodeType": "ArrayTypeName",
+                  "src": "2814:6:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                    "typeString": "uint256[]"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5645,
+                "name": "apiUintVars",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2894:36:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5644,
+                  "keyType": {
+                    "id": 5642,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2902:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "2894:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5643,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2913:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5649,
+                "name": "minedBlockNum",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3385:35:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                  "typeString": "mapping(uint256 => uint256)"
+                },
+                "typeName": {
+                  "id": 5648,
+                  "keyType": {
+                    "id": 5646,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3393:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3385:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                    "typeString": "mapping(uint256 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5647,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3401:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5653,
+                "name": "finalValues",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3470:33:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                  "typeString": "mapping(uint256 => uint256)"
+                },
+                "typeName": {
+                  "id": 5652,
+                  "keyType": {
+                    "id": 5650,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3478:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3470:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                    "typeString": "mapping(uint256 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5651,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3486:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5657,
+                "name": "inDispute",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3619:31:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_bool_$",
+                  "typeString": "mapping(uint256 => bool)"
+                },
+                "typeName": {
+                  "id": 5656,
+                  "keyType": {
+                    "id": 5654,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3627:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3619:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_bool_$",
+                    "typeString": "mapping(uint256 => bool)"
+                  },
+                  "valueType": {
+                    "id": 5655,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3635:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5663,
+                "name": "minersByValue",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3707:41:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_array$_t_address_$5_storage_$",
+                  "typeString": "mapping(uint256 => address[5])"
+                },
+                "typeName": {
+                  "id": 5662,
+                  "keyType": {
+                    "id": 5658,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3715:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3707:27:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_array$_t_address_$5_storage_$",
+                    "typeString": "mapping(uint256 => address[5])"
+                  },
+                  "valueType": {
+                    "baseType": {
+                      "id": 5659,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "3723:7:13",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 5661,
+                    "length": {
+                      "argumentTypes": null,
+                      "hexValue": "35",
+                      "id": 5660,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "3731:1:13",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_5_by_1",
+                        "typeString": "int_const 5"
+                      },
+                      "value": "5"
+                    },
+                    "nodeType": "ArrayTypeName",
+                    "src": "3723:10:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$5_storage_ptr",
+                      "typeString": "address[5]"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5669,
+                "name": "valuesByTimestamp",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3759:41:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_array$_t_uint256_$5_storage_$",
+                  "typeString": "mapping(uint256 => uint256[5])"
+                },
+                "typeName": {
+                  "id": 5668,
+                  "keyType": {
+                    "id": 5664,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3767:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3759:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_array$_t_uint256_$5_storage_$",
+                    "typeString": "mapping(uint256 => uint256[5])"
+                  },
+                  "valueType": {
+                    "baseType": {
+                      "id": 5665,
+                      "name": "uint",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "3775:4:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "id": 5667,
+                    "length": {
+                      "argumentTypes": null,
+                      "hexValue": "35",
+                      "id": 5666,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "3780:1:13",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_5_by_1",
+                        "typeString": "int_const 5"
+                      },
+                      "value": "5"
+                    },
+                    "nodeType": "ArrayTypeName",
+                    "src": "3775:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_uint256_$5_storage_ptr",
+                      "typeString": "uint256[5]"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Request",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "2568:1240:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.TellorStorageStruct",
+            "id": 5737,
+            "members": [
+              {
+                "constant": false,
+                "id": 5672,
+                "name": "currentChallenge",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "3854:24:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bytes32",
+                  "typeString": "bytes32"
+                },
+                "typeName": {
+                  "id": 5671,
+                  "name": "bytes32",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "3854:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5676,
+                "name": "requestQ",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "3922:18:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_uint256_$51_storage_ptr",
+                  "typeString": "uint256[51]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 5673,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3922:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 5675,
+                  "length": {
+                    "argumentTypes": null,
+                    "hexValue": "3531",
+                    "id": 5674,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": true,
+                    "kind": "number",
+                    "lValueRequested": false,
+                    "nodeType": "Literal",
+                    "src": "3927:2:13",
+                    "subdenomination": null,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_rational_51_by_1",
+                      "typeString": "int_const 51"
+                    },
+                    "value": "51"
+                  },
+                  "nodeType": "ArrayTypeName",
+                  "src": "3922:8:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$51_storage_ptr",
+                    "typeString": "uint256[51]"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5679,
+                "name": "newValueTimestamps",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "4006:26:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                  "typeString": "uint256[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 5677,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4006:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 5678,
+                  "length": null,
+                  "nodeType": "ArrayTypeName",
+                  "src": "4006:6:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                    "typeString": "uint256[]"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5683,
+                "name": "currentMiners",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "4079:25:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_struct$_Details_$5597_storage_$5_storage_ptr",
+                  "typeString": "struct TellorStorage.Details[5]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "contractScope": null,
+                    "id": 5680,
+                    "name": "Details",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 5597,
+                    "src": "4079:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_Details_$5597_storage_ptr",
+                      "typeString": "struct TellorStorage.Details"
+                    }
+                  },
+                  "id": 5682,
+                  "length": {
+                    "argumentTypes": null,
+                    "hexValue": "35",
+                    "id": 5681,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": true,
+                    "kind": "number",
+                    "lValueRequested": false,
+                    "nodeType": "Literal",
+                    "src": "4087:1:13",
+                    "subdenomination": null,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_rational_5_by_1",
+                      "typeString": "int_const 5"
+                    },
+                    "value": "5"
+                  },
+                  "nodeType": "ArrayTypeName",
+                  "src": "4079:10:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_struct$_Details_$5597_storage_$5_storage_ptr",
+                    "typeString": "struct TellorStorage.Details[5]"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5687,
+                "name": "addressVars",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "4188:39:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_address_$",
+                  "typeString": "mapping(bytes32 => address)"
+                },
+                "typeName": {
+                  "id": 5686,
+                  "keyType": {
+                    "id": 5684,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4196:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "4188:27:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_address_$",
+                    "typeString": "mapping(bytes32 => address)"
+                  },
+                  "valueType": {
+                    "id": 5685,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4207:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5691,
+                "name": "uintVars",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "4670:33:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5690,
+                  "keyType": {
+                    "id": 5688,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4678:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "4670:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5689,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4689:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5697,
+                "name": "minersByChallenge",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6131:60:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_mapping$_t_address_$_t_bool_$_$",
+                  "typeString": "mapping(bytes32 => mapping(address => bool))"
+                },
+                "typeName": {
+                  "id": 5696,
+                  "keyType": {
+                    "id": 5692,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6139:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6131:42:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_mapping$_t_address_$_t_bool_$_$",
+                    "typeString": "mapping(bytes32 => mapping(address => bool))"
+                  },
+                  "valueType": {
+                    "id": 5695,
+                    "keyType": {
+                      "id": 5693,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6158:7:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Mapping",
+                    "src": "6150:22:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_mapping$_t_address_$_t_bool_$",
+                      "typeString": "mapping(address => bool)"
+                    },
+                    "valueType": {
+                      "id": 5694,
+                      "name": "bool",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6167:4:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      }
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5701,
+                "name": "requestIdByTimestamp",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6293:42:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                  "typeString": "mapping(uint256 => uint256)"
+                },
+                "typeName": {
+                  "id": 5700,
+                  "keyType": {
+                    "id": 5698,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6301:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6293:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                    "typeString": "mapping(uint256 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5699,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6309:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5705,
+                "name": "requestIdByRequestQIndex",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6371:46:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                  "typeString": "mapping(uint256 => uint256)"
+                },
+                "typeName": {
+                  "id": 5704,
+                  "keyType": {
+                    "id": 5702,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6379:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6371:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                    "typeString": "mapping(uint256 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5703,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6387:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5709,
+                "name": "disputesById",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6497:37:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Dispute_$5622_storage_$",
+                  "typeString": "mapping(uint256 => struct TellorStorage.Dispute)"
+                },
+                "typeName": {
+                  "id": 5708,
+                  "keyType": {
+                    "id": 5706,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6505:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6497:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Dispute_$5622_storage_$",
+                    "typeString": "mapping(uint256 => struct TellorStorage.Dispute)"
+                  },
+                  "valueType": {
+                    "contractScope": null,
+                    "id": 5707,
+                    "name": "Dispute",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 5622,
+                    "src": "6513:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_Dispute_$5622_storage_ptr",
+                      "typeString": "struct TellorStorage.Dispute"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5714,
+                "name": "balances",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6574:42:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_Checkpoint_$5632_storage_$dyn_storage_$",
+                  "typeString": "mapping(address => struct TellorStorage.Checkpoint[])"
+                },
+                "typeName": {
+                  "id": 5713,
+                  "keyType": {
+                    "id": 5710,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6583:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6574:33:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_Checkpoint_$5632_storage_$dyn_storage_$",
+                    "typeString": "mapping(address => struct TellorStorage.Checkpoint[])"
+                  },
+                  "valueType": {
+                    "baseType": {
+                      "contractScope": null,
+                      "id": 5711,
+                      "name": "Checkpoint",
+                      "nodeType": "UserDefinedTypeName",
+                      "referencedDeclaration": 5632,
+                      "src": "6594:10:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_struct$_Checkpoint_$5632_storage_ptr",
+                        "typeString": "struct TellorStorage.Checkpoint"
+                      }
+                    },
+                    "id": 5712,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "6594:12:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_struct$_Checkpoint_$5632_storage_$dyn_storage_ptr",
+                      "typeString": "struct TellorStorage.Checkpoint[]"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5720,
+                "name": "allowed",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6662:53:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_uint256_$_$",
+                  "typeString": "mapping(address => mapping(address => uint256))"
+                },
+                "typeName": {
+                  "id": 5719,
+                  "keyType": {
+                    "id": 5715,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6670:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6662:45:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_uint256_$_$",
+                    "typeString": "mapping(address => mapping(address => uint256))"
+                  },
+                  "valueType": {
+                    "id": 5718,
+                    "keyType": {
+                      "id": 5716,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6690:7:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Mapping",
+                    "src": "6681:25:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_mapping$_t_address_$_t_uint256_$",
+                      "typeString": "mapping(address => uint256)"
+                    },
+                    "valueType": {
+                      "id": 5717,
+                      "name": "uint",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6701:4:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5724,
+                "name": "stakerDetails",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6769:44:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_address_$_t_struct$_StakeInfo_$5627_storage_$",
+                  "typeString": "mapping(address => struct TellorStorage.StakeInfo)"
+                },
+                "typeName": {
+                  "id": 5723,
+                  "keyType": {
+                    "id": 5721,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6777:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6769:29:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_address_$_t_struct$_StakeInfo_$5627_storage_$",
+                    "typeString": "mapping(address => struct TellorStorage.StakeInfo)"
+                  },
+                  "valueType": {
+                    "contractScope": null,
+                    "id": 5722,
+                    "name": "StakeInfo",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 5627,
+                    "src": "6788:9:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_StakeInfo_$5627_storage_ptr",
+                      "typeString": "struct TellorStorage.StakeInfo"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5728,
+                "name": "requestDetails",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6878:39:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Request_$5670_storage_$",
+                  "typeString": "mapping(uint256 => struct TellorStorage.Request)"
+                },
+                "typeName": {
+                  "id": 5727,
+                  "keyType": {
+                    "id": 5725,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6886:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6878:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Request_$5670_storage_$",
+                    "typeString": "mapping(uint256 => struct TellorStorage.Request)"
+                  },
+                  "valueType": {
+                    "contractScope": null,
+                    "id": 5726,
+                    "name": "Request",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 5670,
+                    "src": "6894:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_Request_$5670_storage_ptr",
+                      "typeString": "struct TellorStorage.Request"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5732,
+                "name": "requestIdByQueryHash",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6957:45:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5731,
+                  "keyType": {
+                    "id": 5729,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6965:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6957:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5730,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6976:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5736,
+                "name": "disputeIdByDisputeHash",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "7067:47:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5735,
+                  "keyType": {
+                    "id": 5733,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "7075:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "7067:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5734,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "7086:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "TellorStorageStruct",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "3816:3345:13",
+            "visibility": "public"
+          }
+        ],
+        "scope": 5739,
+        "src": "139:7025:13"
+      }
+    ],
+    "src": "0:7166:13"
+  },
+  "legacyAST": {
+    "absolutePath": "/C/company/code/open-oracle/contracts/Tellor/libraries/TellorStorage.sol",
+    "exportedSymbols": {
+      "TellorStorage": [
+        5738
+      ]
+    },
+    "id": 5739,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 5592,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".0"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:13"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "library",
+        "documentation": "@title Tellor Oracle Storage Library\r\n@dev Contains all the variables/structs used by Tellor\r",
+        "fullyImplemented": true,
+        "id": 5738,
+        "linearizedBaseContracts": [
+          5738
+        ],
+        "name": "TellorStorage",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "canonicalName": "TellorStorage.Details",
+            "id": 5597,
+            "members": [
+              {
+                "constant": false,
+                "id": 5594,
+                "name": "value",
+                "nodeType": "VariableDeclaration",
+                "scope": 5597,
+                "src": "253:10:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 5593,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "253:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5596,
+                "name": "miner",
+                "nodeType": "VariableDeclaration",
+                "scope": 5597,
+                "src": "274:13:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 5595,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "274:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Details",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "227:68:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.Dispute",
+            "id": 5622,
+            "members": [
+              {
+                "constant": false,
+                "id": 5599,
+                "name": "hash",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "329:12:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bytes32",
+                  "typeString": "bytes32"
+                },
+                "typeName": {
+                  "id": 5598,
+                  "name": "bytes32",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "329:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5601,
+                "name": "tally",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "417:9:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_int256",
+                  "typeString": "int256"
+                },
+                "typeName": {
+                  "id": 5600,
+                  "name": "int",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "417:3:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int256",
+                    "typeString": "int256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5603,
+                "name": "executed",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "483:13:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 5602,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "483:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5605,
+                "name": "disputeVotePassed",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "531:22:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 5604,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "531:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5607,
+                "name": "isPropFork",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "584:15:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 5606,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "584:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5609,
+                "name": "reportedMiner",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "639:21:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 5608,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "639:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5611,
+                "name": "reportingParty",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "762:22:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 5610,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "762:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5613,
+                "name": "proposedForkAddress",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "897:27:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 5612,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "897:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5617,
+                "name": "disputeUintVars",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "972:40:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5616,
+                  "keyType": {
+                    "id": 5614,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "980:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "972:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5615,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "991:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5621,
+                "name": "voted",
+                "nodeType": "VariableDeclaration",
+                "scope": 5622,
+                "src": "2005:31:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_address_$_t_bool_$",
+                  "typeString": "mapping(address => bool)"
+                },
+                "typeName": {
+                  "id": 5620,
+                  "keyType": {
+                    "id": 5618,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2014:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "2005:25:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_address_$_t_bool_$",
+                    "typeString": "mapping(address => bool)"
+                  },
+                  "valueType": {
+                    "id": 5619,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2025:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Dispute",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "303:1791:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.StakeInfo",
+            "id": 5627,
+            "members": [
+              {
+                "constant": false,
+                "id": 5624,
+                "name": "currentStatus",
+                "nodeType": "VariableDeclaration",
+                "scope": 5627,
+                "src": "2130:18:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 5623,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2130:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5626,
+                "name": "startDate",
+                "nodeType": "VariableDeclaration",
+                "scope": 5627,
+                "src": "2217:14:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 5625,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2217:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "StakeInfo",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "2102:156:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.Checkpoint",
+            "id": 5632,
+            "members": [
+              {
+                "constant": false,
+                "id": 5629,
+                "name": "fromBlock",
+                "nodeType": "VariableDeclaration",
+                "scope": 5632,
+                "src": "2386:17:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint128",
+                  "typeString": "uint128"
+                },
+                "typeName": {
+                  "id": 5628,
+                  "name": "uint128",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2386:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint128",
+                    "typeString": "uint128"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5631,
+                "name": "value",
+                "nodeType": "VariableDeclaration",
+                "scope": 5632,
+                "src": "2480:13:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint128",
+                  "typeString": "uint128"
+                },
+                "typeName": {
+                  "id": 5630,
+                  "name": "uint128",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2480:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint128",
+                    "typeString": "uint128"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Checkpoint",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "2356:204:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.Request",
+            "id": 5670,
+            "members": [
+              {
+                "constant": false,
+                "id": 5634,
+                "name": "queryString",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2594:18:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_string_storage_ptr",
+                  "typeString": "string"
+                },
+                "typeName": {
+                  "id": 5633,
+                  "name": "string",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2594:6:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_storage_ptr",
+                    "typeString": "string"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5636,
+                "name": "dataSymbol",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2641:17:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_string_storage_ptr",
+                  "typeString": "string"
+                },
+                "typeName": {
+                  "id": 5635,
+                  "name": "string",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2641:6:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_storage_ptr",
+                    "typeString": "string"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5638,
+                "name": "queryHash",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2697:17:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bytes32",
+                  "typeString": "bytes32"
+                },
+                "typeName": {
+                  "id": 5637,
+                  "name": "bytes32",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "2697:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5641,
+                "name": "requestTimestamps",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2814:25:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                  "typeString": "uint256[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 5639,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2814:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 5640,
+                  "length": null,
+                  "nodeType": "ArrayTypeName",
+                  "src": "2814:6:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                    "typeString": "uint256[]"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5645,
+                "name": "apiUintVars",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "2894:36:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5644,
+                  "keyType": {
+                    "id": 5642,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2902:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "2894:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5643,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2913:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5649,
+                "name": "minedBlockNum",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3385:35:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                  "typeString": "mapping(uint256 => uint256)"
+                },
+                "typeName": {
+                  "id": 5648,
+                  "keyType": {
+                    "id": 5646,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3393:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3385:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                    "typeString": "mapping(uint256 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5647,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3401:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5653,
+                "name": "finalValues",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3470:33:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                  "typeString": "mapping(uint256 => uint256)"
+                },
+                "typeName": {
+                  "id": 5652,
+                  "keyType": {
+                    "id": 5650,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3478:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3470:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                    "typeString": "mapping(uint256 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5651,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3486:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5657,
+                "name": "inDispute",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3619:31:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_bool_$",
+                  "typeString": "mapping(uint256 => bool)"
+                },
+                "typeName": {
+                  "id": 5656,
+                  "keyType": {
+                    "id": 5654,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3627:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3619:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_bool_$",
+                    "typeString": "mapping(uint256 => bool)"
+                  },
+                  "valueType": {
+                    "id": 5655,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3635:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5663,
+                "name": "minersByValue",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3707:41:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_array$_t_address_$5_storage_$",
+                  "typeString": "mapping(uint256 => address[5])"
+                },
+                "typeName": {
+                  "id": 5662,
+                  "keyType": {
+                    "id": 5658,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3715:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3707:27:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_array$_t_address_$5_storage_$",
+                    "typeString": "mapping(uint256 => address[5])"
+                  },
+                  "valueType": {
+                    "baseType": {
+                      "id": 5659,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "3723:7:13",
+                      "stateMutability": "nonpayable",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "id": 5661,
+                    "length": {
+                      "argumentTypes": null,
+                      "hexValue": "35",
+                      "id": 5660,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "3731:1:13",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_5_by_1",
+                        "typeString": "int_const 5"
+                      },
+                      "value": "5"
+                    },
+                    "nodeType": "ArrayTypeName",
+                    "src": "3723:10:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_address_$5_storage_ptr",
+                      "typeString": "address[5]"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5669,
+                "name": "valuesByTimestamp",
+                "nodeType": "VariableDeclaration",
+                "scope": 5670,
+                "src": "3759:41:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_array$_t_uint256_$5_storage_$",
+                  "typeString": "mapping(uint256 => uint256[5])"
+                },
+                "typeName": {
+                  "id": 5668,
+                  "keyType": {
+                    "id": 5664,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3767:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "3759:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_array$_t_uint256_$5_storage_$",
+                    "typeString": "mapping(uint256 => uint256[5])"
+                  },
+                  "valueType": {
+                    "baseType": {
+                      "id": 5665,
+                      "name": "uint",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "3775:4:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "id": 5667,
+                    "length": {
+                      "argumentTypes": null,
+                      "hexValue": "35",
+                      "id": 5666,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "kind": "number",
+                      "lValueRequested": false,
+                      "nodeType": "Literal",
+                      "src": "3780:1:13",
+                      "subdenomination": null,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_rational_5_by_1",
+                        "typeString": "int_const 5"
+                      },
+                      "value": "5"
+                    },
+                    "nodeType": "ArrayTypeName",
+                    "src": "3775:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_uint256_$5_storage_ptr",
+                      "typeString": "uint256[5]"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Request",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "2568:1240:13",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "TellorStorage.TellorStorageStruct",
+            "id": 5737,
+            "members": [
+              {
+                "constant": false,
+                "id": 5672,
+                "name": "currentChallenge",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "3854:24:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bytes32",
+                  "typeString": "bytes32"
+                },
+                "typeName": {
+                  "id": 5671,
+                  "name": "bytes32",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "3854:7:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5676,
+                "name": "requestQ",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "3922:18:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_uint256_$51_storage_ptr",
+                  "typeString": "uint256[51]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 5673,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3922:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 5675,
+                  "length": {
+                    "argumentTypes": null,
+                    "hexValue": "3531",
+                    "id": 5674,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": true,
+                    "kind": "number",
+                    "lValueRequested": false,
+                    "nodeType": "Literal",
+                    "src": "3927:2:13",
+                    "subdenomination": null,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_rational_51_by_1",
+                      "typeString": "int_const 51"
+                    },
+                    "value": "51"
+                  },
+                  "nodeType": "ArrayTypeName",
+                  "src": "3922:8:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$51_storage_ptr",
+                    "typeString": "uint256[51]"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5679,
+                "name": "newValueTimestamps",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "4006:26:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                  "typeString": "uint256[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 5677,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4006:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 5678,
+                  "length": null,
+                  "nodeType": "ArrayTypeName",
+                  "src": "4006:6:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                    "typeString": "uint256[]"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5683,
+                "name": "currentMiners",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "4079:25:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_struct$_Details_$5597_storage_$5_storage_ptr",
+                  "typeString": "struct TellorStorage.Details[5]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "contractScope": null,
+                    "id": 5680,
+                    "name": "Details",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 5597,
+                    "src": "4079:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_Details_$5597_storage_ptr",
+                      "typeString": "struct TellorStorage.Details"
+                    }
+                  },
+                  "id": 5682,
+                  "length": {
+                    "argumentTypes": null,
+                    "hexValue": "35",
+                    "id": 5681,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": true,
+                    "kind": "number",
+                    "lValueRequested": false,
+                    "nodeType": "Literal",
+                    "src": "4087:1:13",
+                    "subdenomination": null,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_rational_5_by_1",
+                      "typeString": "int_const 5"
+                    },
+                    "value": "5"
+                  },
+                  "nodeType": "ArrayTypeName",
+                  "src": "4079:10:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_struct$_Details_$5597_storage_$5_storage_ptr",
+                    "typeString": "struct TellorStorage.Details[5]"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5687,
+                "name": "addressVars",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "4188:39:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_address_$",
+                  "typeString": "mapping(bytes32 => address)"
+                },
+                "typeName": {
+                  "id": 5686,
+                  "keyType": {
+                    "id": 5684,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4196:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "4188:27:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_address_$",
+                    "typeString": "mapping(bytes32 => address)"
+                  },
+                  "valueType": {
+                    "id": 5685,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4207:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5691,
+                "name": "uintVars",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "4670:33:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5690,
+                  "keyType": {
+                    "id": 5688,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4678:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "4670:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5689,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4689:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5697,
+                "name": "minersByChallenge",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6131:60:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_mapping$_t_address_$_t_bool_$_$",
+                  "typeString": "mapping(bytes32 => mapping(address => bool))"
+                },
+                "typeName": {
+                  "id": 5696,
+                  "keyType": {
+                    "id": 5692,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6139:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6131:42:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_mapping$_t_address_$_t_bool_$_$",
+                    "typeString": "mapping(bytes32 => mapping(address => bool))"
+                  },
+                  "valueType": {
+                    "id": 5695,
+                    "keyType": {
+                      "id": 5693,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6158:7:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Mapping",
+                    "src": "6150:22:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_mapping$_t_address_$_t_bool_$",
+                      "typeString": "mapping(address => bool)"
+                    },
+                    "valueType": {
+                      "id": 5694,
+                      "name": "bool",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6167:4:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      }
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5701,
+                "name": "requestIdByTimestamp",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6293:42:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                  "typeString": "mapping(uint256 => uint256)"
+                },
+                "typeName": {
+                  "id": 5700,
+                  "keyType": {
+                    "id": 5698,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6301:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6293:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                    "typeString": "mapping(uint256 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5699,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6309:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5705,
+                "name": "requestIdByRequestQIndex",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6371:46:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                  "typeString": "mapping(uint256 => uint256)"
+                },
+                "typeName": {
+                  "id": 5704,
+                  "keyType": {
+                    "id": 5702,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6379:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6371:21:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_uint256_$",
+                    "typeString": "mapping(uint256 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5703,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6387:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5709,
+                "name": "disputesById",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6497:37:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Dispute_$5622_storage_$",
+                  "typeString": "mapping(uint256 => struct TellorStorage.Dispute)"
+                },
+                "typeName": {
+                  "id": 5708,
+                  "keyType": {
+                    "id": 5706,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6505:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6497:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Dispute_$5622_storage_$",
+                    "typeString": "mapping(uint256 => struct TellorStorage.Dispute)"
+                  },
+                  "valueType": {
+                    "contractScope": null,
+                    "id": 5707,
+                    "name": "Dispute",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 5622,
+                    "src": "6513:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_Dispute_$5622_storage_ptr",
+                      "typeString": "struct TellorStorage.Dispute"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5714,
+                "name": "balances",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6574:42:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_Checkpoint_$5632_storage_$dyn_storage_$",
+                  "typeString": "mapping(address => struct TellorStorage.Checkpoint[])"
+                },
+                "typeName": {
+                  "id": 5713,
+                  "keyType": {
+                    "id": 5710,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6583:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6574:33:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_address_$_t_array$_t_struct$_Checkpoint_$5632_storage_$dyn_storage_$",
+                    "typeString": "mapping(address => struct TellorStorage.Checkpoint[])"
+                  },
+                  "valueType": {
+                    "baseType": {
+                      "contractScope": null,
+                      "id": 5711,
+                      "name": "Checkpoint",
+                      "nodeType": "UserDefinedTypeName",
+                      "referencedDeclaration": 5632,
+                      "src": "6594:10:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_struct$_Checkpoint_$5632_storage_ptr",
+                        "typeString": "struct TellorStorage.Checkpoint"
+                      }
+                    },
+                    "id": 5712,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "6594:12:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_struct$_Checkpoint_$5632_storage_$dyn_storage_ptr",
+                      "typeString": "struct TellorStorage.Checkpoint[]"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5720,
+                "name": "allowed",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6662:53:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_uint256_$_$",
+                  "typeString": "mapping(address => mapping(address => uint256))"
+                },
+                "typeName": {
+                  "id": 5719,
+                  "keyType": {
+                    "id": 5715,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6670:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6662:45:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_address_$_t_mapping$_t_address_$_t_uint256_$_$",
+                    "typeString": "mapping(address => mapping(address => uint256))"
+                  },
+                  "valueType": {
+                    "id": 5718,
+                    "keyType": {
+                      "id": 5716,
+                      "name": "address",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6690:7:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Mapping",
+                    "src": "6681:25:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_mapping$_t_address_$_t_uint256_$",
+                      "typeString": "mapping(address => uint256)"
+                    },
+                    "valueType": {
+                      "id": 5717,
+                      "name": "uint",
+                      "nodeType": "ElementaryTypeName",
+                      "src": "6701:4:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5724,
+                "name": "stakerDetails",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6769:44:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_address_$_t_struct$_StakeInfo_$5627_storage_$",
+                  "typeString": "mapping(address => struct TellorStorage.StakeInfo)"
+                },
+                "typeName": {
+                  "id": 5723,
+                  "keyType": {
+                    "id": 5721,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6777:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6769:29:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_address_$_t_struct$_StakeInfo_$5627_storage_$",
+                    "typeString": "mapping(address => struct TellorStorage.StakeInfo)"
+                  },
+                  "valueType": {
+                    "contractScope": null,
+                    "id": 5722,
+                    "name": "StakeInfo",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 5627,
+                    "src": "6788:9:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_StakeInfo_$5627_storage_ptr",
+                      "typeString": "struct TellorStorage.StakeInfo"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5728,
+                "name": "requestDetails",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6878:39:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Request_$5670_storage_$",
+                  "typeString": "mapping(uint256 => struct TellorStorage.Request)"
+                },
+                "typeName": {
+                  "id": 5727,
+                  "keyType": {
+                    "id": 5725,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6886:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6878:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_uint256_$_t_struct$_Request_$5670_storage_$",
+                    "typeString": "mapping(uint256 => struct TellorStorage.Request)"
+                  },
+                  "valueType": {
+                    "contractScope": null,
+                    "id": 5726,
+                    "name": "Request",
+                    "nodeType": "UserDefinedTypeName",
+                    "referencedDeclaration": 5670,
+                    "src": "6894:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_Request_$5670_storage_ptr",
+                      "typeString": "struct TellorStorage.Request"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5732,
+                "name": "requestIdByQueryHash",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "6957:45:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5731,
+                  "keyType": {
+                    "id": 5729,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6965:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "6957:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5730,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "6976:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 5736,
+                "name": "disputeIdByDisputeHash",
+                "nodeType": "VariableDeclaration",
+                "scope": 5737,
+                "src": "7067:47:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                  "typeString": "mapping(bytes32 => uint256)"
+                },
+                "typeName": {
+                  "id": 5735,
+                  "keyType": {
+                    "id": 5733,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "7075:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "nodeType": "Mapping",
+                  "src": "7067:24:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_mapping$_t_bytes32_$_t_uint256_$",
+                    "typeString": "mapping(bytes32 => uint256)"
+                  },
+                  "valueType": {
+                    "id": 5734,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "7086:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "TellorStorageStruct",
+            "nodeType": "StructDefinition",
+            "scope": 5738,
+            "src": "3816:3345:13",
+            "visibility": "public"
+          }
+        ],
+        "scope": 5739,
+        "src": "139:7025:13"
+      }
+    ],
+    "src": "0:7166:13"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.8+commit.23d335f2.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.0.16",
+  "updatedAt": "2019-09-23T01:07:00.413Z",
+  "devdoc": {
+    "details": "Contains all the variables/structs used by Tellor\r",
+    "methods": {},
+    "title": "Tellor Oracle Storage Library\r"
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}
