@@ -48,7 +48,6 @@ contract OpenOraclePriceData is OpenOracleData {
             data[source][key] = Datum(timestamp, value);
             emit Write(source, key, timestamp, value);
         }
-
         return key;
     }
 

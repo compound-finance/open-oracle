@@ -28,10 +28,11 @@ module.exports = {
       port: 8545,
       network_id: "*",
       gas: 8000000
-    } ,
-    mocha: {
-    enableTimeouts: false,
-    before_timeout: 210000// Here is 2min but can be whatever timeout is suitable for you.
+      
+    // } ,
+    // mocha: {
+    // enableTimeouts: false,
+    // before_timeout: 210000// Here is 2min but can be whatever timeout is suitable for you.
 },
   //   dev2: {
   //     host: "localhost",
