@@ -15,6 +15,7 @@ contract TestContract{
 	bool public contractEnded;
 	string public symbol;
 	event ContractSettled(uint64 _svalue, uint64 _evalue);
+	address public viewAddress;
 	DelFiPriceWithOnchainData viewContract;
 
 	constructor(string memory _symbol) public {
@@ -23,6 +24,7 @@ contract TestContract{
 
 	function setViewContract(address _viewContract) public {
 		viewContract = DelFiPriceWithOnchainData(_viewContract);
+		viewAddress = _viewContract;
 	}
 
 

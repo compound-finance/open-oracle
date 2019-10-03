@@ -893,10 +893,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        1213,
-                        1214
+                        1219,
+                        1220
                       ],
-                      "referencedDeclaration": 1214,
+                      "referencedDeclaration": 1220,
                       "src": "1340:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -2026,10 +2026,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        1213,
-                        1214
+                        1219,
+                        1220
                       ],
-                      "referencedDeclaration": 1214,
+                      "referencedDeclaration": 1220,
                       "src": "2440:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -3238,7 +3238,7 @@
                                 "name": "now",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 1212,
+                                "referencedDeclaration": 1218,
                                 "src": "3263:3:1",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_uint256",
@@ -6142,10 +6142,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        1213,
-                        1214
+                        1219,
+                        1220
                       ],
-                      "referencedDeclaration": 1214,
+                      "referencedDeclaration": 1220,
                       "src": "1340:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -7275,10 +7275,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        1213,
-                        1214
+                        1219,
+                        1220
                       ],
-                      "referencedDeclaration": 1214,
+                      "referencedDeclaration": 1220,
                       "src": "2440:7:1",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -8487,7 +8487,7 @@
                                 "name": "now",
                                 "nodeType": "Identifier",
                                 "overloadedDeclarations": [],
-                                "referencedDeclaration": 1212,
+                                "referencedDeclaration": 1218,
                                 "src": "3263:3:1",
                                 "typeDescriptions": {
                                   "typeIdentifier": "t_uint256",
@@ -10665,7 +10665,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.16",
-  "updatedAt": "2019-10-03T17:39:31.614Z",
+  "updatedAt": "2019-10-03T20:10:33.042Z",
   "devdoc": {
     "author": "Compound Labs, Inc.\r",
     "methods": {

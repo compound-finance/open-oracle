@@ -605,10 +605,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        1213,
-                        1214
+                        1219,
+                        1220
                       ],
-                      "referencedDeclaration": 1214,
+                      "referencedDeclaration": 1220,
                       "src": "1058:7:0",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -1738,10 +1738,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        1213,
-                        1214
+                        1219,
+                        1220
                       ],
-                      "referencedDeclaration": 1214,
+                      "referencedDeclaration": 1220,
                       "src": "2163:7:0",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -3979,10 +3979,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        1213,
-                        1214
+                        1219,
+                        1220
                       ],
-                      "referencedDeclaration": 1214,
+                      "referencedDeclaration": 1220,
                       "src": "1058:7:0",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -5112,10 +5112,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        1213,
-                        1214
+                        1219,
+                        1220
                       ],
-                      "referencedDeclaration": 1214,
+                      "referencedDeclaration": 1220,
                       "src": "2163:7:0",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
@@ -6892,7 +6892,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.16",
-  "updatedAt": "2019-10-03T17:39:31.610Z",
+  "updatedAt": "2019-10-03T20:10:33.010Z",
   "devdoc": {
     "author": "Compound Labs, Inc.\r",
     "methods": {
