@@ -24,6 +24,10 @@ contract DelFiPriceWithOnchainData is OpenOracleView {
         onChainSources = onChainSources_;
     }
 
+    function getPrice(string memory _symbol) public returns(uint64){
+        return prices[_symbol];
+    }
+
     /**
      * @notice Primary entry point to post and recalculate prices
      * @dev We let anyone pay to post anything, but only sources count for prices.
