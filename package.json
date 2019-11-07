@@ -7,9 +7,8 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
-    "dotenv": "^8.1.0",
     "eth-saddle": "^0.0.9",
-    "truffle-hdwallet-provider": "^1.0.17",
+    "truffle-hdwallet-provider": "^1.0.10",
     "web3": "1.0.0-beta.55",
     "yargs": "^13.2.4"
   },

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.10;
 pragma experimental ABIEncoderV2;
 
 import "./OpenOracleData.sol";
@@ -48,6 +48,7 @@ contract OpenOraclePriceData is OpenOracleData {
             data[source][key] = Datum(timestamp, value);
             emit Write(source, key, timestamp, value);
         }
+
         return key;
     }
 
