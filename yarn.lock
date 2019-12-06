@@ -2093,6 +2093,11 @@ diffie-hellman@^5.0.0:
     miller-rabin "^4.0.0"
     randombytes "^2.0.0"
 
+docker-compose@^0.17.5:
+  version "0.17.5"
+  resolved "https://registry.yarnpkg.com/docker-compose/-/docker-compose-0.17.5.tgz#22723aae86862e0fb8b3f88d70d2a6d65a32ffb3"
+  integrity sha512-/2+l37r51x0lPdDp3qtcIsLlw0I+snhUrZ7h4LCuNmpPBTd7pz20XU5Umj933bFo1P+Mn1sgH3Njm1mL2cw7nA==
+
 dom-walk@^0.1.0:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/dom-walk/-/dom-walk-0.1.1.tgz#672226dc74c8f799ad35307df936aba11acd6018"
@@ -2362,10 +2367,10 @@ eth-query@^2.0.2, eth-query@^2.1.0, eth-query@^2.1.2:
     json-rpc-random-id "^1.0.0"
     xtend "^4.0.1"
 
-eth-saddle@^0.0.5:
-  version "0.0.5"
-  resolved "https://registry.yarnpkg.com/eth-saddle/-/eth-saddle-0.0.5.tgz#201fa814881b01cc8b47b8b6626ac499a46f25c3"
-  integrity sha512-yGPIs4iVqYlJOdUmjRWuruKkenkQnhCThPTxQknWTiZEAErNvSwzug+UkfrE9D3BvXQEau5cyqcDkHbaKa/owA==
+eth-saddle@^0.0.9:
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/eth-saddle/-/eth-saddle-0.0.9.tgz#45dac55e2eeb0a3773ed7dc67637db87fe8555e1"
+  integrity sha512-1bSpt3kStX7Lq0/G16UEkXXiJtwMv3M89m5BnpyU7edcAvopZeJFZlsKZQnypYmPZhwMpcJlA9dqMrOMm7Zkbg==
   dependencies:
     truffle-hdwallet-provider "^1.0.10"
     web3 "1.0.0-beta.55"
@@ -4669,9 +4674,9 @@ minizlib@^1.2.1:
     minipass "^2.2.1"
 
 mixin-deep@^1.2.0:
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/mixin-deep/-/mixin-deep-1.3.1.tgz#a49e7268dce1a0d9698e45326c5626df3543d0fe"
-  integrity sha512-8ZItLHeEgaqEvd5lYBXfm4EZSFCX29Jb9K+lAHhDKzReKBQKj3R+7NOF6tjqYi9t4oI8VUfaWITJQm86wnXGNQ==
+  version "1.3.2"
+  resolved "https://registry.yarnpkg.com/mixin-deep/-/mixin-deep-1.3.2.tgz#1120b43dc359a785dce65b55b82e257ccf479566"
+  integrity sha512-WRoDn//mXBiJ1H40rqa3vH0toePwSsGb45iInWlTySa+Uu4k3tYUSxa2v1KqAiLtvlrSzaExqS1gtk96A9zvEA==
   dependencies:
     for-in "^1.0.2"
     is-extendable "^1.0.1"
