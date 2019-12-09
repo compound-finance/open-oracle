@@ -8,8 +8,8 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "scripts": {
-    "start": "tsc && node ./.tsbuilt/cli.js",
-    "prepare": "tsc",
+    "start": "npx tsc && node ./.tsbuilt/cli.js",
+    "prepare": "npx tsc",
     "test": "jest"
   },
   "dependencies": {
