@@ -10,7 +10,7 @@
   "scripts": {
     "prepare": "npx tsc",
     "start": "node .tsbuilt/index.js",
-    "test": "VCR_MODE=cache jest"
+    "test": "VCR_MODE=cache npx jest"
   },
   "devDependencies": {
     "@types/jest": "^24.0.23",
