@@ -24,10 +24,10 @@ async function main(sources : string,
   return await postWithRetries(trx, senderKey, web3);
 }
 
-async function fetchPayloads(sources : string[]) : Promise<DelFiReporterPayload[]> {
+async function fetchPayloads(sources : string[], fetchFn=fetch) : Promise<DelFiReporterPayload[]> {
   let sourcePromises = sources.map(async (source) => {
     try {
-      let response = await fetch(source);
+      let response = await fetchFn(source);
       return response.json();
     } catch (e) {
       console.error(e);
@@ -38,10 +38,10 @@ async function fetchPayloads(sources : string[]) : Promise<DelFiReporterPayload[
   return (await Promise.all(sourcePromises)).filter(x => x != null);
 }
 
-async function fetchGasPrice() : Promise<number> {
+async function fetchGasPrice(fetchFn=fetch) : Promise<number> {
   try {
     let source = "https://api.compound.finance/api/gas_prices/get_gas_price";
-    let response = await fetch(source);
+    let response = await fetchFn(source);
     let prices = await response.json();
     let averagePrice = Number(prices["average"]["value"]);
     return averagePrice;

@@ -46,3 +46,17 @@ import Web3 from 'web3';
 // let web3Provider = new Web3("web3Node.com", undefined, {transactionPollingTimeout: 180});
 await poster.main(sources, posterKey, viewAddress, viewFunction, web3Provider);
 ```
+
+## Testing
+
+To run tests, simply run:
+
+```bash
+yarn test
+```
+
+To run a single test run:
+
+```
+yarn test tests/poster_test.ts
+```

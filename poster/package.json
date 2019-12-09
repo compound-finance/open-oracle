@@ -10,14 +10,14 @@
   "scripts": {
     "prepare": "npx tsc",
     "start": "node .tsbuilt/index.js",
-    "test": "VCR_MODE=cache npx jest"
+    "test": "npx jest"
   },
   "devDependencies": {
     "@types/jest": "^24.0.23",
     "@types/node": "^12.12.14",
+    "ganache-core": "^2.8.0",
     "jest": "^24.9.0",
     "jest-junit": "^10.0.0",
-    "sepia": "^2.0.2",
     "ts-jest": "^24.2.0",
     "typescript": "^3.7.3"
   },
