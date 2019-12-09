@@ -50,7 +50,7 @@ export function fancyParameterEncoder(paramType: string): [string, (any) => any]
   let actualParamType = paramType, actualParamEnc = (x) => x;
 
   // We add a decimal type for reporter convenience.
-  // Decimals are encoded as uints with 18 decimals of precision on-chain.
+  // Decimals are encoded as uints with 6 decimals of precision on-chain.
   if (paramType === 'decimal') {
     actualParamType = 'uint64';
     actualParamEnc = (x) => web3.utils.toBN(1e6).muln(x).toString();
