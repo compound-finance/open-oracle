@@ -1,4 +1,4 @@
-import {postWithRetries} from './postWithRetries';
+import {postWithRetries} from './post_with_retries';
 import fetch from 'node-fetch';
 import Web3 from 'web3';
 var AbiCoder = require('web3-eth-abi');
