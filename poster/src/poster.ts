@@ -1,7 +1,7 @@
 import {postWithRetries} from './postWithRetries';
 import fetch from 'node-fetch';
 import Web3 from 'web3';
-import {AbiCoder} from 'web3-eth-abi';
+var AbiCoder = require('web3-eth-abi');
 import {TransactionConfig} from 'web3-core';
 
 async function main(sources : string,
@@ -61,9 +61,8 @@ function buildTrxData(payloads : DelFiReporterPayload[], functionSig : string) :
   let symbols = new Set(priceKeys.reduce((acc, val) => acc.concat(val)));
 
   // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
-  const coder = new AbiCoder();
-  return coder.encodeFunctionSignature(functionSig) +
-    coder
+  return AbiCoder.encodeFunctionSignature(functionSig) +
+    AbiCoder
     .encodeParameters(types, [messages, signatures, [...symbols]])
     .replace('0x', '');
 }

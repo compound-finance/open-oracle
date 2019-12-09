@@ -5,7 +5,7 @@ const contract = require('eth-saddle/dist/contract');
 
 const root = path.join(__dirname, '..');
 
-describe.only('Integration', () => {
+describe('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     await compose.upAll({cwd: root, log: true});
     await new Promise(ok => setTimeout(ok, 3000));

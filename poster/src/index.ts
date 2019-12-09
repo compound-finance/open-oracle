@@ -19,7 +19,8 @@ async function run() {
     .argv;
 
   // posting promise will reject and retry once with higher gas after this timeout
-  const web3 = await new Web3(argv.web3Provider, undefined, {transactionPollingTimeout: argv.timeout});
+  const web3 = await new Web3(argv.web3Provider);
+  web3.eth.transactionPollingTimeout = argv.timeout;
 
   web3.eth.transactionConfirmationBlocks = 10;
   if (argv.web3Provider.match(/.*:8545$/)) {
@@ -29,12 +30,14 @@ async function run() {
     // monkey patch web3 since ganache does not implement eth_chainId
     // https://github.com/trufflesuite/ganache-core/issues/339
     // https://github.com/tcichowicz/ganache-core/commit/15d740cc5bdca86c87c3c9fd79bbce5f785b105e
-    const originalSend = web3.eth.currentProvider.send;
-    web3.eth.currentProvider.send = async function (method, parameters) {
-      if (method === "eth_chainId") {
-        return "0x" + Number(1337).toString(16)
-      } else {
-        return originalSend.call(web3.eth.currentProvider, method, parameters);
+    if (web3.eth.currentProvider && typeof(web3.eth.currentProvider)  !== "string" && !!web3.eth.currentProvider.send) {
+      const originalSend = web3.eth.currentProvider.send;
+      web3.eth.currentProvider!.send = async function (method, parameters) {
+        if (method.method === "eth_chainId") {
+          return "0x" + Number(1337).toString(16)
+        } else {
+          return originalSend.call(web3.eth.currentProvider, method, parameters);
+        }
       }
     }
   }

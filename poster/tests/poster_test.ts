@@ -1,5 +1,5 @@
 import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads} from '../src/poster';
-import { AbiCoder } from 'web3-eth-abi';
+import Web3 from 'web3';
 require('sepia');
 
 describe('loading poster arguments from environment and https', () => {
@@ -71,7 +71,7 @@ describe('building a function call', () => {
     };
 
     // @ts-ignore-start
-    let officialWeb3Encoding = new AbiCoder().encodeFunctionCall(assumedAbi, [messages, signatures, ['eth', 'zrx']]);
+    let officialWeb3Encoding = new Web3().eth.abi.encodeFunctionCall(assumedAbi, [messages, signatures, ['eth', 'zrx']]);
     // @ts-ignore-end
 
     expect(data).toEqual(officialWeb3Encoding);
