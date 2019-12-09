@@ -1,1 +1,2 @@
 /poster/fixtures/generated/* binary
+*.sol linguist-language=Solidity
