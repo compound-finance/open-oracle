@@ -84,3 +84,14 @@ export function sign(messages: string | string[], privateKey: string): SignedMes
     return {hash, message, signature, signatory};
   });
 }
+
+export async function signWith(messages: string | string[], signer: (string) => Promise<{r: string, s: string, v: string}>): Promise<SignedMessage[]> {
+  const actualMessages = Array.isArray(messages) ? messages : [messages];
+  return await Promise.all(actualMessages.map(async (message) => {
+    const hash = web3.utils.keccak256(message);
+    const {r, s, v} = await signer(hash);
+    const signature = web3.eth.abi.encodeParameters(['bytes32', 'bytes32', 'uint8'], [r, s, v]);
+    const signatory = web3.eth.accounts.recover(hash, v, r, s);
+    return {hash, message, signature, signatory};
+  }));
+}
