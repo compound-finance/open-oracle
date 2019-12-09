@@ -5,3 +5,4 @@
 .build/test.json
 .build/development.json
 yarn-error.log
+junit.xml
