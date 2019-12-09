@@ -7,7 +7,7 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
-    "eth-saddle": "^0.0.25",
+    "eth-saddle": "^0.0.26",
     "web3": "^1.2.4",
     "yargs": "^15.0.2"
   },
