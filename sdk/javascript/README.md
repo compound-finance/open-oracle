@@ -45,6 +45,15 @@ let encoded = encode('prices', Math.floor(+new Date / 1000), {'eth': 260.0, 'zrx
 let signature = sign(encoded, '0x...');
 ```
 
+Or sign with a remote call:
+
+```typescript
+import {signWith} from 'open-oracle-reporter';
+
+let encoded = encode('prices', Math.floor(+new Date / 1000), {'eth': 260.0, 'zrx': 0.58});
+let signature = signWith(encoded, '0x...', signer);
+```
+
 For example, in an express app:
 
 ```typescript
