@@ -1,4 +1,5 @@
 pragma solidity ^0.5.12;
+pragma experimental ABIEncoderV2;
 
 /**
  * @title The Open Oracle Data Base Contract

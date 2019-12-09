@@ -44,7 +44,7 @@ describe('OpenOracleData', () => {
       // the source we recover in solidity should match
       expect(await call(oracleData.methods.source(message, signature))).toEqual(signatory);
       expect(await call(oracleData.methods.source(bytes('bad'), signature))).not.toEqual(signatory);
-      await expect(send(oracleData.methods.source(message, bytes('0xbad')))).rejects.toRevert();
+      await expect(call(oracleData.methods.source(message, bytes('0xbad')))).rejects.toRevert();
 
       // reads
       ({
