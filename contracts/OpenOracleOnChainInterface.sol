@@ -1,20 +1,12 @@
-pragma solidity ^0.5.0;
+pragma solidity ^0.5.12;
 
-
-/*This contract is the interface between the OpenOracle and onChain prices.
-Examples of onchain price:
-	ETH/USD - DAI/ETH price on DEXes
-	BTC/USD - WBTC/DAI on DEX
-	Onchain oracles:
-		Tellor
-		Chainlink
-		Zap
-		Maker DAO ETH/USD price
-
-*/
-
-
-
+/**
+ * @notice Allow Open Oracle to read on-chain prices
+ */
 interface OpenOracleOnChainInterface{
-	function getCurrentValue(string calldata _symbol) external returns(bool,uint,uint); //_didGet,_value,_timestampRetrieved
+  /**
+   * @notice Returns the current value for a symbol from on-chain
+   * @return (_didGet, _value, _timestampRetrieved)
+   */
+	function getCurrentValue(string calldata _symbol) external returns(bool, uint, uint);
 }
