@@ -1,7 +1,7 @@
-import {postWithRetries} from './postWithRetries';
+import {postWithRetries} from './post_with_retries';
 import fetch from 'node-fetch';
 import Web3 from 'web3';
-import {AbiCoder} from 'web3-eth-abi';
+var AbiCoder = require('web3-eth-abi');
 import {TransactionConfig} from 'web3-core';
 
 async function main(sources : string,
@@ -24,10 +24,10 @@ async function main(sources : string,
   return await postWithRetries(trx, senderKey, web3);
 }
 
-async function fetchPayloads(sources : string[]) : Promise<DelFiReporterPayload[]> {
+async function fetchPayloads(sources : string[], fetchFn=fetch) : Promise<DelFiReporterPayload[]> {
   let sourcePromises = sources.map(async (source) => {
     try {
-      let response = await fetch(source);
+      let response = await fetchFn(source);
       return response.json();
     } catch (e) {
       console.error(e);
@@ -38,10 +38,10 @@ async function fetchPayloads(sources : string[]) : Promise<DelFiReporterPayload[
   return (await Promise.all(sourcePromises)).filter(x => x != null);
 }
 
-async function fetchGasPrice() : Promise<number> {
+async function fetchGasPrice(fetchFn=fetch) : Promise<number> {
   try {
     let source = "https://api.compound.finance/api/gas_prices/get_gas_price";
-    let response = await fetch(source);
+    let response = await fetchFn(source);
     let prices = await response.json();
     let averagePrice = Number(prices["average"]["value"]);
     return averagePrice;
@@ -61,9 +61,8 @@ function buildTrxData(payloads : DelFiReporterPayload[], functionSig : string) :
   let symbols = new Set(priceKeys.reduce((acc, val) => acc.concat(val)));
 
   // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
-  const coder = new AbiCoder();
-  return coder.encodeFunctionSignature(functionSig) +
-    coder
+  return AbiCoder.encodeFunctionSignature(functionSig) +
+    AbiCoder
     .encodeParameters(types, [messages, signatures, [...symbols]])
     .replace('0x', '');
 }

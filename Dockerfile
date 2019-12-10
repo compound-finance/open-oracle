@@ -1,4 +1,4 @@
-FROM ethereum/solc:0.5.10-alpine
+FROM ethereum/solc:0.5.12-alpine
 WORKDIR /open-oracle
 RUN apk update && apk add --no-cache --virtual .gyp \
     python \

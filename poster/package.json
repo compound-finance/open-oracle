@@ -8,21 +8,22 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "scripts": {
+    "prepare": "npx tsc",
     "start": "node .tsbuilt/index.js",
-    "test": "VCR_MODE=cache jest"
+    "test": "npx jest"
   },
   "devDependencies": {
-    "@types/jest": "^24.0.13",
-    "@types/node": "^12.0.10",
-    "jest": "^24.8.0",
-    "jest-junit": "^6.4.0",
-    "sepia": "^2.0.2",
-    "ts-jest": "^24.0.2",
-    "typescript": "^3.5.1"
+    "@types/jest": "^24.0.23",
+    "@types/node": "^12.12.14",
+    "ganache-core": "^2.8.0",
+    "jest": "^24.9.0",
+    "jest-junit": "^10.0.0",
+    "ts-jest": "^24.2.0",
+    "typescript": "^3.7.3"
   },
   "dependencies": {
     "node-fetch": "^2.6.0",
-    "web3": "1.0.0-beta.55",
-    "yargs": "^13.2.4"
+    "web3": "1.2.4",
+    "yargs": "^15.0.2"
   }
 }

@@ -1,25 +1,27 @@
 {
   "name": "compound-open-oracle",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "The Compound Open Oracle",
   "main": "index.js",
   "repository": "https://github.com/compound-finance/open-oracle",
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
-    "eth-saddle": "^0.0.9",
-    "truffle-hdwallet-provider": "^1.0.10",
-    "web3": "1.0.0-beta.55",
-    "yargs": "^13.2.4"
+    "eth-saddle": "^0.0.29",
+    "web3": "^1.2.4",
+    "yargs": "^15.0.2"
   },
   "devDependencies": {
-    "docker-compose": "^0.17.5",
-    "ganache-core": "^2.5.5",
-    "jest": "^24.8.0",
-    "jest-cli": "^24.8.0",
-    "jest-junit": "^6.4.0"
+    "docker-compose": "^0.23.1",
+    "ganache-core": "^2.8.0",
+    "jest": "^24.9.0",
+    "jest-cli": "^24.9.0",
+    "jest-junit": "^10.0.0"
   },
   "scripts": {
     "test": "npx saddle compile && npx saddle test"
+  },
+  "resolutions": {
+    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz"
   }
 }

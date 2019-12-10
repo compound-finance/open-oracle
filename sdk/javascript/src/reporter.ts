@@ -50,7 +50,7 @@ export function fancyParameterEncoder(paramType: string): [string, (any) => any]
   let actualParamType = paramType, actualParamEnc = (x) => x;
 
   // We add a decimal type for reporter convenience.
-  // Decimals are encoded as uints with 18 decimals of precision on-chain.
+  // Decimals are encoded as uints with 6 decimals of precision on-chain.
   if (paramType === 'decimal') {
     actualParamType = 'uint64';
     actualParamEnc = (x) => web3.utils.toBN(1e6).muln(x).toString();
@@ -83,4 +83,15 @@ export function sign(messages: string | string[], privateKey: string): SignedMes
     const signatory = web3.eth.accounts.recover(hash, v, r, s);
     return {hash, message, signature, signatory};
   });
+}
+
+export async function signWith(messages: string | string[], signer: (string) => Promise<{r: string, s: string, v: string}>): Promise<SignedMessage[]> {
+  const actualMessages = Array.isArray(messages) ? messages : [messages];
+  return await Promise.all(actualMessages.map(async (message) => {
+    const hash = web3.utils.keccak256(message);
+    const {r, s, v} = await signer(hash);
+    const signature = web3.eth.abi.encodeParameters(['bytes32', 'bytes32', 'uint8'], [r, s, v]);
+    const signatory = web3.eth.accounts.recover(hash, v, r, s);
+    return {hash, message, signature, signatory};
+  }));
 }

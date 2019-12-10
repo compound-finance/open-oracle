@@ -25,7 +25,7 @@ describe('OpenOracleData', () => {
     expect(timestamp).numEquals(0);
     expect(value).numEquals(0);
 
-    const delfi = await deploy('DelFiPrice', [priceData.address, [account]]);
+    const delfi = await deploy('DelFiPrice', [priceData._address, [account]]);
     const now = new Date - 0;
 
     // succeeds with message (no pairs) + signature

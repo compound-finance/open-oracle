@@ -15,7 +15,7 @@ async function setup(N) {
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf22',
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf23',
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf24',
-  ].slice(0, N).map(web3.eth.accounts.privateKeyToAccount);
+  ].slice(0, N).map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
 
   const nonSources = [
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf15',
@@ -28,10 +28,10 @@ async function setup(N) {
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf27',
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf28',
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf29',
-  ].slice(0, N).map(web3.eth.accounts.privateKeyToAccount);
+  ].slice(0, N).map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
 
   const priceData = await deploy('OpenOraclePriceData', []);
-  const delfi = await deploy('DelFiPrice', [priceData.address, sources.map(a => a.address)]);
+  const delfi = await deploy('DelFiPrice', [priceData._address, sources.map(a => a.address)]);
   const now = Math.floor((+new Date) / 1000);
 
   async function postPrices(timestamp, priceses, symbols, signers = sources) {
