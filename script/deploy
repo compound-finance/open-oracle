@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -eox pipefail
+
+export network="$1"
+api_key="$2"
+reporters="$3"
+
+if [ -z "$network" -o -z "$api_key" ]; then
+  echo "script/deploy [network] [etherscan_api_key] [reporters]";
+  exit 1;
+fi
+
+npx saddle compile
+npx saddle deploy OpenOraclePriceData -n "$network"
+sleep 15; # allow Etherscan time to see contract
+npx saddle verify "$api_key" OpenOraclePriceData -n "$network" -vvv
+
+data_addr=`node -e "const contracts = require('./.build/${network}.json'); console.log(contracts.OpenOraclePriceData);"`
+
+npx saddle deploy DelFiPrice "$data_addr" "$reporters":array -n "$network"
+sleep 15; # allow Etherscan time to see contract
+npx saddle verify "$api_key" DelFiPrice "$data_addr" "$reporters":array -n "$network"
