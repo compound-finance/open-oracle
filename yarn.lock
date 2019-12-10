@@ -3346,10 +3346,10 @@ eth-query@^2.0.2, eth-query@^2.1.0, eth-query@^2.1.2:
     json-rpc-random-id "^1.0.0"
     xtend "^4.0.1"
 
-eth-saddle@^0.0.26:
-  version "0.0.26"
-  resolved "https://registry.yarnpkg.com/eth-saddle/-/eth-saddle-0.0.26.tgz#73a065bd943bb202d40f3e4aee88630c44070875"
-  integrity sha512-xbHxBZJb2byON4N1deGI0KYSWN6QuTyc+6kw2v17KfIslz5eVnSyfsTEeHycf5U8sLCCq5oSqlOtnehRHSqZjg==
+eth-saddle@^0.0.27:
+  version "0.0.27"
+  resolved "https://registry.yarnpkg.com/eth-saddle/-/eth-saddle-0.0.27.tgz#5e8677b3511208122389b56138075c7dfa6bb1df"
+  integrity sha512-uYx0lFOqCqOJUlkHOiPIM4kQzZcxoPXwShGr7YCp8pBOT5Q8qo0nCZIUzBSYXeexN3BiB7+RlmyH+2gS4P851w==
   dependencies:
     "@0x/subproviders" "^6.0.0"
     "@compound-finance/sol-coverage" "^4.0.0-r1"
