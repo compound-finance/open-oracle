@@ -59,11 +59,11 @@ function buildTrxData(payloads : DelFiReporterPayload[], functionSig : string) :
   let signatures = payloads.reduce((a: string[], x) => a.concat(x.signatures), []);
   let priceKeys = payloads.map(x => Object.keys(x.prices));
   let symbols = new Set(priceKeys.reduce((acc, val) => acc.concat(val)));
+  let upperCaseDeDuped = [...symbols].map((x) => x.toUpperCase())
 
   // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
-  return AbiCoder.encodeFunctionSignature(functionSig) +
-    AbiCoder
-    .encodeParameters(types, [messages, signatures, [...symbols]])
+  return AbiCoder.encodeFunctionSignature(functionSig) + AbiCoder
+    .encodeParameters(types, [messages, signatures, [...upperCaseDeDuped]])
     .replace('0x', '');
 }
 

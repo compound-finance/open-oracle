@@ -33,12 +33,14 @@ module.exports = {
     test: {
       providers: [
         {env: "PROVIDER"},
-        {ganache: {}},                                  // In test mode, connect to a new ganache provider. Any options will be passed to ganache
+        {ganache: {
+          gasLimit: 10000000
+        }},                                  // In test mode, connect to a new ganache provider. Any options will be passed to ganache
       ],
       web3: {
         gas: [
           {env: "GAS"},
-          {default: "4600000"}
+          {default: "8000000"}
         ],
         gas_price: [
           {env: "GAS_PRICE"},

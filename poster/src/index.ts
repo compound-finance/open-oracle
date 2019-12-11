@@ -22,31 +22,19 @@ async function run() {
   const web3 = await new Web3(argv.web3_provider);
   web3.eth.transactionPollingTimeout = argv.timeout;
 
-  web3.eth.transactionConfirmationBlocks = 10;
   if (argv.web3_provider.match(/.*:8545$/)) {
     // confirm immediately in dev
     web3.eth.transactionConfirmationBlocks = 1
-
-    // monkey patch web3 since ganache does not implement eth_chainId
-    // https://github.com/trufflesuite/ganache-core/issues/339
-    // https://github.com/tcichowicz/ganache-core/commit/15d740cc5bdca86c87c3c9fd79bbce5f785b105e
-    if (web3.eth.currentProvider && typeof(web3.eth.currentProvider)  !== "string" && !!web3.eth.currentProvider.send) {
-      const originalSend = web3.eth.currentProvider.send;
-      web3.eth.currentProvider!.send = async function (method, parameters) {
-        if (method.method === "eth_chainId") {
-          return "0x" + Number(1337).toString(16)
-        } else {
-          return originalSend.call(web3.eth.currentProvider, method, parameters);
-        }
-      }
-    }
+  } else {
+    web3.eth.transactionConfirmationBlocks = 10;
   }
 
   try {
     await main(argv.sources, argv.poster_key, argv.view_address, argv.view_function, argv.gas_limit, web3);
+    console.log("main compleed")
   } catch (e) {
     console.error(`Poster failed to run`, e);
   }
 }
 
-run()
+run().then((x) => console.log(x));
