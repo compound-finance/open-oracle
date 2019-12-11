@@ -118,7 +118,7 @@ describe('building a function call', () => {
     };
 
     // @ts-ignore-start
-    let officialWeb3Encoding = new Web3().eth.abi.encodeFunctionCall(assumedAbi, [messages, signatures, ['eth', 'zrx']]);
+    let officialWeb3Encoding = new Web3().eth.abi.encodeFunctionCall(assumedAbi, [messages, signatures, ['ETH', 'ZRX']]);
     // @ts-ignore-end
 
     expect(data).toEqual(officialWeb3Encoding);
