@@ -31,10 +31,10 @@ async function run() {
 
   try {
     await main(argv.sources, argv.poster_key, argv.view_address, argv.view_function, argv.gas_limit, web3);
-    console.log("main compleed")
+    console.log("main completed")
   } catch (e) {
     console.error(`Poster failed to run`, e);
   }
 }
 
-run().then((x) => console.log(x));
+run().then(console.log);
