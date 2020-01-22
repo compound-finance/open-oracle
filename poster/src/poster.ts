@@ -1,8 +1,8 @@
-import {postWithRetries} from './post_with_retries';
+import { postWithRetries } from './post_with_retries';
 import fetch from 'node-fetch';
 import Web3 from 'web3';
-var AbiCoder = require('web3-eth-abi');
-import {TransactionConfig} from 'web3-core';
+import { TransactionConfig } from 'web3-core';
+import AbiCoder from 'web3-eth-abi';
 
 async function main(sources : string,
                     senderKey : string,
@@ -62,9 +62,10 @@ function buildTrxData(payloads : DelFiReporterPayload[], functionSig : string) :
   let upperCaseDeDuped = [...symbols].map((x) => x.toUpperCase())
 
   // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
-  return AbiCoder.encodeFunctionSignature(functionSig) + AbiCoder
-    .encodeParameters(types, [messages, signatures, [...upperCaseDeDuped]])
-    .replace('0x', '');
+  return (<any>AbiCoder).encodeFunctionSignature(functionSig) +
+         (<any>AbiCoder)
+           .encodeParameters(types, [messages, signatures, [...upperCaseDeDuped]])
+           .replace('0x', '');
 }
 
 // e.g. findTypes("postPrices(bytes[],bytes[],string[])")-> ["bytes[]","bytes[]","string[]"]

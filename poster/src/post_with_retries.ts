@@ -1,5 +1,5 @@
 import Web3 from 'web3';
-import {TransactionConfig, TransactionReceipt} from 'web3-core';
+import { TransactionConfig, TransactionReceipt } from 'web3-core';
 
 async function postWithRetries(transaction: TransactionConfig, signerKey: string, web3: Web3, retries: number = 3) {
   for (let i = 0; i < retries; i++) {
