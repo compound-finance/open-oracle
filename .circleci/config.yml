@@ -6,6 +6,7 @@ jobs:
       - image: circleci/node:11
     working_directory: ~/repo
     steps:
+      - setup_remote_docker
       - run:
         |
           sudo wget https://github.com/ethereum/solidity/releases/download/v0.5.12/solc-static-linux -O /usr/local/bin/solc
