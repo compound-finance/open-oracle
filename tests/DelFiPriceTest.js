@@ -44,11 +44,11 @@ async function setup(N) {
         signatures.push(signature);
       }
     });
-    return send(delfi.methods.postPrices(messages, signatures, symbols), {gas: 6000000});
+    return send(delfi, 'postPrices', [messages, signatures, symbols], {gas: 6000000});
   }
 
   async function getPrice(symbol) {
-    return call(delfi.methods.prices(symbol))
+    return call(delfi, 'prices', [symbol]);
   }
 
   return {sources, nonSources, priceData, delfi, now, postPrices, getPrice};
@@ -59,7 +59,7 @@ describe('DelFiPrice', () => {
     const {nonSources, delfi, now, postPrices, getPrice} = await setup(5);
 
     // Reads a price of an asset that doesn't exist yet
-    expect(await call(delfi.methods.prices('ETH'))).numEquals(0);
+    expect(await call(delfi, 'prices', ['ETH'])).numEquals(0);
 
     /** Posts nothing **/
 
@@ -164,7 +164,7 @@ describe('DelFiPrice', () => {
 
     /** Does revert on invalid message **/
 
-    await expect(send(delfi.methods.postPrices(['0xabc'], ['0x123'], []), {gas: 5000000})).rejects.toRevert();
+    await expect(send(delfi, 'postPrices', [['0xabc'], ['0x123'], []], {gas: 5000000})).rejects.toRevert();
   }, 30000);
 
   it.skip('quantifies the amount of gas used for a substantial set of updates', async () => {

@@ -1,4 +1,4 @@
-FROM node:current-alpine
+FROM node:13.6.0-alpine3.10
 
 WORKDIR /open-oracle-reporter
 ADD package.json /open-oracle-reporter/package.json
