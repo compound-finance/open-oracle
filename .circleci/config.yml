@@ -41,7 +41,7 @@ jobs:
           key: v1-sdk-dependencies-{{ checksum "sdk/javascript/package.json" }}
       - run: mkdir ~/junit-oracle
       - run: npx saddle compile
-      - run: docker-compose up
+      - run: docker-compose build
       - run: JEST_JUNIT_OUTPUT=~/junit-oracle/test-results.xml npx saddle test tests/*Test.js -- --ci --reporters=default --reporters=jest-junit
       - store_test_results:
           path: ~/junit-oracle
