@@ -2,18 +2,44 @@ const path = require('path');
 const Web3 = require('web3');
 const compose = require('docker-compose');
 const contract = require('eth-saddle/dist/contract');
+const { Docker, Options } = require('docker-cli-js');
+const DockerProvider = require('./DockerProvider');
 
 const root = path.join(__dirname, '..');
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function waitForLogs(serviceLogPairs) {
+  let [service, log] = Object.entries(serviceLogPairs)[0];
+  const serviceLogs = await compose.logs([service]);
+
+  if (!serviceLogs.out.includes(log)) {
+    console.log(`Waiting for logs ${JSON.stringify(serviceLogPairs)}`);
+    console.log(serviceLogs.out);
+    await sleep(5000);
+    await waitForLogs(serviceLogPairs);
+  }
+}
 
 describe('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     try {
       await compose.upOne(["poster"], {cwd: root, log: true});
-      await new Promise(ok => setTimeout(ok, 10000));
+      await waitForLogs({deployer: "Deployed DelFiPrice"});
 
-      const web3 = new Web3('http://localhost:9999');
+      // TODO: Better way to get these?
+      repo = path.basename(process.cwd());
+      const deployer = `${repo}_deployer_1`;
+      const reporter = `${repo}_reporter-1_1`;
+
+      const docker = new Docker(new Options());
+      await docker.command(`cp ${deployer}:/build .dockerbuild_cp`);
+
+      const web3 = new Web3(new DockerProvider('http://ganache:8545', docker, reporter));
       const accounts = await web3.eth.getAccounts();
-      const delfi = await contract.getContractAt(web3, 'DelFiPrice', '.dockerbuild', false, '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24');
+      const delfi = await contract.getContractAt(web3, 'DelFiPrice', '.dockerbuild_cp', false, '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24');
 
       expect(await delfi.methods.prices('BTC').call({from: accounts[0]})).numEquals(0);
       expect(await delfi.methods.prices('ETH').call({from: accounts[0]})).numEquals('260000000');

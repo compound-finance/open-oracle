@@ -1,4 +1,5 @@
 .dockerbuild
+.dockerbuild_cp
 *node_modules*
 *.tsbuilt*
 *.DS_Store*

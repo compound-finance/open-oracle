@@ -813,6 +813,14 @@
   dependencies:
     bignumber.js "*"
 
+"@types/blue-tape@^0.1.30":
+  version "0.1.33"
+  resolved "https://registry.yarnpkg.com/@types/blue-tape/-/blue-tape-0.1.33.tgz#61796d4f0455a00a61be59e52288cb3428209804"
+  integrity sha512-l5cQcLM3aPh55bBQ4geWQ8hZ4Ew+s4RvyhMaBpgW3aJ2HUfRgwd8ENKrk/utC4Hz1dJAiehyIa4vN6emxBMaog==
+  dependencies:
+    "@types/node" "*"
+    "@types/tape" "*"
+
 "@types/bn.js@^4.11.0", "@types/bn.js@^4.11.3", "@types/bn.js@^4.11.4":
   version "4.11.5"
   resolved "https://registry.yarnpkg.com/@types/bn.js/-/bn.js-4.11.5.tgz#40e36197433f78f807524ec623afcf0169ac81dc"
@@ -866,6 +874,11 @@
   dependencies:
     jest-diff "^24.3.0"
 
+"@types/lodash@4.14.119":
+  version "4.14.119"
+  resolved "https://registry.yarnpkg.com/@types/lodash/-/lodash-4.14.119.tgz#be847e5f4bc3e35e46d041c394ead8b603ad8b39"
+  integrity sha512-Z3TNyBL8Vd/M9D9Ms2S3LmFq2sSMzahodD6rCS9V2N44HUMINb75jNkSuwAx7eo2ufqTdfOdtGQpNbieUjPQmw==
+
 "@types/minimatch@^3.0.3":
   version "3.0.3"
   resolved "https://registry.yarnpkg.com/@types/minimatch/-/minimatch-3.0.3.tgz#3dca0e3f33b200fc7d1139c0cd96c1268cadfd9d"
@@ -903,6 +916,13 @@
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@types/stack-utils/-/stack-utils-1.0.1.tgz#0a851d3bd96498fa25c33ab7278ed3bd65f06c3e"
   integrity sha512-l42BggppR6zLmpfU6fq9HEa2oGPEI8yrSPL3GITjfRInppYFahObbIQOQK3UGxEnyQpltZLaPe75046NOZQikw==
+
+"@types/tape@*":
+  version "4.2.33"
+  resolved "https://registry.yarnpkg.com/@types/tape/-/tape-4.2.33.tgz#3583953eaff5f8a77e65ad6ff197741457aaaab9"
+  integrity sha512-ltfyuY5BIkYlGuQfwqzTDT8f0q8Z5DGppvUnWGs39oqDmMd6/UWhNpX3ZMh/VYvfxs3rFGHMrLC/eGRdLiDGuw==
+  dependencies:
+    "@types/node" "*"
 
 "@types/web3-provider-engine@^14.0.0":
   version "14.0.0"
@@ -2496,6 +2516,15 @@ class-utils@^0.3.5:
     isobject "^3.0.0"
     static-extend "^0.1.1"
 
+cli-table-2-json@1.0.13:
+  version "1.0.13"
+  resolved "https://registry.yarnpkg.com/cli-table-2-json/-/cli-table-2-json-1.0.13.tgz#33d5be36851477854b004356197a6409c7370aea"
+  integrity sha512-CpUj9dubfuIZSEezwUPycAJqM2dlATyyRUyBkfGeK2KNfrqK3XrdaBohMt0XlkEvsZyDfUEmPWCNvUO+a/7Wsw==
+  dependencies:
+    "@types/blue-tape" "^0.1.30"
+    "@types/lodash" "4.14.119"
+    lodash "^4.17.15"
+
 cliui@^3.2.0:
   version "3.2.0"
   resolved "https://registry.yarnpkg.com/cliui/-/cliui-3.2.0.tgz#120601537a916d29940f934da3b48d585a39213d"
@@ -3128,10 +3157,28 @@ dirty-chai@^2.0.1:
   resolved "https://registry.yarnpkg.com/dirty-chai/-/dirty-chai-2.0.1.tgz#6b2162ef17f7943589da840abc96e75bda01aff3"
   integrity sha512-ys79pWKvDMowIDEPC6Fig8d5THiC0DJ2gmTeGzVAoEH18J8OzLud0Jh7I9IWg3NSk8x2UocznUuFmfHCXYZx9w==
 
+docker-cli-js@^2.6.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/docker-cli-js/-/docker-cli-js-2.6.0.tgz#91d6e860333b8ced90bfa373f47fec0569078fe2"
+  integrity sha512-tep7VU3SGuydGRI2VMXyeDNRBaKmFx80YQZOTFoeyYvLlhE0nmYgqr4sP7D4M8+zGb0d8OqR0VwkhIEpR0bXsw==
+  dependencies:
+    cli-table-2-json "1.0.13"
+    dockermachine-cli-js "3.0.5"
+    lodash "^4.17.15"
+    nodeify-ts "1.0.6"
+
 docker-compose@^0.23.1:
   version "0.23.1"
   resolved "https://registry.yarnpkg.com/docker-compose/-/docker-compose-0.23.1.tgz#d71b1e244b989527585cbd43f6b20dea4881d34c"
   integrity sha512-9e4moDWxAoEU/WEVJXUnoxXEWDQCX8tQIfuRntApl1atbvz1qV5uoC6YfgYbqUqcIgSD99iZWye7ePrN+ud8AA==
+
+dockermachine-cli-js@3.0.5:
+  version "3.0.5"
+  resolved "https://registry.yarnpkg.com/dockermachine-cli-js/-/dockermachine-cli-js-3.0.5.tgz#7e7aa37adba885572e6b59ed9050fe347e558227"
+  integrity sha512-oV9RRKGvWrvsGl8JW9TWKpjBJVGxn/1qMvhqwPJiOPfRES0+lrq/Q8Wzixb6qinuXPVBhlWqhXb/Oxrh6Vuf/g==
+  dependencies:
+    cli-table-2-json "1.0.13"
+    nodeify-ts "1.0.6"
 
 dom-walk@^0.1.0:
   version "0.1.1"
@@ -6925,6 +6972,11 @@ node-pre-gyp@^0.12.0:
     rimraf "^2.6.1"
     semver "^5.3.0"
     tar "^4"
+
+nodeify-ts@1.0.6:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/nodeify-ts/-/nodeify-ts-1.0.6.tgz#ceef172c4fad1a45a1ae60a31c7e295150b5e221"
+  integrity sha512-jq+8sqVG1aLqy5maMTceL8NUJ1CvarWztlxvrYh3G0aao9BsVeoVmVedUnrUSBLetP7oLIAJrPrw4+iIo7v3GA==
 
 noop-logger@^0.1.1:
   version "0.1.1"

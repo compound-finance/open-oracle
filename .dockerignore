@@ -1,6 +1,7 @@
 .build
 .circleci
 .dockerbuild
+.dockerbuild_cp
 .github
 node_modules
 sdk/javascript/node_modules
