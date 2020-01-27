@@ -14,6 +14,6 @@ ADD package.json /open-oracle-poster/package.json
 RUN yarn install
 
 ADD . /open-oracle-poster
-RUN npx tsc
+RUN npx tsc --skipLibCheck
 
 CMD yarn start

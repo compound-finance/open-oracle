@@ -9,7 +9,7 @@
   "license": "MIT",
   "scripts": {
     "start": "npx tsc && node ./.tsbuilt/cli.js",
-    "prepare": "npx tsc",
+    "prepare": "npx tsc --skipLibCheck",
     "test": "jest"
   },
   "dependencies": {
