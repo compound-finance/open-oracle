@@ -26,14 +26,12 @@ async function waitForLogs(serviceLogPairs) {
 describe('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     try {
-      throw "haha";
       const projectName = "open-oracle";
-
-      await compose.upOne(["poster"], {cwd: root, log: true, composeOptions: ["--project-name", projectName]});
-      await waitForLogs({deployer: "Deployed DelFiPrice"});
-
       const deployer = `${projectName}_deployer_1`;
       const reporter = `${projectName}_reporter-1_1`;
+
+      await compose.upOne(["poster"], {cwd: root, log: true, composeOptions: ["--project-name", projectName]});
+      await waitForLogs({[deployer]: "Deployed DelFiPrice"});
 
       const docker = new Docker(new Options());
       await docker.command(`cp ${deployer}:/build .dockerbuild_cp`);
@@ -48,5 +46,5 @@ describe('Integration', () => {
     } finally {
       await compose.down({cwd: root});
     }
-  }, 600000);
+  }, 60000);
 });
