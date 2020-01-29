@@ -3,23 +3,32 @@ pragma experimental ABIEncoderV2;
 
 import "./OpenOraclePriceData.sol";
 import "./OpenOracleView.sol";
+import "./SafeMath.sol";
 
 /**
  * @notice The DelFi Price Feed View
  * @author Compound Labs, Inc.
  */
 contract DelFiPrice is OpenOracleView {
+    using SafeMath for *;
+
     /**
      * @notice The event emitted when a price is written to storage
      */
     event Price(string symbol, uint64 price);
+
+    address anchor;
+    uint anchorMantissa;
 
     /**
      * @notice The mapping of medianized prices per symbol
      */
     mapping(string => uint64) public prices;
 
-    constructor(OpenOraclePriceData data_, address[] memory sources_) public OpenOracleView(data_, sources_) {}
+    constructor(OpenOraclePriceData data_, address[] memory sources_, address anchor_, uint anchorMantissa_) public OpenOracleView(data_, sources_) {
+        anchor = anchor_;
+        anchorMantissa_ = anchorMantissa;
+    }
 
     /**
      * @notice Primary entry point to post and recalculate prices
@@ -29,20 +38,22 @@ contract DelFiPrice is OpenOracleView {
      */
     function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
+        require(messages.length == symbols.length, "messages and symbols must be 1:1");
 
-        // Post the messages, whatever they are
         for (uint i = 0; i < messages.length; i++) {
+            // Post the data
             OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
-        }
 
-        // Recalculate the asset prices for the symbols to update
-        for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
+            uint64 medianPrice = medianPrice(symbol, sources);
+            uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
+            uint anchorRatio = medianPrice.mul(10e18).div(anchorPrice);
 
-            // Calculate the median price, write to storage, and emit an event
-            uint64 price = medianPrice(symbol, sources);
-            prices[symbol] = price;
-            emit Price(symbol, price);
+            // Only update the view's price if the median of the sources is within a bound
+            if (anchorRatio < anchorMantissa.add(10e18) || anchorRatio > anchorMantissa.sub(10e18)) {
+                prices[symbol] = medianPrice;
+                emit Price(symbol, medianPrice);
+            }
         }
     }
 
