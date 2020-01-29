@@ -12,7 +12,6 @@
     "yargs": "^15.0.2"
   },
   "devDependencies": {
-    "docker-cli-js": "^2.6.0",
     "docker-compose": "^0.23.1",
     "ganache-core": "^2.5.6",
     "jest": "^24.9.0",
