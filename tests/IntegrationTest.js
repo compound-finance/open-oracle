@@ -26,6 +26,7 @@ async function waitForLogs(serviceLogPairs) {
 describe('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     try {
+      throw "haha";
       const projectName = "open-oracle";
 
       await compose.upOne(["poster"], {cwd: root, log: true, composeOptions: ["--project-name", projectName]});
