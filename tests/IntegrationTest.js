@@ -35,7 +35,7 @@ describe('Integration', () => {
       const reporter = `${projectName}_reporter-1_1`;
 
       await compose.upOne(["poster"], composeOptions);
-      await waitForLogs({deployer: "Deployed DelFiPrice"});
+      await waitForLogs({deployer: "Deployed DelFiPrice", poster: "main completed"});
 
       await execute(`docker cp "${deployer}:/build" ".dockerbuild_cp"`);
 
