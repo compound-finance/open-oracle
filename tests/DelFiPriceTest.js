@@ -30,8 +30,11 @@ async function setup(N) {
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf29',
   ].slice(0, N).map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
 
+  const anchor = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf40');
+
+  const anchorMantissa = Math.pow(10,17).toString();
   const priceData = await deploy('OpenOraclePriceData', []);
-  const delfi = await deploy('DelFiPrice', [priceData._address, sources.map(a => a.address)]);
+  const delfi = await deploy('DelFiPrice', [priceData._address, sources.map(a => a.address), anchor.address, anchorMantissa]);
   const now = Math.floor((+new Date) / 1000);
 
   async function postPrices(timestamp, priceses, symbols, signers = sources) {
@@ -51,10 +54,10 @@ async function setup(N) {
     return call(delfi, 'prices', [symbol]);
   }
 
-  return {sources, nonSources, priceData, delfi, now, postPrices, getPrice};
+  return {sources, nonSources, anchor, anchorMantissa, priceData, delfi, now, postPrices, getPrice};
 }
 
-describe('DelFiPrice', () => {
+describe.only('DelFiPrice', () => {
   it('sanity checks the delfi price view', async () => {
     const {nonSources, delfi, now, postPrices, getPrice} = await setup(5);
 

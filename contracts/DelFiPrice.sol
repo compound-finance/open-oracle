@@ -73,6 +73,7 @@ contract DelFiPrice is OpenOracleView {
         }
 
         uint64[] memory sortedPrices = sort(postedPrices);
+        // fix
         return sortedPrices[N / 2];
     }
 
