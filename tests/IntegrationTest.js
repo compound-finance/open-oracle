@@ -17,12 +17,23 @@ function sleep(ms) {
 }
 
 async function waitForLogs(serviceLogPairs) {
-  let [service, log] = Object.entries(serviceLogPairs)[0];
-  const serviceLogs = await compose.logs([service], composeOptions);
+  let results = await Promise.all(Object.entries(serviceLogPairs).map(async ([service, log]) => {
+    const serviceLogs = await compose.logs([service], composeOptions);
 
-  if (!serviceLogs.out.includes(log)) {
-    console.log(`Waiting for logs ${JSON.stringify(serviceLogPairs)}`);
-    console.log(serviceLogs.out);
+    if (!serviceLogs.out.includes(log)) {
+      console.log(`Waiting for logs ${JSON.stringify(serviceLogPairs)}`);
+      console.log(serviceLogs.out);
+      return false;
+    } else {
+      return true;
+    }
+  }));
+
+  let complete = results.every((x) => x === true);
+
+  if (complete) {
+    return;
+  } else {
     await sleep(5000);
     await waitForLogs(serviceLogPairs);
   }
