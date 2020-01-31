@@ -9,7 +9,6 @@ import "./OpenOracleView.sol";
  * @author Compound Labs, Inc.
  */
 contract DelFiPrice is OpenOracleView {
-
     /**
      * @notice The event emitted when a price is written to storage
      */
@@ -41,7 +40,7 @@ contract DelFiPrice is OpenOracleView {
     function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
 
-        // Post the data
+        // Post the messages
         for (uint i = 0; i < messages.length; i++) {
             OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
         }
