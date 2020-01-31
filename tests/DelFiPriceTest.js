@@ -212,14 +212,14 @@ describe('DelFiPrice', () => {
     });
 
     it('should not update median if anchor is much higher', async () => {
-      // median is 90. at 10% tolerance, anchor at 100 should not update median
+      // median is 89. anchor is 100. at 10% tolerance, this should not update median
       const post1 = await postPrices(
         now,
         [
           [['ETH', 100]], //anchor
           [['ETH', 80]],
           [['ETH', 85]],
-          [['ETH', 90]],
+          [['ETH', 89]],
           [['ETH', 100]],
           [['ETH', 110]]
         ],
@@ -231,14 +231,14 @@ describe('DelFiPrice', () => {
     });
 
     it('should not update median if anchor is much lower', async () => {
-      // median is 110. anchor at 100. at 10% tolerance, should not update median
+      // median is 111. anchor is 100. at 10% tolerance, this should not update median
       const post1 = await postPrices(
         now,
         [
           [['ETH', 100]], //anchor
           [['ETH', 100]],
           [['ETH', 110]],
-          [['ETH', 110]],
+          [['ETH', 111]],
           [['ETH', 115]],
           [['ETH', 116]]
         ],

@@ -9,23 +9,29 @@ import "./OpenOracleView.sol";
  * @author Compound Labs, Inc.
  */
 contract DelFiPrice is OpenOracleView {
-    /**
-     * @notice The event emitted when a price is written to storage
-     */
+    /// @notice The event emitted when a price is written to storage
     event Price(string symbol, uint64 price);
 
+    /// @notice The reporter address whose prices checked against the median for safety
     address anchor;
+
+    /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 upperBoundAnchorRatio;
+
+    /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 lowerBoundAnchorRatio;
 
-    /**
-     * @notice The mapping of medianized prices per symbol
-     */
+    /// @notice The mapping of medianized prices per symbol
     mapping(string => uint64) public prices;
 
+    /**
+     * @param data_ Address of the Oracle Data contract
+     * @param sources_ The reporter addresses whose prices will be used to calculate the median
+     * @param anchor_ The reporter address whose prices checked against the median for safety
+     * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 1e17 means a new median that is 10% off from the anchor will still be saved
+     */
     constructor(OpenOraclePriceData data_, address[] memory sources_, address anchor_, uint anchorToleranceMantissa_) public OpenOracleView(data_, sources_) {
         anchor = anchor_;
-        //anchorMantissa of 10e17 means we tolerate a 10% difference between anchor and median
         require(anchorToleranceMantissa_ < 1e18, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 1e18 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 1e18 - anchorToleranceMantissa_;
@@ -33,7 +39,7 @@ contract DelFiPrice is OpenOracleView {
 
     /**
      * @notice Primary entry point to post and recalculate prices
-     * @dev We let anyone pay to post anything, but only sources count for prices.
+     * @dev We let anyone pay to post anything, but only sources count for prices
      * @param messages The messages to post to the oracle
      * @param signatures The signatures for the corresponding messages
      */
@@ -53,7 +59,7 @@ contract DelFiPrice is OpenOracleView {
             uint256 anchorRatioMantissa = uint256(medianPrice) * 1e18 / anchorPrice;
 
             // Only update the view's price if the median of the sources is within a bound
-            if (anchorRatioMantissa < upperBoundAnchorRatio && anchorRatioMantissa > lowerBoundAnchorRatio) {
+            if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
                 prices[symbol] = medianPrice;
                 emit Price(symbol, medianPrice);
             }
