@@ -48,7 +48,7 @@ services:
     command: "sh -c '
       apk add jq;
       while [ ! -f /build/development.json ]; do echo waiting for /build/development.json; sleep 1; done;
-      cat /build/development.json
+      cat /build/development.json;
       npm run start --
       --poster_key $$POSTER_KEY
       --sources http://reporter-1:3000/prices.json,http://reporter-2:3000/prices.json
