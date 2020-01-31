@@ -1,7 +1,5 @@
-const {
-  encode,
-  sign,
-} = require('../sdk/javascript/.tsbuilt/reporter');
+const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
+const { numToHex } = require('./Helpers');
 
 async function setup(N) {
   const sources = [
@@ -14,8 +12,10 @@ async function setup(N) {
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf21',
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf22',
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf23',
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf24',
-  ].slice(0, N).map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
+    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf24'
+  ]
+    .slice(0, N)
+    .map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
 
   const nonSources = [
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf15',
@@ -27,292 +27,470 @@ async function setup(N) {
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf26',
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf27',
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf28',
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf29',
-  ].slice(0, N).map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
+    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf29'
+  ]
+    .slice(0, N)
+    .map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
 
-  const anchor = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf40');
+  const anchor = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf40'
+  );
 
-  const anchorMantissa = Math.pow(10,17).toString();
+  const anchorMantissa = numToHex(1e17); //1e17 equates to 10% tolerance for median to be above or below anchor
   const priceData = await deploy('OpenOraclePriceData', []);
-  const delfi = await deploy('DelFiPrice', [priceData._address, sources.map(a => a.address), anchor.address, anchorMantissa]);
-  const now = Math.floor((+new Date) / 1000);
+  const delfi = await deploy('DelFiPrice', [
+    priceData._address,
+    sources.map(a => a.address),
+    anchor.address,
+    anchorMantissa
+  ]);
+  const now = Math.floor(+new Date() / 1000);
 
-  async function postPrices(timestamp, priceses, symbols, signers = sources) {
-    const messages = [], signatures = [];
-    priceses.forEach((prices, i) => {
-      const signed = sign(encode('prices', timestamp, prices.map(([symbol, price]) => [symbol, price])), signers[i].privateKey);
-      for (let {message, signature, signatory} of signed) {
-        expect(signatory).toEqual(signers[i].address);
+  async function postPrices(timestamp, prices2dArr, symbols, signers) {
+    const messages = [],
+      signatures = [];
+    prices2dArr.forEach((prices, i) => {
+      const signed = sign(
+        encode(
+          'prices',
+          timestamp,
+          prices.map(([symbol, price]) => [symbol, price])
+        ),
+        signers[i].privateKey
+      );
+      for (let { message, signature, signatory } of signed) {
+        // expect(signatory).toEqual(signers[i].address);
         messages.push(message);
         signatures.push(signature);
       }
     });
-    return send(delfi, 'postPrices', [messages, signatures, symbols], {gas: 6000000});
+    return send(delfi, 'postPrices', [messages, signatures, symbols], {
+      gas: 6000000
+    });
   }
 
   async function getPrice(symbol) {
     return call(delfi, 'prices', [symbol]);
   }
 
-  return {sources, nonSources, anchor, anchorMantissa, priceData, delfi, now, postPrices, getPrice};
+  return {
+    sources,
+    nonSources,
+    anchor,
+    anchorMantissa,
+    priceData,
+    delfi,
+    now,
+    postPrices,
+    getPrice
+  };
 }
 
-describe.only('DelFiPrice', () => {
-  it('sanity checks the delfi price view', async () => {
-    const {nonSources, delfi, now, postPrices, getPrice} = await setup(5);
+describe('DelFiPrice', () => {
+  let sources,
+    nonSources,
+    anchor,
+    anchorMantissa,
+    priceData,
+    delfi,
+    now,
+    postPrices,
+    getPrice;
 
-    // Reads a price of an asset that doesn't exist yet
-    expect(await call(delfi, 'prices', ['ETH'])).numEquals(0);
+  describe('Deploy with an even # of sources', () => {
+    beforeEach(async done => {
+      // use 4 sources
+      ({
+        sources,
+        nonSources,
+        anchor,
+        anchorMantissa,
+        priceData,
+        delfi,
+        now,
+        postPrices,
+        getPrice
+      } = await setup(4));
+      done();
+    });
 
-    /** Posts nothing **/
+    it('should sort even number of sources correctly', async () => {
+      // post prices for the anchor and 3 / 4 sources
+      const post1 = await postPrices(
+        now,
+        [[['ETH', 498]], [['ETH', 501]], [['ETH', 502]], [['ETH', 503]]],
+        ['ETH'],
+        [anchor, ...sources]
+      );
+      expect(post1.gasUsed).toBeLessThan(250000);
+      expect(post1.events.Price.returnValues.symbol).toBe('ETH');
+      // last unused source is saved as 0
+      expect(post1.events.Price.returnValues.price).numEquals(501.5e6);
+      expect(await getPrice('ETH')).numEquals(501.5e6);
+    });
 
-    const post0 = await postPrices(now, [], [])
-    expect(post0.gasUsed).toBeLessThan(25000);
-    expect(await getPrice('ETH')).numEquals(0);
+    it('should sort even number of sources correctly with two assets', async () => {
+      // post prices for the anchor and 4 / 4 sources
+      const post1 = await postPrices(
+        now,
+        [
+          [['ETH', 498], ['BTC', 9900]],
+          [['ETH', 510], ['BTC', 11000]],
+          [['ETH', 499], ['BTC', 20000]],
+          [['ETH', 1], ['BTC', 100]],
+          [['ETH', 501], ['BTC', 9000]]
+        ],
+        ['ETH', 'BTC'],
+        [anchor, ...sources]
+      );
+      expect(post1.gasUsed).toBeLessThan(550000);
 
+      expect(post1.events.Price[0].returnValues.symbol).toBe('ETH');
+      // anchor: 498, sources: [1, 499, 501, 510], median = 500
+      expect(post1.events.Price[0].returnValues.price).numEquals(500e6);
+      expect(await getPrice('ETH')).numEquals(500e6);
 
-    /** Posts a price for 1 symbol from 1 source, stores median **/
+      expect(post1.events.Price[1].returnValues.symbol).toBe('BTC');
+      // anchor: 9900, sources: [100, 9000, 11000, 20000], median = 10000
+      expect(post1.events.Price[1].returnValues.price).numEquals(10000e6);
+      expect(await getPrice('BTC')).numEquals(10000e6);
+    });
+  });
 
-    const post1 = await postPrices(now, [
-      [['ETH', 257]]
-    ], ['ETH']);
-    expect(post1.gasUsed).toBeLessThan(106000);
-    expect(post1.events.Price.returnValues.symbol).toBe('ETH');
-    expect(post1.events.Price.returnValues.price).numEquals(0);
-    expect(await getPrice('ETH')).numEquals(0);
+  describe('Deploy with an odd # of sources', () => {
+    beforeEach(async done => {
+      // use 5 sources
+      ({
+        sources,
+        nonSources,
+        anchor,
+        anchorMantissa,
+        priceData,
+        delfi,
+        now,
+        postPrices,
+        getPrice
+      } = await setup(5));
+      done();
+    });
 
+    it('posting single source should not record a median', async () => {
+      const post1 = await postPrices(
+        now,
+        [[['ETH', 100]], [['ETH', 100]]],
+        ['ETH'],
+        [anchor, ...sources]
+      );
+      expect(post1.gasUsed).toBeLessThan(152000);
+      expect(post1.events.Price).toBe(undefined);
+      expect(await getPrice('ETH')).numEquals(0);
+    });
 
-    /** Posts a price for 2 symbols from 2 sources, stores median **/
+    it('posting some sources should yield correct median', async () => {
+      // post prices for 3 / 5 sources, and the anchor
+      const post1 = await postPrices(
+        now,
+        [[['ETH', 100]], [['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
+        ['ETH'],
+        [anchor, ...sources]
+      );
+      expect(post1.gasUsed).toBeLessThan(253000);
+      expect(post1.events.Price.returnValues.symbol).toBe('ETH');
+      expect(post1.events.Price.returnValues.price).numEquals(91e6);
+      expect(await getPrice('ETH')).numEquals(91e6);
 
-    const post2 = await postPrices(now + 1, [
-      [
-        ['BTC', 9000],
-        ['ETH', 257]
-      ],
-      [
-        ['BTC', 8000],
-        ['ETH', 255]
-      ]
-    ], ['BTC', 'ETH']);
-    expect(post2.gasUsed).toBeLessThan(265000);
-    expect(await getPrice('BTC')).numEquals(0); // not added to list of symbols to update
-    expect(await getPrice('ETH')).numEquals(0);
+      const post2 = await postPrices(
+        now + 1,
+        [[['ETH', 200]], [['ETH', 218]], [['ETH', 220]], [['ETH', 230]]],
+        ['ETH'],
+        [anchor, ...sources]
+      );
+      expect(post2.gasUsed).toBeLessThan(252000);
+      expect(post2.events.Price.returnValues.symbol).toBe('ETH');
+      expect(post2.events.Price.returnValues.price).numEquals(218e6);
+      expect(await getPrice('ETH')).numEquals(218e6);
+    });
 
+    it('should not update median if anchor is much higher', async () => {
+      // median is 90. at 10% tolerance, anchor at 100 should not update median
+      const post1 = await postPrices(
+        now,
+        [
+          [['ETH', 100]], //anchor
+          [['ETH', 80]],
+          [['ETH', 85]],
+          [['ETH', 90]],
+          [['ETH', 100]],
+          [['ETH', 110]]
+        ],
+        ['ETH'],
+        [anchor, ...sources]
+      );
+      expect(post1.events.Price).toBe(undefined);
+      expect(await getPrice('ETH')).numEquals(0);
+    });
 
-    /** Posts a price for 2 symbols from 3 sources, stores median **/
+    it('should not update median if anchor is much lower', async () => {
+      // median is 110. anchor at 100. at 10% tolerance, should not update median
+      const post1 = await postPrices(
+        now,
+        [
+          [['ETH', 100]], //anchor
+          [['ETH', 100]],
+          [['ETH', 110]],
+          [['ETH', 110]],
+          [['ETH', 115]],
+          [['ETH', 116]]
+        ],
+        ['ETH'],
+        [anchor, ...sources]
+      );
+      expect(post1.events.Price).toBe(undefined);
 
-    const post3a = await postPrices(now + 2, [
-      [
-        ['BTC', 9000],
-        ['ETH', 257]
-      ],
-      [
-        ['BTC', 8500],
-        ['ETH', 256]
-      ],
-      [
-        ['BTC', 8000],
-        ['ETH', 255]
-      ]
-    ], ['BTC', 'ETH']);
-    expect(post3a.gasUsed).toBeLessThan(341000);
-    expect(post3a.events.Price[0].returnValues.symbol).toBe('BTC');
-    expect(post3a.events.Price[0].returnValues.price).numEquals(8000e6);
-    expect(post3a.events.Price[1].returnValues.symbol).toBe('ETH');
-    expect(post3a.events.Price[1].returnValues.price).numEquals(255e6);
-    expect(await getPrice('BTC')).numEquals(8000e6);
-    expect(await getPrice('ETH')).numEquals(255e6);
+      expect(await getPrice('ETH')).numEquals(0);
+    });
 
+    it('posting all sources for two assets should sort correctly and yield correct median', async () => {
+      // post prices for the anchor and 4 / 4 sources
+      const post1 = await postPrices(
+        now,
+        [
+          [['ETH', 498], ['BTC', 9900]], //anchor
+          [['ETH', 510], ['BTC', 11000]],
+          [['ETH', 499], ['BTC', 20000]],
+          [['ETH', 1], ['BTC', 100]],
+          [['ETH', 501], ['BTC', 9000]],
+          [['ETH', 502], ['BTC', 10200]]
+        ],
+        ['ETH', 'BTC'],
+        [anchor, ...sources]
+      );
+      expect(post1.gasUsed).toBeLessThan(650000);
 
-    /** Posts again with fresher timestamp, gas should still be cheaper **/
+      expect(post1.events.Price[0].returnValues.symbol).toBe('ETH');
+      // anchor: 498, sources: [1, 499, 501, 502, 510], median = 501
+      expect(post1.events.Price[0].returnValues.price).numEquals(501e6);
+      expect(await getPrice('ETH')).numEquals(501e6);
 
-    const post3b = await postPrices(now + 3, [
-      [
-        ['BTC', 9000],
-        ['ETH', 257]
-      ],
-      [
-        ['BTC', 8500],
-        ['ETH', 256]
-      ],
-      [
-        ['BTC', 8000],
-        ['ETH', 255]
-      ]
-    ], ['BTC', 'ETH']);
-    expect(post3b.gasUsed).toBeLessThan(281000);
-    expect(await getPrice('BTC')).numEquals(8000e6);
-    expect(await getPrice('ETH')).numEquals(255e6);
+      expect(post1.events.Price[1].returnValues.symbol).toBe('BTC');
+      // anchor: 9900, sources: [100, 9000, 10200, 11000, 20000], median = 10000
+      expect(post1.events.Price[1].returnValues.price).numEquals(10200e6);
+      expect(await getPrice('BTC')).numEquals(10200e6);
+    });
 
+    it('view should use most recent post', async () => {
+      // post prices for 5 / 5 sources, and the anchor
+      const post1 = await postPrices(
+        now,
+        [
+          [['ETH', 498], ['BTC', 9900]], //anchor
+          [['ETH', 510], ['BTC', 11000]],
+          [['ETH', 499], ['BTC', 20000]],
+          [['ETH', 1], ['BTC', 100]],
+          [['ETH', 501], ['BTC', 9000]],
+          [['ETH', 502], ['BTC', 10200]]
+        ],
+        ['ETH', 'BTC'],
+        [anchor, ...sources]
+      );
 
-    /** Posts a price from non-sources, median does not change **/
+      // anchor: 498, sources: [1, 499, 501, 502, 510], median = 501
+      // anchor: 9900, sources: [100, 9000, 10200, 11000, 20000], median = 10000
 
-    const postNon3 = await postPrices(now + 3, [
-      [
-        ['BTC', 19000],
-        ['ETH', 1257]
-      ],
-      [
-        ['BTC', 18500],
-        ['ETH', 1256]
-      ],
-      [
-        ['BTC', 18000],
-        ['ETH', 1255]
-      ]
-    ], ['BTC', 'ETH'], nonSources);
+      const post2 = await postPrices(
+        now + 1,
+        [
+          [['ETH', 498], ['BTC', 9900]], //anchor
+          [['ETH', 510], ['BTC', 11000]],
+          [['ETH', 499], ['BTC', 20000]],
+          [['ETH', 1], ['BTC', 100]],
+          [['ETH', 503], ['BTC', 9000]],
+          [['ETH', 502], ['BTC', 10500]]
+        ],
+        ['ETH', 'BTC'],
+        [anchor, ...sources]
+      );
 
-    expect(await getPrice('BTC')).numEquals(8000e6);
-    expect(await getPrice('ETH')).numEquals(255e6);
+      // anchor: 498, sources: [1, 499, 502, 503, 510], median = 502
+      expect(post2.events.Price[0].returnValues.price).numEquals(502e6);
+      expect(await getPrice('ETH')).numEquals(502e6);
 
-    /** Does revert on invalid message **/
+      // anchor: 99, sources: [100, 9000, 10500, 11000, 20000], median = 10500
+      expect(post2.events.Price[1].returnValues.price).numEquals(10500e6);
+      expect(await getPrice('BTC')).numEquals(10500e6);
+    });
 
-    await expect(send(delfi, 'postPrices', [['0xabc'], ['0x123'], []], {gas: 5000000})).rejects.toRevert();
-  }, 30000);
+    it('should revert on posting invalid message', async () => {
+      await expect(
+        send(delfi, 'postPrices', [['0xabc'], ['0x123'], []], { gas: 5000000 })
+      ).rejects.toRevert();
+    });
 
-  it.skip('quantifies the amount of gas used for a substantial set of updates', async () => {
-    const {delfi, now, postPrices, getPrice} = await setup(10);
+    it('posting from non-source should not change median', async () => {
+      const post1 = await postPrices(
+        now,
+        [
+          [['BTC', 18500], ['ETH', 1257]], //anchor
+          [['BTC', 19000], ['ETH', 1257]],
+          [['BTC', 18500], ['ETH', 1256]],
+          [['BTC', 18000], ['ETH', 1255]]
+        ],
+        ['BTC', 'ETH'],
+        [anchor, ...nonSources]
+      );
+      expect(post1.events.Price).toBe(undefined);
+      expect(await getPrice('BTC')).numEquals(0);
+      expect(await getPrice('ETH')).numEquals(0);
+    });
+  });
 
-    const big = [
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.33],
-        ['BTC', 9000],
-        ['DAI', 1],
-        ['ETH', 257],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ],
+  describe.skip('Deploy with many sources', () => {
+    beforeEach(async done => {
+      ({ delfi, now, postPrices, getPrice } = await setup(10));
+      done();
+    });
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.33],
-        ['BTC', 9000],
-        ['DAI', 1],
-        ['ETH', 257],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ],
+    it('quantifies the amount of gas used for a substantial set of updates', async () => {
+      const big = [
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.33],
+          ['BTC', 9000],
+          ['DAI', 1],
+          ['ETH', 257],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.34],
-        ['BTC', 8500],
-        ['DAI', 1],
-        ['ETH', 256],
-        ['REP', 0.34],
-        ['ZRX', 0.34],
-      ],
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.33],
+          ['BTC', 9000],
+          ['DAI', 1],
+          ['ETH', 257],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.35],
-        ['BTC', 8000],
-        ['DAI', 1],
-        ['ETH', 255],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ],
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.34],
+          ['BTC', 8500],
+          ['DAI', 1],
+          ['ETH', 256],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.35],
-        ['BTC', 8000],
-        ['DAI', 1],
-        ['ETH', 255],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ],
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.35],
+          ['BTC', 8000],
+          ['DAI', 1],
+          ['ETH', 255],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.35],
-        ['BTC', 8000],
-        ['DAI', 1],
-        ['ETH', 255],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ],
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.35],
+          ['BTC', 8000],
+          ['DAI', 1],
+          ['ETH', 255],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.33],
-        ['BTC', 9000],
-        ['DAI', 1],
-        ['ETH', 257],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ],
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.35],
+          ['BTC', 8000],
+          ['DAI', 1],
+          ['ETH', 255],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.33],
-        ['BTC', 9000],
-        ['DAI', 1],
-        ['ETH', 257],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ],
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.33],
+          ['BTC', 9000],
+          ['DAI', 1],
+          ['ETH', 257],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.33],
-        ['BTC', 9000],
-        ['DAI', 1],
-        ['ETH', 257],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ],
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.33],
+          ['BTC', 9000],
+          ['DAI', 1],
+          ['ETH', 257],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-      [
-        ['ABC', 0.35],
-        ['DEF', 8000],
-        ['GHI', 0.35],
-        ['JKL', 8000],
-        ['BAT', 0.33],
-        ['BTC', 9000],
-        ['DAI', 1],
-        ['ETH', 257],
-        ['REP', 0.34],
-        ['ZRX', 0.34]
-      ]
-    ];
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.33],
+          ['BTC', 9000],
+          ['DAI', 1],
+          ['ETH', 257],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ],
 
-    const postA = await postPrices(now, big, big[0].map(([k]) => k));
-    expect(postA.gasUsed).toBeLessThan(5.4e6);
+        [
+          ['ABC', 0.35],
+          ['DEF', 8000],
+          ['GHI', 0.35],
+          ['JKL', 8000],
+          ['BAT', 0.33],
+          ['BTC', 9000],
+          ['DAI', 1],
+          ['ETH', 257],
+          ['REP', 0.34],
+          ['ZRX', 0.34]
+        ]
+      ];
 
-    const postB = await postPrices(now + 1, big, big[0].map(([k]) => k));
-    expect(postB.gasUsed).toBeLessThan(3.7e6);
+      const postA = await postPrices(now, big, big[0].map(([k]) => k));
+      expect(postA.gasUsed).toBeLessThan(5.4e6);
 
-    const postC = await postPrices(now + 1, big, big[0].map(([k]) => k));
-    expect(postC.gasUsed).toBeLessThan(2.8e6);
+      const postB = await postPrices(now + 1, big, big[0].map(([k]) => k));
+      expect(postB.gasUsed).toBeLessThan(3.7e6);
 
-  }, 120000);
+      const postC = await postPrices(now + 1, big, big[0].map(([k]) => k));
+      expect(postC.gasUsed).toBeLessThan(2.8e6);
+    }, 120000);
+  });
 });

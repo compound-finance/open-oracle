@@ -18,16 +18,16 @@ contract DelFiPrice is OpenOracleView {
     event Price(string symbol, uint64 price);
 
     address anchor;
-    uint anchorMantissa;
+    uint anchorToleranceMantissa;
 
     /**
      * @notice The mapping of medianized prices per symbol
      */
     mapping(string => uint64) public prices;
 
-    constructor(OpenOraclePriceData data_, address[] memory sources_, address anchor_, uint anchorMantissa_) public OpenOracleView(data_, sources_) {
+    constructor(OpenOraclePriceData data_, address[] memory sources_, address anchor_, uint anchorToleranceMantissa_) public OpenOracleView(data_, sources_) {
         anchor = anchor_;
-        anchorMantissa_ = anchorMantissa;
+        anchorToleranceMantissa = anchorToleranceMantissa_;
     }
 
     /**
@@ -38,21 +38,23 @@ contract DelFiPrice is OpenOracleView {
      */
     function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
-        require(messages.length == symbols.length, "messages and symbols must be 1:1");
 
+        // Post the data
         for (uint i = 0; i < messages.length; i++) {
-            // Post the data
             OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
+        }
 
+        // Recalculate the asset prices for the symbols to update
+        for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             uint64 medianPrice = medianPrice(symbol, sources);
             uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
-            uint anchorRatio = medianPrice.mul(10e18).div(anchorPrice);
+            uint anchorRatioMantissa = medianPrice.mul(1e18).div(anchorPrice);
 
             // Only update the view's price if the median of the sources is within a bound
-            if (anchorRatio < anchorMantissa.add(10e18) || anchorRatio > anchorMantissa.sub(10e18)) {
+            if (anchorRatioMantissa < (1e18).add(anchorToleranceMantissa) && anchorRatioMantissa > (1e18).sub(anchorToleranceMantissa)) {
                 prices[symbol] = medianPrice;
-                emit Price(symbol, medianPrice);
+                emit Price(symbol, uint64(medianPrice));
             }
         }
     }
@@ -73,8 +75,16 @@ contract DelFiPrice is OpenOracleView {
         }
 
         uint64[] memory sortedPrices = sort(postedPrices);
-        // fix
-        return sortedPrices[N / 2];
+
+        // if N is even, get the left and right medians and average them
+        if (N % 2 == 0) {
+            uint64 left = sortedPrices[(N / 2) - 1];
+            uint64 right = sortedPrices[N / 2];
+            return (left + right) / 2;
+        } else {
+        // if N is odd, just return the median
+            return sortedPrices[N / 2];
+        }
     }
 
     /**
