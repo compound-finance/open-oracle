@@ -12,7 +12,7 @@ services:
       apk add jq;
       SADDLE_BUILD=/build npx saddle compile;
       GAS=6721975 SADDLE_BUILD=/build npx saddle deploy OpenOraclePriceData;
-      GAS=6721975 SADDLE_BUILD=/build npx saddle deploy DelFiPrice $$(cat /build/development.json | jq -r .OpenOraclePriceData) $$REPORTER_1_ADDRESS,$$REPORTER_2_ADDRESS
+      GAS=6721975 SADDLE_BUILD=/build npx saddle deploy DelFiPrice $$(cat /build/development.json | jq -r .OpenOraclePriceData) $$REPORTER_1_ADDRESS,$$REPORTER_2_ADDRESS:array
     '"
     environment:
       - PROVIDER=http://ganache:8545
@@ -48,6 +48,7 @@ services:
     command: "sh -c '
       apk add jq;
       while [ ! -f /build/development.json ]; do echo waiting for /build/development.json; sleep 1; done;
+      cat /build/development.json
       npm run start --
       --poster_key $$POSTER_KEY
       --sources http://reporter-1:3000/prices.json,http://reporter-2:3000/prices.json
