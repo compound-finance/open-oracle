@@ -47,7 +47,7 @@ services:
     build: poster
     command: "sh -c '
       apk add jq;
-      while [ ! -f /build/development.json ]; do echo waiting for /build/development.json; sleep 1; done;
+      while ! grep -q DelFiPrice /build/development.json; do echo waiting for /build/development.json; sleep 1; done;
       cat /build/development.json;
       npm run start --
       --poster_key $$POSTER_KEY
