@@ -43,8 +43,7 @@ contract OpenOraclePriceData is OpenOracleData {
 
         // Only update if newer than stored, according to source
         Datum storage prior = data[source][key];
-        // XXX should be a require? add 5 min check?
-        if (prior.timestamp < timestamp && timestamp < now) {
+        if (prior.timestamp < timestamp) {
             data[source][key] = Datum(timestamp, value);
             emit Write(source, key, timestamp, value);
         }

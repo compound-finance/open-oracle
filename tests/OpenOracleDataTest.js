@@ -1,6 +1,7 @@
 const {
   address,
-  bytes
+  bytes,
+  numToHex
 } = require('./Helpers');
 
 const {
@@ -9,12 +10,21 @@ const {
 } = require('../sdk/javascript/.tsbuilt/reporter');
 
 describe('OpenOracleData', () => {
-  // XXX describe cant be async with jest :(
-  //  all things considered, havent found a nice way to do setup
+  let oracleData;
+  let priceData;
+  let delfi;
+  let anchorAddress = accounts[1];
+
+  beforeEach(async done => {
+    oracleData = await deploy('OpenOracleData', []);
+    priceData = await deploy('OpenOraclePriceData', []);
+    delfi = await deploy('DelFiPrice', [priceData._address, [account], anchorAddress, numToHex(1e17)]);
+    done();
+  });
+
+  // TODO: refactor this ;/
   it('sets up the oracle data and tests some stuff', async () => {
     const privateKey = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10';
-    const oracleData = await deploy('OpenOracleData', []);
-    const priceData = await deploy('OpenOraclePriceData', []);
 
     // gets default data
     let {
@@ -25,7 +35,6 @@ describe('OpenOracleData', () => {
     expect(timestamp).numEquals(0);
     expect(value).numEquals(0);
 
-    const delfi = await deploy('DelFiPrice', [priceData._address, [account]]);
     const now = new Date - 0;
 
     // succeeds with message (no pairs) + signature
