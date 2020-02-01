@@ -42,8 +42,8 @@ async function waitForLogs(serviceLogPairs) {
 describe('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     try {
-      await execute(`rm -r ".dockerbuild"`);
-      await execute(`rm -r ".dockerbuild_cp"`);
+      await execute(`rm -rf ".dockerbuild"`);
+      await execute(`rm -rf ".dockerbuild_cp"`);
       const deployer = `${projectName}_deployer_1`;
       const reporter = `${projectName}_reporter-1_1`;
 
