@@ -18,9 +18,14 @@ function numToHex(num) {
 	return web3.utils.numberToHex(num);
 }
 
+function time(){
+	return Math.floor(new Date() / 1000);
+}
+
 module.exports = {
 	address,
 	bytes,
+	time,
 	numToHex,
 	uint256
 };
