@@ -1,5 +1,5 @@
 const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
-const { numToHex } = require('./Helpers');
+const { time, numToHex } = require('./Helpers');
 
 async function setup(N) {
   const sources = [
@@ -44,7 +44,6 @@ async function setup(N) {
     anchor.address,
     anchorMantissa
   ]);
-  const now = Math.floor(+new Date() / 1000);
 
   async function postPrices(timestamp, prices2dArr, symbols, signers) {
     const messages = [],
@@ -79,7 +78,6 @@ async function setup(N) {
     anchorMantissa,
     priceData,
     delfi,
-    now,
     postPrices,
     getPrice
   };
@@ -92,9 +90,10 @@ describe('DelFiPrice', () => {
     anchorMantissa,
     priceData,
     delfi,
-    now,
     postPrices,
     getPrice;
+
+  const timestamp = time() - 5;
 
   describe('Deploy with an even # of sources', () => {
     beforeEach(async done => {
@@ -106,7 +105,6 @@ describe('DelFiPrice', () => {
         anchorMantissa,
         priceData,
         delfi,
-        now,
         postPrices,
         getPrice
       } = await setup(4));
@@ -116,7 +114,7 @@ describe('DelFiPrice', () => {
     it('should sort even number of sources correctly', async () => {
       // post prices for the anchor and 3 / 4 sources
       const post1 = await postPrices(
-        now,
+        timestamp,
         [[['ETH', 498]], [['ETH', 501]], [['ETH', 502]], [['ETH', 503]]],
         ['ETH'],
         [anchor, ...sources]
@@ -131,7 +129,7 @@ describe('DelFiPrice', () => {
     it('should sort even number of sources correctly with two assets', async () => {
       // post prices for the anchor and 4 / 4 sources
       const post1 = await postPrices(
-        now,
+        timestamp,
         [
           [['ETH', 498], ['BTC', 9900]],
           [['ETH', 510], ['BTC', 11000]],
@@ -166,7 +164,6 @@ describe('DelFiPrice', () => {
         anchorMantissa,
         priceData,
         delfi,
-        now,
         postPrices,
         getPrice
       } = await setup(5));
@@ -175,7 +172,7 @@ describe('DelFiPrice', () => {
 
     it('posting single source should not record a median', async () => {
       const post1 = await postPrices(
-        now,
+        timestamp,
         [[['ETH', 100]], [['ETH', 100]]],
         ['ETH'],
         [anchor, ...sources]
@@ -188,7 +185,7 @@ describe('DelFiPrice', () => {
 
     it('posting 0 anchor price should guard price and not revert', async () => {
       const post1 = await postPrices(
-        now,
+        timestamp,
         [[['ETH', 0]], [['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
         ['ETH'],
         [anchor, ...sources]
@@ -201,7 +198,7 @@ describe('DelFiPrice', () => {
     it('posting some sources should yield correct median', async () => {
       // post prices for 3 / 5 sources, and the anchor
       const post1 = await postPrices(
-        now,
+        timestamp,
         [[['ETH', 100]], [['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
         ['ETH'],
         [anchor, ...sources]
@@ -212,7 +209,7 @@ describe('DelFiPrice', () => {
       expect(await getPrice('ETH')).numEquals(91e6);
 
       const post2 = await postPrices(
-        now + 1,
+        timestamp + 1,
         [[['ETH', 200]], [['ETH', 218]], [['ETH', 220]], [['ETH', 230]]],
         ['ETH'],
         [anchor, ...sources]
@@ -226,7 +223,7 @@ describe('DelFiPrice', () => {
     it('should not update median if anchor is much higher', async () => {
       // median is 89. anchor is 100. at 10% tolerance, this should not update median
       const post1 = await postPrices(
-        now,
+        timestamp,
         [
           [['ETH', 100]], //anchor
           [['ETH', 80]],
@@ -246,7 +243,7 @@ describe('DelFiPrice', () => {
     it('should not update median if anchor is much lower', async () => {
       // median is 111. anchor is 100. at 10% tolerance, this should not update median
       const post1 = await postPrices(
-        now,
+        timestamp,
         [
           [['ETH', 100]], //anchor
           [['ETH', 100]],
@@ -266,7 +263,7 @@ describe('DelFiPrice', () => {
     it('posting all sources for two assets should sort correctly and yield correct median', async () => {
       // post prices for the anchor and 4 / 4 sources
       const post1 = await postPrices(
-        now,
+        timestamp,
         [
           [['ETH', 498], ['BTC', 9900]], //anchor
           [['ETH', 510], ['BTC', 11000]],
@@ -294,7 +291,7 @@ describe('DelFiPrice', () => {
     it('view should use most recent post with two sources', async () => {
       // post prices for 5 / 5 sources, and the anchor
       const post1 = await postPrices(
-        now,
+        timestamp,
         [
           [['ETH', 498], ['BTC', 9900]], //anchor
           [['ETH', 510], ['BTC', 11000]],
@@ -311,7 +308,7 @@ describe('DelFiPrice', () => {
       // anchor: 9900, sources: [100, 9000, 10200, 11000, 20000], median = 10000
 
       const post2 = await postPrices(
-        now + 1,
+        timestamp + 1,
         [
           [['ETH', 498], ['BTC', 9900]], //anchor
           [['ETH', 510], ['BTC', 11000]],
@@ -342,7 +339,7 @@ describe('DelFiPrice', () => {
     it('posting from non-source should not change median or emit event', async () => {
       // set some baseline numbers
       await postPrices(
-        now - 2,
+        timestamp,
         [
           [['ETH', 100]], //anchor
           [['ETH', 100]],
@@ -356,7 +353,7 @@ describe('DelFiPrice', () => {
       );
 
       const post1 = await postPrices(
-        now - 1,
+        timestamp + 1,
         [[['ETH', 95]]],
         ['ETH'],
         [...nonSources]
@@ -369,7 +366,7 @@ describe('DelFiPrice', () => {
 
   describe.skip('Deploy with many sources', () => {
     beforeEach(async done => {
-      ({ delfi, now, postPrices, getPrice } = await setup(10));
+      ({ delfi, timestamp, postPrices, getPrice } = await setup(10));
       done();
     });
 
@@ -506,13 +503,13 @@ describe('DelFiPrice', () => {
         ]
       ];
 
-      const postA = await postPrices(now, big, big[0].map(([k]) => k));
+      const postA = await postPrices(timestamp, big, big[0].map(([k]) => k));
       expect(postA.gasUsed).toBeLessThan(5.4e6);
 
-      const postB = await postPrices(now + 1, big, big[0].map(([k]) => k));
+      const postB = await postPrices(timestamp + 1, big, big[0].map(([k]) => k));
       expect(postB.gasUsed).toBeLessThan(3.7e6);
 
-      const postC = await postPrices(now + 1, big, big[0].map(([k]) => k));
+      const postC = await postPrices(timestamp + 1, big, big[0].map(([k]) => k));
       expect(postC.gasUsed).toBeLessThan(2.8e6);
     }, 120000);
   });

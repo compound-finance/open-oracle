@@ -8,14 +8,12 @@ import "./OpenOracleData.sol";
  * @author Compound Labs, Inc.
  */
 contract OpenOraclePriceData is OpenOracleData {
-    /**
-     * @notice The event emitted when a source writes to its storage
-     */
+    ///@notice The event emitted when a source writes to its storage
     event Write(address indexed source, string key, uint64 timestamp, uint64 value);
+    ///@notice The event emitted when the timestamp on a price is invalid and it is not written to storage
+    event NotWritten(uint64 priorTimestamp, uint256 messageTimestamp, uint256 blockTimestamp);
 
-    /**
-     * @notice The fundamental unit of storage for a reporter source
-     */
+    ///@notice The fundamental unit of storage for a reporter source
     struct Datum {
         uint64 timestamp;
         uint64 value;
@@ -43,9 +41,11 @@ contract OpenOraclePriceData is OpenOracleData {
 
         // Only update if newer than stored, according to source
         Datum storage prior = data[source][key];
-        if (prior.timestamp < timestamp) {
+        if (prior.timestamp < timestamp && timestamp < block.timestamp && block.timestamp - 10 minutes < timestamp) {
             data[source][key] = Datum(timestamp, value);
             emit Write(source, key, timestamp, value);
+        } else {
+            emit NotWritten(prior.timestamp, timestamp, block.timestamp);
         }
 
         return key;
