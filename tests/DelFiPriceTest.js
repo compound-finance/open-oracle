@@ -185,7 +185,7 @@ describe('DelFiPrice', () => {
 
     it('posting 0 anchor price should guard price and not revert', async () => {
       const post1 = await postPrices(
-        now,
+        timestamp,
         [[['ETH', 0]], [['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
         ['ETH'],
         [anchor, ...sources]
