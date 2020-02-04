@@ -65,22 +65,6 @@ describe('OpenOracleData', () => {
     expect(putTx.gasUsed).toBeLessThan(86000);
   });
 
-  it('signing old data should fail', async () => {
-    const timestamp = time() - 10000;
-    const [{ message, signature }] = sign(
-      encode('prices', timestamp, [['ETH', 700]]),
-      privateKey
-    );
-
-    await send(priceData, 'put', [message, signature], { gas: 1000000 });
-
-    ({ 0: signedTimestamp, 1: value } = await call(priceData, 'get', [
-      signer,
-      'ETH'
-    ]));
-    expect(signedTimestamp).numEquals(0);
-    expect(value).numEquals(0);
-  });
 
   it('sending data from before previous checkpoint should fail', async () => {
     const timestamp = time() - 1;
@@ -111,7 +95,7 @@ describe('OpenOracleData', () => {
   });
 
   it('signing future timestamp should not write to storage', async () => {
-    const timestamp = time() + 1;
+    const timestamp = time() + 3601;
     const [{ message, signature }] = sign(
       encode('prices', timestamp, [['ABC', 100]]),
       privateKey
