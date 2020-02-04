@@ -57,7 +57,7 @@ async function setup(N) {
         ),
         signers[i].privateKey
       );
-      for (let { message, signature, signatory } of signed) {
+      for (let { message, signature } of signed) {
         messages.push(message);
         signatures.push(signature);
       }
@@ -120,9 +120,9 @@ describe('DelFiPrice', () => {
         [anchor, ...sources]
       );
       expect(post1.gasUsed).toBeLessThan(250000);
-      expect(post1.events.Price.returnValues.symbol).toBe('ETH');
+      expect(post1.events.PriceUpdated.returnValues.symbol).toBe('ETH');
       // last unused source is saved as 0
-      expect(post1.events.Price.returnValues.price).numEquals(501.5e6);
+      expect(post1.events.PriceUpdated.returnValues.price).numEquals(501.5e6);
       expect(await getPrice('ETH')).numEquals(501.5e6);
     });
 
@@ -142,14 +142,14 @@ describe('DelFiPrice', () => {
       );
       expect(post1.gasUsed).toBeLessThan(550000);
 
-      expect(post1.events.Price[0].returnValues.symbol).toBe('ETH');
+      expect(post1.events.PriceUpdated[0].returnValues.symbol).toBe('ETH');
       // anchor: 498, sources: [1, 499, 501, 510], median = 500
-      expect(post1.events.Price[0].returnValues.price).numEquals(500e6);
+      expect(post1.events.PriceUpdated[0].returnValues.price).numEquals(500e6);
       expect(await getPrice('ETH')).numEquals(500e6);
 
-      expect(post1.events.Price[1].returnValues.symbol).toBe('BTC');
+      expect(post1.events.PriceUpdated[1].returnValues.symbol).toBe('BTC');
       // anchor: 9900, sources: [100, 9000, 11000, 20000], median = 10000
-      expect(post1.events.Price[1].returnValues.price).numEquals(10000e6);
+      expect(post1.events.PriceUpdated[1].returnValues.price).numEquals(10000e6);
       expect(await getPrice('BTC')).numEquals(10000e6);
     });
   });
@@ -178,7 +178,20 @@ describe('DelFiPrice', () => {
         [anchor, ...sources]
       );
       expect(post1.gasUsed).toBeLessThan(152000);
-      expect(post1.events.Price).toBe(undefined);
+      expect(post1.events.PriceUpdated).toBe(undefined);
+      expect(post1.events.PriceGuarded).not.toBe(undefined);
+      expect(await getPrice('ETH')).numEquals(0);
+    });
+
+    it('posting 0 anchor price should guard price and not revert', async () => {
+      const post1 = await postPrices(
+        now,
+        [[['ETH', 0]], [['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
+        ['ETH'],
+        [anchor, ...sources]
+      );
+      expect(post1.events.PriceGuarded).not.toBe(undefined);
+      expect(post1.events.PricePosted).toBe(undefined);
       expect(await getPrice('ETH')).numEquals(0);
     });
 
@@ -191,8 +204,8 @@ describe('DelFiPrice', () => {
         [anchor, ...sources]
       );
       expect(post1.gasUsed).toBeLessThan(253000);
-      expect(post1.events.Price.returnValues.symbol).toBe('ETH');
-      expect(post1.events.Price.returnValues.price).numEquals(91e6);
+      expect(post1.events.PriceUpdated.returnValues.symbol).toBe('ETH');
+      expect(post1.events.PriceUpdated.returnValues.price).numEquals(91e6);
       expect(await getPrice('ETH')).numEquals(91e6);
 
       const post2 = await postPrices(
@@ -202,8 +215,8 @@ describe('DelFiPrice', () => {
         [anchor, ...sources]
       );
       expect(post2.gasUsed).toBeLessThan(252000);
-      expect(post2.events.Price.returnValues.symbol).toBe('ETH');
-      expect(post2.events.Price.returnValues.price).numEquals(218e6);
+      expect(post2.events.PriceUpdated.returnValues.symbol).toBe('ETH');
+      expect(post2.events.PriceUpdated.returnValues.price).numEquals(218e6);
       expect(await getPrice('ETH')).numEquals(218e6);
     });
 
@@ -222,7 +235,8 @@ describe('DelFiPrice', () => {
         ['ETH'],
         [anchor, ...sources]
       );
-      expect(post1.events.Price).toBe(undefined);
+      expect(post1.events.PriceUpdated).toBe(undefined);
+      expect(post1.events.PriceGuarded).not.toBe(undefined);
       expect(await getPrice('ETH')).numEquals(0);
     });
 
@@ -241,8 +255,8 @@ describe('DelFiPrice', () => {
         ['ETH'],
         [anchor, ...sources]
       );
-      expect(post1.events.Price).toBe(undefined);
-
+      expect(post1.events.PriceUpdated).toBe(undefined);
+      expect(post1.events.PriceGuarded).not.toBe(undefined);
       expect(await getPrice('ETH')).numEquals(0);
     });
 
@@ -263,18 +277,18 @@ describe('DelFiPrice', () => {
       );
       expect(post1.gasUsed).toBeLessThan(650000);
 
-      expect(post1.events.Price[0].returnValues.symbol).toBe('ETH');
+      expect(post1.events.PriceUpdated[0].returnValues.symbol).toBe('ETH');
       // anchor: 498, sources: [1, 499, 501, 502, 510], median = 501
-      expect(post1.events.Price[0].returnValues.price).numEquals(501e6);
+      expect(post1.events.PriceUpdated[0].returnValues.price).numEquals(501e6);
       expect(await getPrice('ETH')).numEquals(501e6);
 
-      expect(post1.events.Price[1].returnValues.symbol).toBe('BTC');
+      expect(post1.events.PriceUpdated[1].returnValues.symbol).toBe('BTC');
       // anchor: 9900, sources: [100, 9000, 10200, 11000, 20000], median = 10000
-      expect(post1.events.Price[1].returnValues.price).numEquals(10200e6);
+      expect(post1.events.PriceUpdated[1].returnValues.price).numEquals(10200e6);
       expect(await getPrice('BTC')).numEquals(10200e6);
     });
 
-    it('view should use most recent post', async () => {
+    it('view should use most recent post with two sources', async () => {
       // post prices for 5 / 5 sources, and the anchor
       const post1 = await postPrices(
         timestamp,
@@ -308,11 +322,11 @@ describe('DelFiPrice', () => {
       );
 
       // anchor: 498, sources: [1, 499, 502, 503, 510], median = 502
-      expect(post2.events.Price[0].returnValues.price).numEquals(502e6);
+      expect(post2.events.PriceUpdated[0].returnValues.price).numEquals(502e6);
       expect(await getPrice('ETH')).numEquals(502e6);
 
       // anchor: 99, sources: [100, 9000, 10500, 11000, 20000], median = 10500
-      expect(post2.events.Price[1].returnValues.price).numEquals(10500e6);
+      expect(post2.events.PriceUpdated[1].returnValues.price).numEquals(10500e6);
       expect(await getPrice('BTC')).numEquals(10500e6);
     });
 
@@ -322,21 +336,31 @@ describe('DelFiPrice', () => {
       ).rejects.toRevert();
     });
 
-    it('posting from non-source should not change median', async () => {
-      const post1 = await postPrices(
+    it('posting from non-source should not change median or emit event', async () => {
+      // set some baseline numbers
+      await postPrices(
         timestamp,
         [
-          [['BTC', 18500], ['ETH', 1257]], //anchor
-          [['BTC', 19000], ['ETH', 1257]],
-          [['BTC', 18500], ['ETH', 1256]],
-          [['BTC', 18000], ['ETH', 1255]]
+          [['ETH', 100]], //anchor
+          [['ETH', 100]],
+          [['ETH', 100]],
+          [['ETH', 100]],
+          [['ETH', 100]],
+          [['ETH', 100]]
         ],
-        ['BTC', 'ETH'],
-        [anchor, ...nonSources]
+        ['ETH'],
+        [anchor, ...sources]
       );
-      expect(post1.events.Price).toBe(undefined);
-      expect(await getPrice('BTC')).numEquals(0);
-      expect(await getPrice('ETH')).numEquals(0);
+
+      const post1 = await postPrices(
+        timestamp + 1,
+        [[['ETH', 95]]],
+        ['ETH'],
+        [...nonSources]
+      );
+      expect(post1.events.PriceGuarded).toBe(undefined);
+      expect(post1.events.PriceUpdated).toBe(undefined);
+      expect(await getPrice('ETH')).numEquals(100e6);
     });
   });
 
