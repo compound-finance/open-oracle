@@ -1,5 +1,6 @@
-FROM ethereum/solc:0.5.12-alpine
+FROM node:13.6.0-alpine3.10
 WORKDIR /open-oracle
+RUN wget https://github.com/ethereum/solidity/releases/download/v0.5.12/solc-static-linux -O /usr/local/bin/solc && chmod +x /usr/local/bin/solc
 RUN apk update && apk add --no-cache --virtual .gyp \
     python \
     make \
@@ -15,6 +16,7 @@ RUN yarn install
 
 ENV PROVIDER PROVIDER
 ADD contracts contracts
+ADD saddle.config.js saddle.config.js
 RUN npx saddle compile
 
 ENTRYPOINT []

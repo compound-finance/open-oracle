@@ -1,7 +1,7 @@
 import ganache from "ganache-core";
 import {postWithRetries, signAndSend} from '../src/post_with_retries';
 import Web3 from 'web3';
-import { PromiEvent } from 'web3-utils';
+import { PromiEvent } from 'web3-core';
 import { TransactionReceipt } from 'web3-eth';
 
 describe('posting', () => {
@@ -9,11 +9,11 @@ describe('posting', () => {
     const web3 = new Web3(<any>ganache.provider());
     web3.eth.transactionConfirmationBlocks = 1;
 
-    web3.eth.sendSignedTransaction = async (signedTransactionData: string, callback?: ((error: Error, hash: string) => void) | undefined): PromiEvent<TransactionReceipt> => {
+    web3.eth.sendSignedTransaction = (signedTransactionData: string, callback?: ((error: Error, hash: string) => void) | undefined): PromiEvent<TransactionReceipt> => {
       // TODO: Parse signed transaction data to ensure matches
       expect(signedTransactionData).toEqual("0xf901eb8083989680830186a0944fe3dd76d873caf6cbf56e442b2c808d3984df1d80b90184a59d56ad000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000020177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf1000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000006004a78a7b3013f6939da19eac6fd1ad5c5a20c41bcc5d828557442aad6f07598d029ae684620bec13e13d018cba0da5096626e83cfd4d5356d808d7437a0a5076000000000000000000000000000000000000000000000000000000000000001c820a95a0122a39912374aaf6d64f0ea8d4de552237af6deda0038cc3ebf4e2f8b36daa2fa0408d15da1b8fa27a5f73b3c06a561eecf6e4e667d410c6f973da6a54abb78f4b");
 
-      return {
+      return <PromiEvent<TransactionReceipt>>(<unknown>Promise.resolve({
         "blockHash": "0x4dd036433dde8a2e04bf49f50f7543de20e8a66566bad42359fae6ec2a816ea3",
         "blockNumber": 1,
         "contractAddress": null,
@@ -31,7 +31,7 @@ describe('posting', () => {
         "transactionHash": "0xc693cb5a9f8bea2fac46d003c5ebe63102704c66658b532e76a3f9a2f1272f8b",
         "transactionIndex": 0,
         "v": "0x9e"
-      };
+      }));
     }
 
     let senderKey = "0x620622d7fbe43a4dccd3aef6ef90d20728508c563719380f289cf3f9460d0510";

@@ -20,7 +20,7 @@ describe('OpenOracleData', () => {
     let {
       0: timestamp,
       1: value
-    } = await call(priceData.methods.get(address(0), 'ETH'));
+    } = await call(priceData, 'get', [address(0), 'ETH']);
 
     expect(timestamp).numEquals(0);
     expect(value).numEquals(0);
@@ -38,19 +38,19 @@ describe('OpenOracleData', () => {
 
     for (let {message, signature, signatory} of signed) {
       // writes
-      const wrote1 = await send(priceData.methods.put(message, signature), {gas: 1000000});
+      const wrote1 = await send(priceData, 'put', [message, signature], {gas: 1000000});
       expect(wrote1.gasUsed).toBeLessThan(86000);
 
       // the source we recover in solidity should match
-      expect(await call(oracleData.methods.source(message, signature))).toEqual(signatory);
-      expect(await call(oracleData.methods.source(bytes('bad'), signature))).not.toEqual(signatory);
-      await expect(call(oracleData.methods.source(message, bytes('0xbad')))).rejects.toRevert();
+      expect(await call(oracleData, 'source', [message, signature])).toEqual(signatory);
+      expect(await call(oracleData, 'source', [bytes('bad'), signature])).not.toEqual(signatory);
+      await expect(call(oracleData, 'source', [message, bytes('0xbad')])).rejects.toRevert();
 
       // reads
       ({
         0: timestamp,
         1: value
-      } = await call(priceData.methods.get(signatory, K)));
+      } = await call(priceData, 'get', [signatory, K]));
       expect(timestamp).numEquals(now);
       expect(value).numEquals(V * 1e6);
     }
@@ -60,12 +60,12 @@ describe('OpenOracleData', () => {
 
     for (let {message, signature, signatory} of signed) {
       // write fails
-      await send(priceData.methods.put(message, signature), {gas: 1000000});
+      await send(priceData, 'put', [message, signature], {gas: 1000000});
 
       ({
         0: timestamp,
         1: value
-      } = await call(priceData.methods.get(signatory, K)));
+      } = await call(priceData, 'get', [signatory, K]));
       expect(timestamp).numEquals(now);
       expect(value).numEquals(V * 1e6);
     }
@@ -79,14 +79,14 @@ describe('OpenOracleData', () => {
     let i = 0;
     for (let {message, signature, signatory} of signed) {
       // writes
-      const wrote2a = await send(priceData.methods.put(message, signature), {gas: 1000000});
+      const wrote2a = await send(priceData, 'put', [message, signature], {gas: 1000000});
       expect(wrote2a.gasUsed).toBeLessThan(135000);
 
       if (i++ == 1) {
         ({
           0: timestamp,
           1: value
-        } = await call(priceData.methods.get(signatory, 'BTC')));
+        } = await call(priceData, 'get', [signatory, 'BTC']));
         expect(timestamp).numEquals(now);
         expect(value).numEquals(9000e6);
       }
@@ -99,7 +99,7 @@ describe('OpenOracleData', () => {
     ]), privateKey);
 
     for (let {message, signature, signatory} of signed) {
-      const wrote2b = await send(priceData.methods.put(message, signature), {gas: 1000000});
+      const wrote2b = await send(priceData, 'put', [message, signature], {gas: 1000000});
       expect(wrote2b.gasUsed).toBeLessThan(75000);
     }
   }, 30000);

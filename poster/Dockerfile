@@ -1,4 +1,4 @@
-FROM node:current-alpine
+FROM node:13.6.0-alpine3.10
 
 RUN apk update && apk add --no-cache --virtual .gyp \
     python \
@@ -14,6 +14,6 @@ ADD package.json /open-oracle-poster/package.json
 RUN yarn install
 
 ADD . /open-oracle-poster
-RUN npx tsc
+RUN npx tsc --skipLibCheck
 
 CMD yarn start

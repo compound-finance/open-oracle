@@ -1,0 +1,13 @@
+.build
+.circleci
+.dockerbuild
+.dockerbuild_cp
+.github
+node_modules
+sdk/javascript/node_modules
+sdk/javascript/.tsbuilt
+poster/node_modules
+poster/.tsbuilt
+tests
+yarn-error.log
+junit.xml

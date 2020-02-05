@@ -7,7 +7,7 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
-    "eth-saddle": "^0.0.29",
+    "eth-saddle": "0.1.8",
     "web3": "^1.2.4",
     "yargs": "^15.0.2"
   },
@@ -19,7 +19,8 @@
     "jest-junit": "^10.0.0"
   },
   "scripts": {
-    "test": "npx saddle compile && npx saddle test"
+    "test": "npx saddle test",
+    "console": "npx -n --experimental-repl-await saddle console"
   },
   "resolutions": {
     "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz"
