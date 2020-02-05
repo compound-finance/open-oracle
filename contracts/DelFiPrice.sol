@@ -31,13 +31,13 @@ contract DelFiPrice is OpenOracleView {
      * @param data_ Address of the Oracle Data contract
      * @param sources_ The reporter addresses whose prices will be used to calculate the median
      * @param anchor_ The reporter address whose prices checked against the median for safety
-     * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 1e17 means a new median that is 10% off from the anchor will still be saved
+     * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 10e16 means a new median that is 10% off from the anchor will still be saved
      */
     constructor(OpenOraclePriceData data_, address[] memory sources_, address anchor_, uint anchorToleranceMantissa_) public OpenOracleView(data_, sources_) {
         anchor = anchor_;
-        require(anchorToleranceMantissa_ < 1e18, "Anchor Tolerance is too high");
-        upperBoundAnchorRatio = 1e18 + anchorToleranceMantissa_;
-        lowerBoundAnchorRatio = 1e18 - anchorToleranceMantissa_;
+        require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
+        upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
+        lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
     }
 
     /**
@@ -62,7 +62,7 @@ contract DelFiPrice is OpenOracleView {
             if (anchorPrice == 0) {
                 emit PriceGuarded(symbol, medianPrice, anchorPrice);
             } else {
-                uint256 anchorRatioMantissa = uint256(medianPrice) * 1e18 / anchorPrice;
+                uint256 anchorRatioMantissa = uint256(medianPrice) * 100e16 / anchorPrice;
                 // Only update the view's price if the median of the sources is within a bound, and it is a new median
                 if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
                     // only update and emit event if the median price is new, otherwise do nothing
@@ -93,13 +93,11 @@ contract DelFiPrice is OpenOracleView {
         }
 
         uint64[] memory sortedPrices = sort(postedPrices);
-
         // if N is even, get the left and right medians and average them
         if (N % 2 == 0) {
             uint64 left = sortedPrices[(N / 2) - 1];
             uint64 right = sortedPrices[N / 2];
             uint128 sum = left + right;
-            require(sum >= left, "DelfiPrice::MedianPrice price addition overflow");
             return uint64(sum / 2);
         } else {
             // if N is odd, just return the median
