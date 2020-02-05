@@ -97,7 +97,7 @@ contract DelFiPrice is OpenOracleView {
         if (N % 2 == 0) {
             uint64 left = sortedPrices[(N / 2) - 1];
             uint64 right = sortedPrices[N / 2];
-            uint128 sum = left + right;
+            uint128 sum = uint128(left) + uint128(right);
             return uint64(sum / 2);
         } else {
             // if N is odd, just return the median
