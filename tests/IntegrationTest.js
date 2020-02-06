@@ -42,11 +42,13 @@ async function waitForLogs(serviceLogPairs) {
 describe('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     try {
+      await execute(`rm -rf ".dockerbuild"`);
+      await execute(`rm -rf ".dockerbuild_cp"`);
       const deployer = `${projectName}_deployer_1`;
       const reporter = `${projectName}_reporter-1_1`;
 
-      await compose.upOne(["poster"], composeOptions);
-      await waitForLogs({deployer: "Deployed DelFiPrice", poster: "main completed"});
+      await compose.upAll(composeOptions);
+      await waitForLogs({deployer: "Deployed DelFiPrice", poster: "main completed", "reporter-1": "Reporter listening", ganache: "Listening on 0.0.0.0:8545"});
 
       await execute(`docker cp "${deployer}:/build" ".dockerbuild_cp"`);
 
