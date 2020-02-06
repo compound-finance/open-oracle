@@ -11,9 +11,8 @@ services:
     command: "sh -c '
       apk add jq;
       SADDLE_BUILD=/build npx saddle compile;
-      SADDLE_BUILD=/build npx saddle contracts;
       GAS=6721975 SADDLE_BUILD=/build npx saddle deploy OpenOraclePriceData;
-      GAS=6721975 SADDLE_BUILD=/build npx saddle deploy DelFiPrice $$(cat /build/development.json | jq -r .OpenOraclePriceData) $$REPORTER_1_ADDRESS,$$REPORTER_2_ADDRESS:array $$ANCHOR_ADDRESS $$ANCHOR_MANTISSA_HEX
+      GAS=6721975 SADDLE_BUILD=/build npx saddle deploy DelFiPrice $$(cat /build/development.json | jq -r .OpenOraclePriceData) $$REPORTER_1_ADDRESS,$$REPORTER_2_ADDRESS:array
     '"
     environment:
       - PROVIDER=http://ganache:8545
@@ -44,16 +43,6 @@ services:
     env_file:
       - test_keys.env
 
-  anchor-reporter:
-    build: sdk/javascript
-    command: npm run start --
-      --private_key $$ANCHOR_PRIVATE_KEY
-      --script examples/fixed.js
-    ports:
-      - "3003:3000"
-    env_file:
-      - test_keys.env
-
   poster:
     build: poster
     command: "sh -c '
@@ -62,15 +51,14 @@ services:
       cat /build/development.json;
       npm run start --
       --poster_key $$POSTER_KEY
-      --sources http://anchor-reporter:3000/prices.json,http://reporter-1:3000/prices.json,http://reporter-2:3000/prices.json
+      --sources http://reporter-1:3000/prices.json,http://reporter-2:3000/prices.json
       --view_address $$(cat /build/development.json | jq -r .DelFiPrice)
       --web3_provider http://ganache:8545
     '"
     depends_on:
-      - deployer
+      - deployer 
       - reporter-1
       - reporter-2
-      - anchor-reporter
     restart: "always"
     volumes:
       - ./.dockerbuild:/build

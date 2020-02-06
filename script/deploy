@@ -18,6 +18,6 @@ npx saddle verify "$api_key" OpenOraclePriceData -n "$network" -vvv
 
 data_addr=`node -e "const contracts = require('./.build/${network}.json'); console.log(contracts.OpenOraclePriceData);"`
 
-npx saddle deploy DelFiPrice "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" -n "$network"
+npx saddle deploy DelFiPrice "$data_addr" "$reporters":array -n "$network"
 sleep 15; # allow Etherscan time to see contract
 npx saddle verify "$api_key" DelFiPrice "$data_addr" "$reporters":array -n "$network"

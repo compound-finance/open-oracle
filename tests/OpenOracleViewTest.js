@@ -1,7 +1,9 @@
 
 describe('OpenOracleView', () => {
-  it('view with no sources is invalid', async () => {
+  it('is a valid view', async () => {
     const oracleData = await saddle.deploy('OpenOracleData', []);
-	await expect(saddle.deploy('OpenOracleView', [oracleData._address, []])).rejects.toRevert('revert Must initialize with sources');
+    const oracleView = await saddle.deploy('OpenOracleView', [oracleData._address, []]);
+
+    expect(await saddle.call(oracleView, 'data', [])).toEqual(oracleData._address);
   });
 });
