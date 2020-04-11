@@ -74,6 +74,10 @@ export function encode(kind: string, timestamp: number, pairs: [any, any][] | ob
   });
 }
 
+export function encodeRotationMessage(rotationTarget: string) : string {
+  return web3.eth.abi.encodeParameters(['string', 'address'], ['rotate', rotationTarget]);
+}
+
 export function sign(messages: string | string[], privateKey: string): SignedMessage[] {
   const actualMessages = Array.isArray(messages) ? messages : [messages];
   return actualMessages.map((message) => {
