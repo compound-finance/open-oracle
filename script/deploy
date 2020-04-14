@@ -21,3 +21,7 @@ data_addr=`node -e "const contracts = require('./.build/${network}.json'); conso
 npx saddle deploy DelFiPrice "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" -n "$network"
 sleep 15; # allow Etherscan time to see contract
 npx saddle verify "$api_key" DelFiPrice "$data_addr" "$reporters":array -n "$network"
+
+npx saddle deploy AnchoredPriceView "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network"
+sleep 15; # allow Etherscan time to see contract
+npx saddle verify "$api_key" AnchoredPriceView "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network"

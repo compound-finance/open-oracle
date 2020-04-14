@@ -54,7 +54,8 @@ describe('Integration', () => {
 
       const web3 = new Web3(new DockerProvider('http://ganache:8545', reporter));
       const accounts = await web3.eth.getAccounts();
-      const delfi = await contract.getContractAt(web3, 'DelFiPrice', {build_dir: '.dockerbuild_cp', trace: false}, '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24');
+
+      const delfi = await contract.getContractAt(web3, 'DelFiPrice', {build_dir: '.dockerbuild_cp', trace: false, extra_build_files: []}, '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24');
 
       expect(await delfi.methods.prices('BTC').call({from: accounts[0]})).numEquals(0);
       expect(await delfi.methods.prices('ETH').call({from: accounts[0]})).numEquals('260000000');
