@@ -39,7 +39,8 @@ async function waitForLogs(serviceLogPairs) {
   }
 }
 
-describe('Integration', () => {
+// Skip this test for now, until saddle script or :struct processing is added
+describe.skip('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     try {
       await execute(`rm -rf ".dockerbuild"`);

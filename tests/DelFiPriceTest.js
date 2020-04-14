@@ -1,5 +1,5 @@
 const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
-const { time, numToHex } = require('./Helpers');
+const { time, numToHex, address } = require('./Helpers');
 
 async function setup(N) {
   const sources = [
@@ -32,17 +32,37 @@ async function setup(N) {
     .slice(0, N)
     .map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
 
-  const anchor = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf40'
-  );
+  // const anchor = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+  //   '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf40'
+  // );
+
+  // CToken contracts addresses
+  const ctokens = {
+    cEthAddress: address(1),
+    cUsdcAddress: address(2),
+    cDaiAddress: address(3),
+    cRepAddress: address(4),
+    cWbtcAddress: address(5),
+    cBatAddress: address(6),
+    cZrxAddress: address(7),
+  }
 
   const anchorMantissa = numToHex(1e17); //1e17 equates to 10% tolerance for median to be above or below anchor
   const priceData = await deploy('OpenOraclePriceData', []);
+  const proxyPriceOracle = await deploy('ProxyPriceOracle');
+  const anchor = proxyPriceOracle._address;
   const delfi = await deploy('DelFiPrice', [
     priceData._address,
     sources.map(a => a.address),
-    anchor.address,
-    anchorMantissa
+    anchor,
+    anchorMantissa, 
+    {cEthAddress: ctokens.cEthAddress,
+     cUsdcAddress: ctokens.cUsdcAddress,
+     cDaiAddress: ctokens.cDaiAddress,
+     cRepAddress: ctokens.cRepAddress,
+     cWbtcAddress: ctokens.cWbtcAddress,
+     cBatAddress: ctokens.cBatAddress,
+     cZrxAddress: ctokens.cZrxAddress}
   ]);
 
   async function postPrices(timestamp, prices2dArr, symbols, signers) {
@@ -78,6 +98,8 @@ async function setup(N) {
     anchorMantissa,
     priceData,
     delfi,
+    proxyPriceOracle,
+    ctokens,
     postPrices,
     getPrice
   };
@@ -90,6 +112,8 @@ describe('DelFiPrice', () => {
     anchorMantissa,
     priceData,
     delfi,
+    proxyPriceOracle,
+    ctokens,
     postPrices,
     getPrice;
 
@@ -105,6 +129,8 @@ describe('DelFiPrice', () => {
         anchorMantissa,
         priceData,
         delfi,
+        proxyPriceOracle,
+        ctokens,
         postPrices,
         getPrice
       } = await setup(4));
@@ -112,13 +138,17 @@ describe('DelFiPrice', () => {
     });
 
     it('should sort even number of sources correctly', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
+        gas: 43000
+      });
       // post prices for the anchor and 3 / 4 sources
       const post1 = await postPrices(
         timestamp,
-        [[['ETH', 498]], [['ETH', 501]], [['ETH', 502]], [['ETH', 503]]],
+        [[['ETH', 501]], [['ETH', 502]], [['ETH', 503]]],
         ['ETH'],
-        [anchor, ...sources]
+        sources
       );
+
       expect(post1.gasUsed).toBeLessThan(250000);
       expect(post1.events.PriceUpdated.returnValues.symbol).toBe('ETH');
       // last unused source is saved as 0
@@ -127,18 +157,23 @@ describe('DelFiPrice', () => {
     });
 
     it('should sort even number of sources correctly with two assets', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
+        gas: 43000
+      });
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cWbtcAddress, 9900e6], {
+        gas: 43000
+      });
       // post prices for the anchor and 4 / 4 sources
       const post1 = await postPrices(
         timestamp,
         [
-          [['ETH', 498], ['BTC', 9900]],
           [['ETH', 510], ['BTC', 11000]],
           [['ETH', 499], ['BTC', 20000]],
           [['ETH', 1], ['BTC', 100]],
           [['ETH', 501], ['BTC', 9000]]
         ],
         ['ETH', 'BTC'],
-        [anchor, ...sources]
+        sources
       );
       expect(post1.gasUsed).toBeLessThan(550000);
 
@@ -164,6 +199,8 @@ describe('DelFiPrice', () => {
         anchorMantissa,
         priceData,
         delfi,
+        proxyPriceOracle,
+        ctokens,
         postPrices,
         getPrice
       } = await setup(5));
@@ -171,11 +208,14 @@ describe('DelFiPrice', () => {
     });
 
     it('posting single source should not record a median', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
+        gas: 43000
+      });
       const post1 = await postPrices(
         timestamp,
-        [[['ETH', 100]], [['ETH', 100]]],
+        [[['ETH', 100]]],
         ['ETH'],
-        [anchor, ...sources]
+        sources
       );
       expect(post1.gasUsed).toBeLessThan(152000);
       expect(post1.events.PriceUpdated).toBe(undefined);
@@ -184,11 +224,14 @@ describe('DelFiPrice', () => {
     });
 
     it('posting 0 anchor price should guard price and not revert', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 0], {
+        gas: 43000
+      });
       const post1 = await postPrices(
         timestamp,
-        [[['ETH', 0]], [['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
+        [[['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
         ['ETH'],
-        [anchor, ...sources]
+        sources
       );
       expect(post1.events.PriceGuarded).not.toBe(undefined);
       expect(post1.events.PricePosted).toBe(undefined);
@@ -196,23 +239,29 @@ describe('DelFiPrice', () => {
     });
 
     it('posting some sources should yield correct median', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
+        gas: 43000
+      });
       // post prices for 3 / 5 sources, and the anchor
       const post1 = await postPrices(
         timestamp,
-        [[['ETH', 100]], [['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
+        [[['ETH', 91]], [['ETH', 110]], [['ETH', 110]]],
         ['ETH'],
-        [anchor, ...sources]
+        sources
       );
       expect(post1.gasUsed).toBeLessThan(253000);
       expect(post1.events.PriceUpdated.returnValues.symbol).toBe('ETH');
       expect(post1.events.PriceUpdated.returnValues.price).numEquals(91e6);
       expect(await getPrice('ETH')).numEquals(91e6);
 
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 200e6], {
+        gas: 43000
+      });
       const post2 = await postPrices(
         timestamp + 1,
-        [[['ETH', 200]], [['ETH', 218]], [['ETH', 220]], [['ETH', 230]]],
+        [[['ETH', 218]], [['ETH', 220]], [['ETH', 230]]],
         ['ETH'],
-        [anchor, ...sources]
+        sources
       );
       expect(post2.gasUsed).toBeLessThan(252000);
       expect(post2.events.PriceUpdated.returnValues.symbol).toBe('ETH');
@@ -221,11 +270,13 @@ describe('DelFiPrice', () => {
     });
 
     it('should not update median if anchor is much higher', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
+        gas: 43000
+      });
       // median is 89. anchor is 100. at 10% tolerance, this should not update median
       const post1 = await postPrices(
         timestamp,
         [
-          [['ETH', 100]], //anchor
           [['ETH', 80]],
           [['ETH', 85]],
           [['ETH', 89]],
@@ -233,7 +284,7 @@ describe('DelFiPrice', () => {
           [['ETH', 110]]
         ],
         ['ETH'],
-        [anchor, ...sources]
+        sources
       );
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(post1.events.PriceGuarded).not.toBe(undefined);
@@ -241,11 +292,13 @@ describe('DelFiPrice', () => {
     });
 
     it('should not update median if anchor is much lower', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
+        gas: 43000
+      });
       // median is 111. anchor is 100. at 10% tolerance, this should not update median
       const post1 = await postPrices(
         timestamp,
         [
-          [['ETH', 100]], //anchor
           [['ETH', 100]],
           [['ETH', 110]],
           [['ETH', 111]],
@@ -253,7 +306,7 @@ describe('DelFiPrice', () => {
           [['ETH', 116]]
         ],
         ['ETH'],
-        [anchor, ...sources]
+        sources
       );
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(post1.events.PriceGuarded).not.toBe(undefined);
@@ -261,11 +314,16 @@ describe('DelFiPrice', () => {
     });
 
     it('posting all sources for two assets should sort correctly and yield correct median', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
+        gas: 43000
+      });
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cWbtcAddress, 9900e6], {
+        gas: 43000
+      });
       // post prices for the anchor and 4 / 4 sources
       const post1 = await postPrices(
         timestamp,
         [
-          [['ETH', 498], ['BTC', 9900]], //anchor
           [['ETH', 510], ['BTC', 11000]],
           [['ETH', 499], ['BTC', 20000]],
           [['ETH', 1], ['BTC', 100]],
@@ -273,10 +331,9 @@ describe('DelFiPrice', () => {
           [['ETH', 502], ['BTC', 10200]]
         ],
         ['ETH', 'BTC'],
-        [anchor, ...sources]
+        sources
       );
       expect(post1.gasUsed).toBeLessThan(650000);
-
       expect(post1.events.PriceUpdated[0].returnValues.symbol).toBe('ETH');
       // anchor: 498, sources: [1, 499, 501, 502, 510], median = 501
       expect(post1.events.PriceUpdated[0].returnValues.price).numEquals(501e6);
@@ -290,10 +347,15 @@ describe('DelFiPrice', () => {
 
     it('view should use most recent post with two sources', async () => {
       // post prices for 5 / 5 sources, and the anchor
-      const post1 = await postPrices(
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
+        gas: 43000
+      });
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cWbtcAddress, 9900e6], {
+        gas: 43000
+      });
+      await postPrices(
         timestamp,
         [
-          [['ETH', 498], ['BTC', 9900]], //anchor
           [['ETH', 510], ['BTC', 11000]],
           [['ETH', 499], ['BTC', 20000]],
           [['ETH', 1], ['BTC', 100]],
@@ -301,16 +363,14 @@ describe('DelFiPrice', () => {
           [['ETH', 502], ['BTC', 10200]]
         ],
         ['ETH', 'BTC'],
-        [anchor, ...sources]
+        sources
       );
 
       // anchor: 498, sources: [1, 499, 501, 502, 510], median = 501
       // anchor: 9900, sources: [100, 9000, 10200, 11000, 20000], median = 10000
-
       const post2 = await postPrices(
         timestamp + 1,
         [
-          [['ETH', 498], ['BTC', 9900]], //anchor
           [['ETH', 510], ['BTC', 11000]],
           [['ETH', 499], ['BTC', 20000]],
           [['ETH', 1], ['BTC', 100]],
@@ -318,7 +378,7 @@ describe('DelFiPrice', () => {
           [['ETH', 502], ['BTC', 10500]]
         ],
         ['ETH', 'BTC'],
-        [anchor, ...sources]
+        sources
       );
 
       // anchor: 498, sources: [1, 499, 502, 503, 510], median = 502
@@ -337,11 +397,13 @@ describe('DelFiPrice', () => {
     });
 
     it('posting from non-source should not change median or emit event', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
+        gas: 43000
+      });
       // set some baseline numbers
       await postPrices(
         timestamp,
         [
-          [['ETH', 100]], //anchor
           [['ETH', 100]],
           [['ETH', 100]],
           [['ETH', 100]],
@@ -349,7 +411,7 @@ describe('DelFiPrice', () => {
           [['ETH', 100]]
         ],
         ['ETH'],
-        [anchor, ...sources]
+        sources
       );
 
       const post1 = await postPrices(

@@ -5,19 +5,13 @@ const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
 describe('OpenOracleData', () => {
   let oracleData;
   let priceData;
-  let delfi;
   const privateKey =
     '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10';
   const signer = '0x1826265c3156c3B9b9e751DC4635376F3CD6ee06';
+  
   beforeEach(async done => {
     oracleData = await deploy('OpenOracleData', []);
     priceData = await deploy('OpenOraclePriceData', []);
-    delfi = await deploy('DelFiPrice', [
-      priceData._address,
-      [account],
-      accounts[1],
-      numToHex(1e17)
-    ]);
     done();
   });
 
