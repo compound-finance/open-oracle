@@ -27,17 +27,55 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The mapping of medianized prices per symbol
     mapping(string => uint64) public prices;
 
+    /// @notice Address of the cEther contract
+    address public cEthAddress;
+
+    /// @notice Address of the cUSDC contract
+    address public cUsdcAddress;
+
+    /// @notice Address of the cDAI contract
+    address public cDaiAddress;
+
+    /// @notice Address of the cREP contract
+    address public cRepAddress;
+
+    /// @notice Address of the cWBTC contract
+    address public cWbtcAddress;
+
+    /// @notice Address of the cBAT contract
+    address public cBatAddress;
+
+    /// @notice Address of the cZRX contract
+    address public cZrxAddress;
+
     /**
      * @param data_ Address of the Oracle Data contract
      * @param sources_ The reporter addresses whose prices will be used to calculate the median
      * @param anchor_ The reporter address whose prices checked against the median for safety
      * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 10e16 means a new median that is 10% off from the anchor will still be saved
      */
-    constructor(OpenOraclePriceData data_, address[] memory sources_, address anchor_, uint anchorToleranceMantissa_) public OpenOracleView(data_, sources_) {
+    constructor(OpenOraclePriceData data_, 
+                address[] memory sources_,
+                address anchor_,
+                uint anchorToleranceMantissa_,
+                address cEthAddress_,
+                address cUsdcAddress_,
+                address cDaiAddress_,
+                // address cRepAddress_,
+                // address cWbtcAddress_, 
+                // address cBatAddress_, 
+                address cZrxAddress_) public OpenOracleView(data_, sources_) {
         anchor = anchor_;
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
+        cEthAddress = cEthAddress_;
+        cUsdcAddress = cUsdcAddress_;
+        cDaiAddress = cDaiAddress_;
+        // cRepAddress = cRepAddress_;
+        // cWbtcAddress = cWbtcAddress_;
+        // cBatAddress = cBatAddress_;
+        cZrxAddress = cZrxAddress_;
     }
 
     /**
@@ -103,6 +141,23 @@ contract DelFiPrice is OpenOracleView {
             // if N is odd, just return the median
             return sortedPrices[N / 2];
         }
+    }
+
+
+    /**
+     * @notice Returns the cToken address for symbol
+     * @param symbol The symbol to map to cToken address
+     * @return cToken The cToken address for the given symbol
+     */
+    function getOracleKey(string memory symbol) public view returns (address cToken) {
+        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("ETH"))) return cEthAddress;
+        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("USDC"))) return cUsdcAddress;
+        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("DAI"))) return cDaiAddress;
+        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("REP"))) return cRepAddress;
+        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("BTC"))) return cWbtcAddress;
+        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("BAT"))) return cBatAddress;
+        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("ZRX"))) return cZrxAddress;
+        return address(0);
     }
 
     /**
