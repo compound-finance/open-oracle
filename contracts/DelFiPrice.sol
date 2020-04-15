@@ -19,7 +19,7 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The event emitted when new prices are posted but the median price is not updated due to the anchor
     event PriceGuarded(string symbol, uint64 median, uint64 anchor);
 
-    /// @notice The structure thatCToken contracts addresses
+    /// @notice The structure that stores token symbols and CToken contracts addresses pairs
     struct CTokens {
         string symbol;
         address contractAddress;
