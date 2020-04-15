@@ -20,6 +20,17 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The event emitted when new prices are posted but the median price is not updated due to the anchor
     event PriceGuarded(string symbol, uint64 median, uint64 anchor);
 
+     /// @notice The CToken contracts addresses
+    struct CTokens {
+        address cEthAddress;
+        address cUsdcAddress;
+        address cDaiAddress;
+        address cRepAddress;
+        address cWbtcAddress; 
+        address cBatAddress; 
+        address cZrxAddress;
+    }
+
     /// @notice The reporter address whose prices checked against the median for safety
     address anchor;
 
@@ -32,58 +43,47 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The mapping of medianized prices per symbol
     mapping(string => uint64) public prices;
 
-    /// @notice Address of the cEther contract
-    address public cEthAddress;
+    /// @notice The structure that stores addresses of CToken contracts
+    CTokens public tokens;
 
-    /// @notice Address of the cUSDC contract
-    address public cUsdcAddress;
+    /// @notice The binary representation for 'ETH' symbol , used for string comparison
+    bytes32 constant symbolEth = keccak256(abi.encodePacked("ETH"));
 
-    /// @notice Address of the cDAI contract
-    address public cDaiAddress;
+    /// @notice The binary representation for 'USDC' symbol, used for string comparison
+    bytes32 constant symbolUsdc = keccak256(abi.encodePacked("USDC"));
 
-    /// @notice Address of the cREP contract
-    address public cRepAddress;
+    /// @notice The binary representation for 'DAI' symbol, used for string comparison
+    bytes32 constant symbolDai = keccak256(abi.encodePacked("DAI"));
 
-    /// @notice Address of the cWBTC contract
-    address public cWbtcAddress;
+    /// @notice The binary representation for 'REP' symbol, used for string comparison
+    bytes32 constant symbolRep = keccak256(abi.encodePacked("REP"));
 
-    /// @notice Address of the cBAT contract
-    address public cBatAddress;
+    /// @notice The binary representation for 'BTC' symbol, used for string comparison
+    bytes32 constant symbolWbtc = keccak256(abi.encodePacked("BTC"));
 
-    /// @notice Address of the cZRX contract
-    address public cZrxAddress;
+    /// @notice The binary representation for 'BAT' symbol, used for string comparison
+    bytes32 constant symbolBat = keccak256(abi.encodePacked("BAT"));
+
+    /// @notice The binary representation for 'ZRX' symbol, used for string comparison
+    bytes32 constant symbolZrx = keccak256(abi.encodePacked("ZRX"));
 
     /**
      * @param data_ Address of the Oracle Data contract
      * @param sources_ The reporter addresses whose prices will be used to calculate the median
      * @param anchor_ The reporter address whose prices checked against the median for safety
      * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 10e16 means a new median that is 10% off from the anchor will still be saved
-     * @param cEthAddress_ The address of cETH token asset
-     * @param cDaiAddress_ The address of cDAI token asset
-     * @param cZrxAddress_ The address of cZRX token asset
+     * @param tokens_ The CTokens struct that contains addresses for CToken contracts
      */
     constructor(OpenOraclePriceData data_, 
                 address[] memory sources_,
                 address anchor_,
                 uint anchorToleranceMantissa_,
-                address cEthAddress_,
-                address cUsdcAddress_,
-                address cDaiAddress_,
-                // address cRepAddress_,
-                // address cWbtcAddress_, 
-                // address cBatAddress_, 
-                address cZrxAddress_) public OpenOracleView(data_, sources_) {
+                CTokens memory tokens_) public OpenOracleView(data_, sources_) {
         anchor = anchor_;
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
-        cEthAddress = cEthAddress_;
-        cUsdcAddress = cUsdcAddress_;
-        cDaiAddress = cDaiAddress_;
-        // cRepAddress = cRepAddress_;
-        // cWbtcAddress = cWbtcAddress_;
-        // cBatAddress = cBatAddress_;
-        cZrxAddress = cZrxAddress_;
+        tokens = tokens_;
     }
 
     /**
@@ -105,7 +105,7 @@ contract DelFiPrice is OpenOracleView {
             string memory symbol = symbols[i];
             uint64 medianPrice = medianPrice(symbol, sources);
             // uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
-            uint64 anchorPrice = uint64(AnchorPriceOracle(address(anchor)).getUnderlyingPrice(getOracleKey(symbol)));
+            uint64 anchorPrice = uint64(AnchorPriceOracle(address(anchor)).getUnderlyingPrice(getCTokenAddress(symbol)));
             if (anchorPrice == 0) {
                 emit PriceGuarded(symbol, medianPrice, anchorPrice);
             } else {
@@ -158,15 +158,16 @@ contract DelFiPrice is OpenOracleView {
      * @param symbol The symbol to map to cToken address
      * @return cToken The cToken address for the given symbol
      */
-    function getOracleKey(string memory symbol) public view returns (address cToken) {
-        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("ETH"))) return cEthAddress;
-        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("USDC"))) return cUsdcAddress;
-        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("DAI"))) return cDaiAddress;
-        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("REP"))) return cRepAddress;
-        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("BTC"))) return cWbtcAddress;
-        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("BAT"))) return cBatAddress;
-        if (keccak256(abi.encodePacked(symbol)) == keccak256(abi.encodePacked("ZRX"))) return cZrxAddress;
-        return address(0);
+    function getCTokenAddress(string memory symbol) public view returns (address cToken) {
+        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+        if (symbolHash == symbolEth) return tokens.cEthAddress;
+        if (symbolHash == symbolUsdc) return tokens.cUsdcAddress;
+        if (symbolHash == symbolDai) return tokens.cDaiAddress;
+        if (symbolHash == symbolRep) return tokens.cRepAddress;
+        if (symbolHash == symbolWbtc) return tokens.cWbtcAddress;
+        if (symbolHash == symbolBat) return tokens.cBatAddress;
+        if (symbolHash == symbolZrx) return tokens.cZrxAddress;
+        revert("Unknown token symbol");
     }
 
     /**
