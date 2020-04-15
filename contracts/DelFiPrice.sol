@@ -4,6 +4,11 @@ pragma experimental ABIEncoderV2;
 import "./OpenOraclePriceData.sol";
 import "./OpenOracleView.sol";
 
+interface AnchorPriceOracle {
+     function getUnderlyingPrice(address) external returns (uint);
+}
+
+
 /**
  * @notice The DelFi Price Feed View
  * @author Compound Labs, Inc.
@@ -53,6 +58,9 @@ contract DelFiPrice is OpenOracleView {
      * @param sources_ The reporter addresses whose prices will be used to calculate the median
      * @param anchor_ The reporter address whose prices checked against the median for safety
      * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 10e16 means a new median that is 10% off from the anchor will still be saved
+     * @param cEthAddress_ The address of cETH token asset
+     * @param cDaiAddress_ The address of cDAI token asset
+     * @param cZrxAddress_ The address of cZRX token asset
      */
     constructor(OpenOraclePriceData data_, 
                 address[] memory sources_,
@@ -96,7 +104,8 @@ contract DelFiPrice is OpenOracleView {
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             uint64 medianPrice = medianPrice(symbol, sources);
-            uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
+            // uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
+            uint64 anchorPrice = uint64(AnchorPriceOracle(address(anchor)).getUnderlyingPrice(getOracleKey(symbol)));
             if (anchorPrice == 0) {
                 emit PriceGuarded(symbol, medianPrice, anchorPrice);
             } else {
