@@ -43,9 +43,6 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The mapping of medianized prices per symbol
     mapping(string => uint64) public prices;
 
-    /// @notice The structure that stores addresses of CToken contracts
-    CTokens public tokens;
-
     /// @notice The binary representation for 'ETH' symbol , used for string comparison
     bytes32 constant symbolEth = keccak256(abi.encodePacked("ETH"));
 
@@ -67,6 +64,27 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The binary representation for 'ZRX' symbol, used for string comparison
     bytes32 constant symbolZrx = keccak256(abi.encodePacked("ZRX"));
 
+    /// @notice Address of the cEther contract
+    address public immutable cEthAddress;
+
+    /// @notice Address of the cUSDC contract
+    address public immutable cUsdcAddress;
+
+    /// @notice Address of the cDAI contract
+    address public immutable cDaiAddress;
+
+    /// @notice Address of the cREP contract
+    address public immutable cRepAddress;
+
+    /// @notice Address of the cWBTC contract
+    address public immutable cWbtcAddress;
+
+    /// @notice Address of the cBAT contract
+    address public immutable cBatAddress;
+
+    /// @notice Address of the cZRX contract
+    address public immutable cZrxAddress;
+
     /**
      * @param data_ Address of the Oracle Data contract
      * @param sources_ The reporter addresses whose prices will be used to calculate the median
@@ -83,7 +101,13 @@ contract DelFiPrice is OpenOracleView {
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
-        tokens = tokens_;
+        cEthAddress = tokens_.cEthAddress;
+        cUsdcAddress = tokens_.cUsdcAddress;
+        cDaiAddress = tokens_.cDaiAddress;
+        cRepAddress = tokens_.cRepAddress;
+        cWbtcAddress = tokens_.cWbtcAddress;
+        cBatAddress = tokens_.cBatAddress;
+        cZrxAddress = tokens_.cZrxAddress;
     }
 
     /**
@@ -160,13 +184,13 @@ contract DelFiPrice is OpenOracleView {
      */
     function getCTokenAddress(string memory symbol) public view returns (address cToken) {
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-        if (symbolHash == symbolEth) return tokens.cEthAddress;
-        if (symbolHash == symbolUsdc) return tokens.cUsdcAddress;
-        if (symbolHash == symbolDai) return tokens.cDaiAddress;
-        if (symbolHash == symbolRep) return tokens.cRepAddress;
-        if (symbolHash == symbolWbtc) return tokens.cWbtcAddress;
-        if (symbolHash == symbolBat) return tokens.cBatAddress;
-        if (symbolHash == symbolZrx) return tokens.cZrxAddress;
+        if (symbolHash == symbolEth) return cEthAddress;
+        if (symbolHash == symbolUsdc) return cUsdcAddress;
+        if (symbolHash == symbolDai) return cDaiAddress;
+        if (symbolHash == symbolRep) return cRepAddress;
+        if (symbolHash == symbolWbtc) return cWbtcAddress;
+        if (symbolHash == symbolBat) return cBatAddress;
+        if (symbolHash == symbolZrx) return cZrxAddress;
         revert("Unknown token symbol");
     }
 
