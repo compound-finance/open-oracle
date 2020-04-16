@@ -3,8 +3,9 @@ module.exports = {
   // solc: "solc",                                         // Solc command to run
   // solc_args: [],                                        // Extra solc args
   build_dir: process.env['SADDLE_BUILD'] || ".build",      // Directory to place built contracts
-  // contracts: "contracts/*.sol",                         // Glob to match contract files
-  tests: ['**/tests/*Test.js'],                            // Glob to match test files
+  // contracts: "contracts/*.sol",
+  contracts: process.env['SADDLE_CONTRACTS'] || "{contracts,tests/contracts}/*.sol",   // Glob to match contract files
+  tests: ['**/tests/*Test.js'],                         // Glob to match test files
   networks: {                                           // Define configuration for each network
     development: {
       providers: [                                      // How to load provider (processed in order)
