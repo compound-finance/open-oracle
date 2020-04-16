@@ -27,7 +27,46 @@ async function main(sources : string,
 async function fetchPayloads(sources : string[], fetchFn=fetch) : Promise<DelFiReporterPayload[]> {
   let sourcePromises = sources.map(async (source) => {
     try {
-      let response = await fetchFn(source);
+      let response;
+      if(source == "https://api.pro.coinbase.com/oracle") {
+        const crypto = require('crypto');
+
+        const key_id = <string>process.env.API_KEY_ID;
+        const secret = <string>process.env.API_SECRET;
+        const passphrase = <string>process.env.API_PASSPHRASE;
+
+
+        let timestamp = Date.now() / 1000;
+
+        let method = 'GET';
+
+        // create the prehash string by concatenating required parts
+        let what = timestamp + method + "/oracle";
+
+        // decode the base64 secret
+        let key =  Buffer.from(secret, 'base64');
+
+        // create a sha256 hmac with the secret
+        let hmac = crypto.createHmac('sha256', key);
+
+        // sign the require message with the hmac
+        // and finally base64 encode the result
+        let signature = hmac.update(what).digest('base64');
+        let headers = {
+          'CB-ACCESS-KEY': key_id,
+          'CB-ACCESS-SIGN': signature,
+          'CB-ACCESS-TIMESTAMP': timestamp,
+          'CB-ACCESS-PASSPHRASE': passphrase,
+          'Content-Type': 'application/json'
+        }
+
+        response = await fetchFn(source, {
+          headers: headers
+        })
+
+      } else {
+        response = await fetchFn(source);
+      }
       return response.json();
     } catch (e) {
       console.error(e);
