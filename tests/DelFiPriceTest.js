@@ -37,27 +37,29 @@ async function setup(N) {
   // );
 
   // CToken contracts addresses
-  const cEthAddress = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf50'
-  );
-  const cUsdcAddress = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf51'
-  );
-  const cDaiAddress = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf52'
-  );
-  const cRepAddress = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf53'
-  );
-  const cWbtcAddress = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf54'
-  );
-  const cBatAddress = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf55'
-  );
-  const cZrxAddress = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-    '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf56'
-  );
+  const ctokens = {
+    cEthAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf50'
+    ),
+    cUsdcAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf51'
+    ),
+    cDaiAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf52'
+    ),
+    cRepAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf53'
+    ),
+    cWbtcAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf54'
+    ),
+    cBatAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf55'
+    ),
+    cZrxAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
+      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf56'
+    )
+  }
 
   const anchorMantissa = numToHex(1e17); //1e17 equates to 10% tolerance for median to be above or below anchor
   const priceData = await deploy('OpenOraclePriceData', []);
@@ -68,13 +70,13 @@ async function setup(N) {
     sources.map(a => a.address),
     anchor,
     anchorMantissa, 
-    {cEthAddress: cEthAddress.address, 
-     cUsdcAddress: cUsdcAddress.address, 
-     cDaiAddress: cDaiAddress.address,
-     cRepAddress: cRepAddress.address, 
-     cWbtcAddress: cWbtcAddress.address, 
-     cBatAddress: cBatAddress.address, 
-     cZrxAddress: cZrxAddress.address}
+    {cEthAddress: ctokens.cEthAddress.address,
+     cUsdcAddress: ctokens.cUsdcAddress.address,
+     cDaiAddress: ctokens.cDaiAddress.address,
+     cRepAddress: ctokens.cRepAddress.address,
+     cWbtcAddress: ctokens.cWbtcAddress.address,
+     cBatAddress: ctokens.cBatAddress.address,
+     cZrxAddress: ctokens.cZrxAddress.address}
   ]);
 
   async function postPrices(timestamp, prices2dArr, symbols, signers) {
@@ -110,6 +112,8 @@ async function setup(N) {
     anchorMantissa,
     priceData,
     delfi,
+    proxyPriceOracle,
+    ctokens,
     postPrices,
     getPrice
   };
@@ -122,6 +126,8 @@ describe('DelFiPrice', () => {
     anchorMantissa,
     priceData,
     delfi,
+    proxyPriceOracle,
+    ctokens,
     postPrices,
     getPrice;
 
@@ -137,6 +143,8 @@ describe('DelFiPrice', () => {
         anchorMantissa,
         priceData,
         delfi,
+        proxyPriceOracle,
+        ctokens,
         postPrices,
         getPrice
       } = await setup(4));
@@ -144,6 +152,9 @@ describe('DelFiPrice', () => {
     });
 
     it('should sort even number of sources correctly', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress.address, 498e6], {
+        gas: 43000
+      });
       // post prices for the anchor and 3 / 4 sources
       const post1 = await postPrices(
         timestamp,
