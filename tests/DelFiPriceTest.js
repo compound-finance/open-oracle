@@ -1,5 +1,5 @@
 const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
-const { time, numToHex } = require('./Helpers');
+const { time, numToHex, address } = require('./Helpers');
 
 async function setup(N) {
   const sources = [
@@ -38,27 +38,13 @@ async function setup(N) {
 
   // CToken contracts addresses
   const ctokens = {
-    cEthAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf50'
-    ),
-    cUsdcAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf51'
-    ),
-    cDaiAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf52'
-    ),
-    cRepAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf53'
-    ),
-    cWbtcAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf54'
-    ),
-    cBatAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf55'
-    ),
-    cZrxAddress: web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-      '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf56'
-    )
+    cEthAddress: address(1),
+    cUsdcAddress: address(2),
+    cDaiAddress: address(3),
+    cRepAddress: address(4),
+    cWbtcAddress: address(5),
+    cBatAddress: address(6),
+    cZrxAddress: address(7),
   }
 
   const anchorMantissa = numToHex(1e17); //1e17 equates to 10% tolerance for median to be above or below anchor
@@ -70,13 +56,13 @@ async function setup(N) {
     sources.map(a => a.address),
     anchor,
     anchorMantissa, 
-    {cEthAddress: ctokens.cEthAddress.address,
-     cUsdcAddress: ctokens.cUsdcAddress.address,
-     cDaiAddress: ctokens.cDaiAddress.address,
-     cRepAddress: ctokens.cRepAddress.address,
-     cWbtcAddress: ctokens.cWbtcAddress.address,
-     cBatAddress: ctokens.cBatAddress.address,
-     cZrxAddress: ctokens.cZrxAddress.address}
+    {cEthAddress: ctokens.cEthAddress,
+     cUsdcAddress: ctokens.cUsdcAddress,
+     cDaiAddress: ctokens.cDaiAddress,
+     cRepAddress: ctokens.cRepAddress,
+     cWbtcAddress: ctokens.cWbtcAddress,
+     cBatAddress: ctokens.cBatAddress,
+     cZrxAddress: ctokens.cZrxAddress}
   ]);
 
   async function postPrices(timestamp, prices2dArr, symbols, signers) {
@@ -152,7 +138,7 @@ describe('DelFiPrice', () => {
     });
 
     it('should sort even number of sources correctly', async () => {
-      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress.address, 498e6], {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
         gas: 43000
       });
       // post prices for the anchor and 3 / 4 sources
@@ -170,12 +156,17 @@ describe('DelFiPrice', () => {
       expect(await getPrice('ETH')).numEquals(501.5e6);
     });
 
-    it.skip('should sort even number of sources correctly with two assets', async () => {
+    it('should sort even number of sources correctly with two assets', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
+        gas: 43000
+      });
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cWbtcAddress, 9900e6], {
+        gas: 43000
+      });
       // post prices for the anchor and 4 / 4 sources
       const post1 = await postPrices(
         timestamp,
         [
-         //  [['ETH', 498], ['BTC', 9900]],
           [['ETH', 510], ['BTC', 11000]],
           [['ETH', 499], ['BTC', 20000]],
           [['ETH', 1], ['BTC', 100]],
