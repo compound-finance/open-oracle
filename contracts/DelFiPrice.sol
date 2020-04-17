@@ -2,10 +2,9 @@ pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 import "./OpenOraclePriceData.sol";
-import "./OpenOracleView.sol";
 
 interface AnchorPriceOracle {
-     function getUnderlyingPrice(address) external returns (uint);
+     function getUnderlyingPrice(address) external view returns (uint256);
 }
 
 
@@ -13,12 +12,12 @@ interface AnchorPriceOracle {
  * @notice The DelFi Price Feed View
  * @author Compound Labs, Inc.
  */
-contract DelFiPrice is OpenOracleView {
-    /// @notice The event emitted when the median price is updated
+contract DelFiPrice {
+    /// @notice The event emitted when the stored price is updated
     event PriceUpdated(string symbol, uint64 price);
 
-    /// @notice The event emitted when new prices are posted but the median price is not updated due to the anchor
-    event PriceGuarded(string symbol, uint64 median, uint64 anchor);
+    /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
+    event PriceGuarded(string symbol, uint64 stored, uint64 anchor);
 
     /// @notice The CToken contracts addresses
     struct CTokens {
@@ -26,19 +25,20 @@ contract DelFiPrice is OpenOracleView {
         address cUsdcAddress;
         address cDaiAddress;
         address cRepAddress;
-        address cWbtcAddress; 
-        address cBatAddress; 
+        address cWbtcAddress;
+        address cBatAddress;
         address cZrxAddress;
+        address cSaiAddress;
+        address cUsdtAddress;
     }
 
-    /// @notice The reporter address whose prices checked against the median for safety
-    address anchor;
+    /// @notice The Price Oracle Proxy address whose prices checked against the source for safety
+    AnchorPriceOracle immutable anchor;
 
-    /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
-    uint256 upperBoundAnchorRatio;
+    /// @notice The Open Oracle data contract to read source prices
+    OpenOraclePriceData immutable priceData;
 
-    /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
-    uint256 lowerBoundAnchorRatio;
+    address immutable source;
 
     /// @notice The mapping of medianized prices per symbol
     mapping(string => uint64) public prices;
@@ -55,14 +55,14 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The binary representation for 'REP' symbol, used for string comparison
     bytes32 constant symbolRep = keccak256(abi.encodePacked("REP"));
 
-    /// @notice The binary representation for 'BTC' symbol, used for string comparison
-    bytes32 constant symbolWbtc = keccak256(abi.encodePacked("BTC"));
+    /// @notice The highest ratio of the new source price to the anchor price that will still trigger the stored price to be updated
+    uint256 immutable upperBoundAnchorRatio;
 
-    /// @notice The binary representation for 'BAT' symbol, used for string comparison
-    bytes32 constant symbolBat = keccak256(abi.encodePacked("BAT"));
+    /// @notice The lowest ratio of the new source price to the anchor price that will still trigger the stored price to be updated
+    uint256 immutable lowerBoundAnchorRatio;
 
-    /// @notice The binary representation for 'ZRX' symbol, used for string comparison
-    bytes32 constant symbolZrx = keccak256(abi.encodePacked("ZRX"));
+    /// @notice The mapping of stored prices per symbol
+    mapping(string => uint64) public prices;
 
     /// @notice Address of the cEther contract
     address public immutable cEthAddress;
@@ -86,21 +86,17 @@ contract DelFiPrice is OpenOracleView {
     address public immutable cZrxAddress;
 
     /**
-     * @param data_ Address of the Oracle Data contract
-     * @param sources_ The reporter addresses whose prices will be used to calculate the median
-     * @param anchor_ The reporter address whose prices checked against the median for safety
-     * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 10e16 means a new median that is 10% off from the anchor will still be saved
+     * @param data_ Address of the Oracle Price Data contract
+     * @param source_ The reporter address whose prices will be used
+     * @param anchor_ The Price Oracle Proxy whose prices will be checked against for safety
+     * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and source price. A tolerance of 10e16 means a new source that is 10% off from the anchor will still be saved
      * @param tokens_ The CTokens struct that contains addresses for CToken contracts
      */
-    constructor(OpenOraclePriceData data_, 
-                address[] memory sources_,
-                address anchor_,
-                uint anchorToleranceMantissa_,
-                CTokens memory tokens_) public OpenOracleView(data_, sources_) {
-        anchor = anchor_;
+    constructor(OpenOraclePriceData data_, address source_, address anchor_, uint anchorToleranceMantissa_, CTokens memory tokens_) public {
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
+
         cEthAddress = tokens_.cEthAddress;
         cUsdcAddress = tokens_.cUsdcAddress;
         cDaiAddress = tokens_.cDaiAddress;
@@ -108,6 +104,10 @@ contract DelFiPrice is OpenOracleView {
         cWbtcAddress = tokens_.cWbtcAddress;
         cBatAddress = tokens_.cBatAddress;
         cZrxAddress = tokens_.cZrxAddress;
+
+        priceData = data_;
+        source = source_;
+        anchor = AnchorPriceOracle(anchor_);
     }
 
     /**
@@ -121,68 +121,56 @@ contract DelFiPrice is OpenOracleView {
 
         // Save the prices
         for (uint i = 0; i < messages.length; i++) {
-            OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
+            priceData.put(messages[i], signatures[i]);
         }
 
-        // Try to update the median
+        uint usdcPrice = anchor.getUnderlyingPrice(tokens.cUsdcAddress);
+
+        // Update view value if anchor allows
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
-            uint64 medianPrice = medianPrice(symbol, sources);
-            // uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
-            uint64 anchorPrice = uint64(AnchorPriceOracle(address(anchor)).getUnderlyingPrice(getCTokenAddress(symbol)));
+            uint64 sourcePrice = priceData.getPrice(source, symbol);
+
+            // get price from anchor, and convert to dollars
+            // TODO: get decimals right
+
+            uint64 anchorPrice = uint64(anchor.getUnderlyingPrice(getCTokenAddress(symbol)) / usdcPrice);
+
             if (anchorPrice == 0) {
-                emit PriceGuarded(symbol, medianPrice, anchorPrice);
+                emit PriceGuarded(symbol, sourcePrice, anchorPrice);
             } else {
-                uint256 anchorRatioMantissa = uint256(medianPrice) * 100e16 / anchorPrice;
-                // Only update the view's price if the median of the sources is within a bound, and it is a new median
+                uint256 anchorRatioMantissa = uint256(sourcePrice) * 100e16 / anchorPrice;
+                // Only update the view's price if the source price is within a bound, and it is changed
                 if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
-                    // only update and emit event if the median price is new, otherwise do nothing
-                    if (prices[symbol] != medianPrice) {
-                        prices[symbol] = medianPrice;
-                        emit PriceUpdated(symbol, medianPrice);
+                    // only update and emit event if the source price is new, otherwise do nothing
+                    if (prices[symbol] != sourcePrice) {
+                        prices[symbol] = sourcePrice;
+                        emit PriceUpdated(symbol, sourcePrice);
                     }
                 } else {
-                    emit PriceGuarded(symbol, medianPrice, anchorPrice);
+                    emit PriceGuarded(symbol, sourcePrice, anchorPrice);
                 }
             }
         }
     }
 
-    /**
-     * @notice Calculates the median price over any set of sources
-     * @param symbol The symbol to calculate the median price of
-     * @param sources_ The sources to use when calculating the median price
-     * @return median The median price over the set of sources
-     */
-    function medianPrice(string memory symbol, address[] memory sources_) public view returns (uint64 median) {
-        require(sources_.length > 0, "sources list must not be empty");
-
-        uint N = sources_.length;
-        uint64[] memory postedPrices = new uint64[](N);
-        for (uint i = 0; i < N; i++) {
-            postedPrices[i] = OpenOraclePriceData(address(data)).getPrice(sources_[i], symbol);
+    // @notice Price Oracle Proxy interface
+    function getUnderlyingPrice(address cTokenAddress) public view returns (uint256) {
+        if(cTokenAddress == tokens.cSaiAddress) {
+            uint256 ethPerUsd = prices["ETH"];
+            // TODO: get decimals right
+            return anchor.getUnderlyingPrice(tokens.cSaiAddress) / ethPerUsd;
         }
 
-        uint64[] memory sortedPrices = sort(postedPrices);
-        // if N is even, get the left and right medians and average them
-        if (N % 2 == 0) {
-            uint64 left = sortedPrices[(N / 2) - 1];
-            uint64 right = sortedPrices[N / 2];
-            uint128 sum = uint128(left) + uint128(right);
-            return uint64(sum / 2);
-        } else {
-            // if N is odd, just return the median
-            return sortedPrices[N / 2];
-        }
+        return prices[getOracleKey(cTokenAddress)];
     }
-
 
     /**
      * @notice Returns the cToken address for symbol
      * @param symbol The symbol to map to cToken address
      * @return cToken The cToken address for the given symbol
      */
-    function getCTokenAddress(string memory symbol) public view returns (address cToken) {
+    function getCTokenAddress(string memory symbol) public view returns (address) {
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
         if (symbolHash == symbolEth) return cEthAddress;
         if (symbolHash == symbolUsdc) return cUsdcAddress;
@@ -195,21 +183,30 @@ contract DelFiPrice is OpenOracleView {
     }
 
     /**
-     * @notice Helper to sort an array of uints
-     * @param array Array of integers to sort
-     * @return The sorted array of integers
+     * @notice Returns the symbol for a cToken address 
+     * @param cTokenAddress The cToken address to map to symbol
+     * @return symbol The symbol for the cToken address
      */
-    function sort(uint64[] memory array) private pure returns (uint64[] memory) {
-        uint N = array.length;
-        for (uint i = 0; i < N; i++) {
-            for (uint j = i + 1; j < N; j++) {
-                if (array[i] > array[j]) {
-                    uint64 tmp = array[i];
-                    array[i] = array[j];
-                    array[j] = tmp;
-                }
-            }
+    function getOracleKey(address cTokenAddress) public view returns (string memory) {
+        if (cTokenAddress == cEthAddress) return "ETH";
+        if (cTokenAddress == cUsdcAddress) return "USDC";
+        if (cTokenAddress == cDaiAddress) return "DAI";
+        if (cTokenAddress == cRepAddress) return "REP";
+        if (cTokenAddress == cWbtcAddress) return "BTC";
+        if (cTokenAddress == cBatAddress) return "BAT";
+        if (cTokenAddress == cZrxAddress) return "ZRX";
+        if (cTokenAddress == cUsdtAddress) return "USDC";
+        revert("Unknown token symbol");
+    }
+
+    function safeMul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
         }
-        return array;
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
     }
 }
