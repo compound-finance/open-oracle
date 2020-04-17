@@ -5,7 +5,9 @@ async function postWithRetries(transaction: TransactionConfig, signerKey: string
   for (let i = 0; i < retries; i++) {
     console.log(`Running Open Oracle Poster (attempt ${i})...`);
     try {
+      console.log(signerKey, "fuuu")
       return await signAndSend(transaction, signerKey, web3);
+
     } catch (e) {
       // If higher gas price will help, try again. Otherwise, really throw.
       if (e.message === "Returned error: replacement transaction underpriced") {

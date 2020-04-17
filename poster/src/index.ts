@@ -19,6 +19,7 @@ async function run() {
     .argv;
 
   // posting promise will reject and retry once with higher gas after this timeout
+  console.log(argv.web3_provider, "ffeee")
   const web3 = await new Web3(argv.web3_provider);
   web3.eth.transactionPollingTimeout = argv.timeout;
 
