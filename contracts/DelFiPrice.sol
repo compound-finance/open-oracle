@@ -132,8 +132,12 @@ contract DelFiPrice {
             uint64 sourcePrice = priceData.getPrice(source, symbol);
 
             // get price from anchor, and convert to dollars
+<<<<<<< HEAD
             // TODO: get decimals right
 
+=======
+            // TODO do decimals correclty
+>>>>>>> sketch in dollar mapping
             uint64 anchorPrice = uint64(anchor.getUnderlyingPrice(getCTokenAddress(symbol)) / usdcPrice);
 
             if (anchorPrice == 0) {
@@ -158,7 +162,11 @@ contract DelFiPrice {
     function getUnderlyingPrice(address cTokenAddress) public view returns (uint256) {
         if(cTokenAddress == tokens.cSaiAddress) {
             uint256 ethPerUsd = prices["ETH"];
+<<<<<<< HEAD
             // TODO: get decimals right
+=======
+            // TODO do decimals correctly 
+>>>>>>> sketch in dollar mapping
             return anchor.getUnderlyingPrice(tokens.cSaiAddress) / ethPerUsd;
         }
 
