@@ -193,13 +193,12 @@ contract DelFiPrice is OpenOracleView {
         }
     }
 
-
     /**
      * @notice Returns the cToken address for symbol
      * @param symbol The symbol to map to cToken address
-     * @return cToken The cToken address for the given symbol
+     * @return The cToken address for the given symbol
      */
-    function getCTokenAddress(string memory symbol) public view returns (address cToken) {
+    function getCTokenAddress(string memory symbol) public view returns (address) {
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
         if (symbolHash == symbolEth) return cEthAddress;
         if (symbolHash == symbolUsdc) return cUsdcAddress;
@@ -211,6 +210,37 @@ contract DelFiPrice is OpenOracleView {
         if (symbolHash == symbolSai) return cSaiAddress;
         if (symbolHash == symbolUsdt) return cUsdtAddress;
         revert("Unknown token symbol");
+    }
+
+    /**
+     * @notice Implements the PriceOracle interface of Compound v2.
+     * @param cToken The cToken address for price retrieval
+     * @return The price for the given cToken address
+     */
+    function getUnderlyingPrice(address cToken) external returns (uint256) {
+        if(cToken == cSaiAddress) {
+            uint256 ethPerUsd = prices["ETH"];
+            return anchor.getUnderlyingPrice(cSaiAddress) / ethPerUsd;
+        }
+        return prices[getOracleKey(cToken)];
+    }
+
+    /**
+     * @notice Returns the symbol for cToken address
+     * @param cToken The cToken address to map to symbol
+     * @return The symbol for the given cToken address
+     */
+    function getOracleKey(address cToken) public view returns (string memory) {
+        if (cToken == cEthAddress) return "ETH";
+        if (cToken == cUsdcAddress) return "USDC";
+        if (cToken == cDaiAddress) return "DAI";
+        if (cToken == cRepAddress) return "REP";
+        if (cToken == cWbtcAddress) return "BTC";
+        if (cToken == cBatAddress) return "BAT";
+        if (cToken == cZrxAddress) return "ZRX";
+        if (cToken == cSaiAddress) return "SAI";
+        if (cToken == cUsdtAddress) return "USDT";
+        revert("Unknown token address");
     }
 
     /**

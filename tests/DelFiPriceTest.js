@@ -138,6 +138,9 @@ describe('DelFiPrice', () => {
     });
 
     it('should sort even number of sources correctly', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
         gas: 43000
       });
@@ -157,6 +160,9 @@ describe('DelFiPrice', () => {
     });
 
     it('should sort even number of sources correctly with two assets', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
         gas: 43000
       });
@@ -208,6 +214,9 @@ describe('DelFiPrice', () => {
     });
 
     it('posting single source should not record a median', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
         gas: 43000
       });
@@ -224,6 +233,9 @@ describe('DelFiPrice', () => {
     });
 
     it('posting 0 anchor price should guard price and not revert', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 0], {
         gas: 43000
       });
@@ -239,6 +251,9 @@ describe('DelFiPrice', () => {
     });
 
     it('posting some sources should yield correct median', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
         gas: 43000
       });
@@ -270,6 +285,9 @@ describe('DelFiPrice', () => {
     });
 
     it('should not update median if anchor is much higher', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
         gas: 43000
       });
@@ -292,6 +310,9 @@ describe('DelFiPrice', () => {
     });
 
     it('should not update median if anchor is much lower', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
         gas: 43000
       });
@@ -314,6 +335,9 @@ describe('DelFiPrice', () => {
     });
 
     it('posting all sources for two assets should sort correctly and yield correct median', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
         gas: 43000
       });
@@ -346,13 +370,16 @@ describe('DelFiPrice', () => {
     });
 
     it('view should use most recent post with two sources', async () => {
-      // post prices for 5 / 5 sources, and the anchor
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 498e6], {
         gas: 43000
       });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cWbtcAddress, 9900e6], {
         gas: 43000
       });
+      // post prices for 5 / 5 sources, and the anchor
       await postPrices(
         timestamp,
         [
@@ -397,6 +424,9 @@ describe('DelFiPrice', () => {
     });
 
     it('posting from non-source should not change median or emit event', async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
+        gas: 43000
+      });
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, 100e6], {
         gas: 43000
       });
