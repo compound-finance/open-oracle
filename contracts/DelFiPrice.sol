@@ -166,6 +166,27 @@ contract DelFiPrice is OpenOracleView {
     }
 
     /**
+     * @notice Flags that this contract is meant to be compatible with Compound v2 PriceOracle interface.
+     * @return true, this contract is meant to be used by Compound v2 PriceOracle interface.
+     */
+    function isPriceOracle() external pure returns (bool) {
+       return true;
+    }
+
+    /**
+     * @notice Implements the method of the PriceOracle interface of Compound v2.
+     * @param cToken The cToken address for price retrieval
+     * @return The price for the given cToken address
+     */
+    function getUnderlyingPrice(address cToken) external returns (uint256) {
+        if(cToken == cSaiAddress) {
+            uint256 ethPerUsd = prices["ETH"];
+            return anchor.getUnderlyingPrice(cSaiAddress) / ethPerUsd;
+        }
+        return prices[getOracleKey(cToken)];
+    }
+
+    /**
      * @notice Calculates the median price over any set of sources
      * @param symbol The symbol to calculate the median price of
      * @param sources_ The sources to use when calculating the median price
@@ -210,19 +231,6 @@ contract DelFiPrice is OpenOracleView {
         if (symbolHash == symbolSai) return cSaiAddress;
         if (symbolHash == symbolUsdt) return cUsdtAddress;
         revert("Unknown token symbol");
-    }
-
-    /**
-     * @notice Implements the PriceOracle interface of Compound v2.
-     * @param cToken The cToken address for price retrieval
-     * @return The price for the given cToken address
-     */
-    function getUnderlyingPrice(address cToken) external returns (uint256) {
-        if(cToken == cSaiAddress) {
-            uint256 ethPerUsd = prices["ETH"];
-            return anchor.getUnderlyingPrice(cSaiAddress) / ethPerUsd;
-        }
-        return prices[getOracleKey(cToken)];
     }
 
     /**
