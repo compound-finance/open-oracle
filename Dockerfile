@@ -16,6 +16,7 @@ RUN yarn install
 
 ENV PROVIDER PROVIDER
 ADD contracts contracts
+ADD tests tests
 ADD saddle.config.js saddle.config.js
 RUN npx saddle compile
 

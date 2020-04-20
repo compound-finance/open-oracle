@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 import "./OpenOraclePriceData.sol";
 
 interface AnchorPriceOracle {
-     function getUnderlyingPrice(address) external view returns (uint256);
+     function getUnderlyingPrice(address) external returns (uint256);
 }
 
 
@@ -40,7 +40,7 @@ contract DelFiPrice {
 
     address immutable source;
 
-    /// @notice The mapping of medianized prices per symbol
+    /// @notice The mapping of stored prices per symbol
     mapping(string => uint64) public prices;
 
     /// @notice The binary representation for 'ETH' symbol , used for string comparison
@@ -55,14 +55,26 @@ contract DelFiPrice {
     /// @notice The binary representation for 'REP' symbol, used for string comparison
     bytes32 constant symbolRep = keccak256(abi.encodePacked("REP"));
 
+    /// @notice The binary representation for 'BTC' symbol, used for string comparison
+    bytes32 constant symbolWbtc = keccak256(abi.encodePacked("BTC"));
+
+    /// @notice The binary representation for 'BAT' symbol, used for string comparison
+    bytes32 constant symbolBat = keccak256(abi.encodePacked("BAT"));
+
+    /// @notice The binary representation for 'ZRX' symbol, used for string comparison
+    bytes32 constant symbolZrx = keccak256(abi.encodePacked("ZRX"));
+
+    /// @notice The binary representation for 'SAI' symbol, used for string comparison
+    bytes32 constant symbolSai = keccak256(abi.encodePacked("SAI"));
+
+    /// @notice The binary representation for 'USDT' symbol, used for string comparison
+    bytes32 constant symbolUsdt = keccak256(abi.encodePacked("USDT"));
+
     /// @notice The highest ratio of the new source price to the anchor price that will still trigger the stored price to be updated
     uint256 immutable upperBoundAnchorRatio;
 
     /// @notice The lowest ratio of the new source price to the anchor price that will still trigger the stored price to be updated
     uint256 immutable lowerBoundAnchorRatio;
-
-    /// @notice The mapping of stored prices per symbol
-    mapping(string => uint64) public prices;
 
     /// @notice Address of the cEther contract
     address public immutable cEthAddress;
@@ -85,6 +97,12 @@ contract DelFiPrice {
     /// @notice Address of the cZRX contract
     address public immutable cZrxAddress;
 
+    /// @notice Address of the cSAI contract
+    address public immutable cSaiAddress;
+
+    /// @notice Address of the cUSDT contract
+    address public immutable cUsdtAddress;
+
     /**
      * @param data_ Address of the Oracle Price Data contract
      * @param source_ The reporter address whose prices will be used
@@ -104,6 +122,8 @@ contract DelFiPrice {
         cWbtcAddress = tokens_.cWbtcAddress;
         cBatAddress = tokens_.cBatAddress;
         cZrxAddress = tokens_.cZrxAddress;
+        cSaiAddress = tokens_.cSaiAddress;
+        cUsdtAddress = tokens_.cUsdtAddress;
 
         priceData = data_;
         source = source_;
@@ -124,22 +144,14 @@ contract DelFiPrice {
             priceData.put(messages[i], signatures[i]);
         }
 
-        uint usdcPrice = anchor.getUnderlyingPrice(tokens.cUsdcAddress);
+        uint usdcPrice = anchor.getUnderlyingPrice(cUsdcAddress);
 
         // Update view value if anchor allows
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             uint64 sourcePrice = priceData.getPrice(source, symbol);
-
-            // get price from anchor, and convert to dollars
-<<<<<<< HEAD
-            // TODO: get decimals right
-
-=======
             // TODO do decimals correclty
->>>>>>> sketch in dollar mapping
             uint64 anchorPrice = uint64(anchor.getUnderlyingPrice(getCTokenAddress(symbol)) / usdcPrice);
-
             if (anchorPrice == 0) {
                 emit PriceGuarded(symbol, sourcePrice, anchorPrice);
             } else {
@@ -159,15 +171,10 @@ contract DelFiPrice {
     }
 
     // @notice Price Oracle Proxy interface
-    function getUnderlyingPrice(address cTokenAddress) public view returns (uint256) {
-        if(cTokenAddress == tokens.cSaiAddress) {
+    function getUnderlyingPrice(address cTokenAddress) public returns (uint256) {
+        if(cTokenAddress == cSaiAddress) {
             uint256 ethPerUsd = prices["ETH"];
-<<<<<<< HEAD
-            // TODO: get decimals right
-=======
-            // TODO do decimals correctly 
->>>>>>> sketch in dollar mapping
-            return anchor.getUnderlyingPrice(tokens.cSaiAddress) / ethPerUsd;
+            return anchor.getUnderlyingPrice(cSaiAddress) / ethPerUsd;
         }
 
         return prices[getOracleKey(cTokenAddress)];
@@ -187,6 +194,8 @@ contract DelFiPrice {
         if (symbolHash == symbolWbtc) return cWbtcAddress;
         if (symbolHash == symbolBat) return cBatAddress;
         if (symbolHash == symbolZrx) return cZrxAddress;
+        if (symbolHash == symbolSai) return cSaiAddress;
+        if (symbolHash == symbolUsdt) return cUsdtAddress;
         revert("Unknown token symbol");
     }
 
@@ -203,8 +212,9 @@ contract DelFiPrice {
         if (cTokenAddress == cWbtcAddress) return "BTC";
         if (cTokenAddress == cBatAddress) return "BAT";
         if (cTokenAddress == cZrxAddress) return "ZRX";
-        if (cTokenAddress == cUsdtAddress) return "USDC";
-        revert("Unknown token symbol");
+        if (cTokenAddress == cSaiAddress) return "SAI";
+        if (cTokenAddress == cUsdtAddress) return "USDT";
+        revert("Unknown token address");
     }
 
     function safeMul(uint256 a, uint256 b) internal pure returns (uint256) {

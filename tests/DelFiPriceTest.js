@@ -353,7 +353,7 @@ describe('DelFiPrice', () => {
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cWbtcAddress, 9900e6], {
         gas: 43000
       });
-      const post1 = await postPrices(
+      await postPrices(
         timestamp,
         [
           [['ETH', 510], ['BTC', 11000]],
