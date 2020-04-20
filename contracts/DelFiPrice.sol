@@ -5,7 +5,7 @@ import "./OpenOraclePriceData.sol";
 import "./OpenOracleView.sol";
 
 interface AnchorPriceOracle {
-     function getUnderlyingPrice(address) external returns (uint);
+     function getUnderlyingPrice(address) external returns (uint256);
 }
 
 
@@ -29,10 +29,12 @@ contract DelFiPrice is OpenOracleView {
         address cWbtcAddress; 
         address cBatAddress; 
         address cZrxAddress;
+        address cSaiAddress;
+        address cUsdtAddress;
     }
 
     /// @notice The reporter address whose prices checked against the median for safety
-    address anchor;
+    AnchorPriceOracle immutable anchor;
 
     /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 upperBoundAnchorRatio;
@@ -64,6 +66,12 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The binary representation for 'ZRX' symbol, used for string comparison
     bytes32 constant symbolZrx = keccak256(abi.encodePacked("ZRX"));
 
+    /// @notice The binary representation for 'SAI' symbol, used for string comparison
+    bytes32 constant symbolSai = keccak256(abi.encodePacked("SAI"));
+
+    /// @notice The binary representation for 'SAI' symbol, used for string comparison
+    bytes32 constant symbolUsdt = keccak256(abi.encodePacked("USDT"));
+
     /// @notice Address of the cEther contract
     address public immutable cEthAddress;
 
@@ -85,6 +93,12 @@ contract DelFiPrice is OpenOracleView {
     /// @notice Address of the cZRX contract
     address public immutable cZrxAddress;
 
+    /// @notice Address of the cSAI contract
+    address public immutable cSaiAddress;
+
+    /// @notice Address of the cUsdt contract
+    address public immutable cUsdtAddress;
+
     /**
      * @param data_ Address of the Oracle Data contract
      * @param sources_ The reporter addresses whose prices will be used to calculate the median
@@ -97,7 +111,7 @@ contract DelFiPrice is OpenOracleView {
                 address anchor_,
                 uint anchorToleranceMantissa_,
                 CTokens memory tokens_) public OpenOracleView(data_, sources_) {
-        anchor = anchor_;
+        anchor = AnchorPriceOracle(anchor_);
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
@@ -108,6 +122,8 @@ contract DelFiPrice is OpenOracleView {
         cWbtcAddress = tokens_.cWbtcAddress;
         cBatAddress = tokens_.cBatAddress;
         cZrxAddress = tokens_.cZrxAddress;
+        cSaiAddress = tokens_.cSaiAddress;
+        cUsdtAddress = tokens_.cUsdtAddress;
     }
 
     /**
@@ -128,8 +144,9 @@ contract DelFiPrice is OpenOracleView {
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             uint64 medianPrice = medianPrice(symbol, sources);
-            // uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
-            uint64 anchorPrice = uint64(AnchorPriceOracle(address(anchor)).getUnderlyingPrice(getCTokenAddress(symbol)));
+            uint256 usdcPrice = anchor.getUnderlyingPrice(cUsdcAddress);
+            //TODO sort out proper precision and decimals here
+            uint64 anchorPrice = uint64(anchor.getUnderlyingPrice(getCTokenAddress(symbol)) / usdcPrice);
             if (anchorPrice == 0) {
                 emit PriceGuarded(symbol, medianPrice, anchorPrice);
             } else {
@@ -191,6 +208,8 @@ contract DelFiPrice is OpenOracleView {
         if (symbolHash == symbolWbtc) return cWbtcAddress;
         if (symbolHash == symbolBat) return cBatAddress;
         if (symbolHash == symbolZrx) return cZrxAddress;
+        if (symbolHash == symbolSai) return cSaiAddress;
+        if (symbolHash == symbolUsdt) return cUsdtAddress;
         revert("Unknown token symbol");
     }
 

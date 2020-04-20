@@ -32,10 +32,6 @@ async function setup(N) {
     .slice(0, N)
     .map(web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts));
 
-  // const anchor = web3.eth.accounts.privateKeyToAccount.bind(web3.eth.accounts)(
-  //   '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf40'
-  // );
-
   // CToken contracts addresses
   const ctokens = {
     cEthAddress: address(1),
@@ -45,6 +41,8 @@ async function setup(N) {
     cWbtcAddress: address(5),
     cBatAddress: address(6),
     cZrxAddress: address(7),
+    cSaiAddress: address(8), 
+    cUsdtAddress: address(9)
   }
 
   const anchorMantissa = numToHex(1e17); //1e17 equates to 10% tolerance for median to be above or below anchor
@@ -62,7 +60,9 @@ async function setup(N) {
      cRepAddress: ctokens.cRepAddress,
      cWbtcAddress: ctokens.cWbtcAddress,
      cBatAddress: ctokens.cBatAddress,
-     cZrxAddress: ctokens.cZrxAddress}
+     cZrxAddress: ctokens.cZrxAddress, 
+     cSaiAddress: ctokens.cSaiAddress, 
+     cUsdtAddress: ctokens.cUsdtAddress}
   ]);
 
   async function postPrices(timestamp, prices2dArr, symbols, signers) {
