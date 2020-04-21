@@ -43,7 +43,7 @@ contract DelFiPrice is OpenOracleView {
     uint256 lowerBoundAnchorRatio;
 
     /// @notice The mapping of medianized prices per symbol
-    mapping(string => uint64) public prices;
+    mapping(bytes32 => uint64) public prices;
 
     /// @notice The binary representation for 'ETH' symbol , used for string comparison
     bytes32 constant symbolEth = keccak256(abi.encodePacked("ETH"));
@@ -154,8 +154,9 @@ contract DelFiPrice is OpenOracleView {
                 // Only update the view's price if the median of the sources is within a bound, and it is a new median
                 if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
                     // only update and emit event if the median price is new, otherwise do nothing
-                    if (prices[symbol] != medianPrice) {
-                        prices[symbol] = medianPrice;
+                    bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+                    if (prices[symbolHash] != medianPrice) {
+                        prices[symbolHash] = medianPrice;
                         emit PriceUpdated(symbol, medianPrice);
                     }
                 } else {
@@ -180,7 +181,7 @@ contract DelFiPrice is OpenOracleView {
      */
     function getUnderlyingPrice(address cToken) external returns (uint256) {
         if(cToken == cSaiAddress) {
-            uint256 ethPerUsd = prices["ETH"];
+            uint256 ethPerUsd = prices[symbolEth];
             return anchor.getUnderlyingPrice(cSaiAddress) / ethPerUsd;
         }
         return prices[getOracleKey(cToken)];
@@ -238,16 +239,16 @@ contract DelFiPrice is OpenOracleView {
      * @param cToken The cToken address to map to symbol
      * @return The symbol for the given cToken address
      */
-    function getOracleKey(address cToken) public view returns (string memory) {
-        if (cToken == cEthAddress) return "ETH";
-        if (cToken == cUsdcAddress) return "USDC";
-        if (cToken == cDaiAddress) return "DAI";
-        if (cToken == cRepAddress) return "REP";
-        if (cToken == cWbtcAddress) return "BTC";
-        if (cToken == cBatAddress) return "BAT";
-        if (cToken == cZrxAddress) return "ZRX";
-        if (cToken == cSaiAddress) return "SAI";
-        if (cToken == cUsdtAddress) return "USDT";
+    function getOracleKey(address cToken) public view returns (bytes32) {
+        if (cToken == cEthAddress) return  symbolEth;
+        if (cToken == cUsdcAddress) return symbolUsdc;
+        if (cToken == cDaiAddress) return symbolDai;
+        if (cToken == cRepAddress) return symbolRep;
+        if (cToken == cWbtcAddress) return symbolWbtc;
+        if (cToken == cBatAddress) return symbolBat;
+        if (cToken == cZrxAddress) return symbolZrx;
+        if (cToken == cSaiAddress) return symbolSai;
+        if (cToken == cUsdtAddress) return symbolUsdt;
         revert("Unknown token address");
     }
 
