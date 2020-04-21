@@ -88,7 +88,8 @@ async function setup(N) {
   }
 
   async function getPrice(symbol) {
-    return call(delfi, 'prices', [symbol]);
+    const symbolHash = web3.utils.keccak256(symbol);
+    return call(delfi, 'prices', [symbolHash]);
   }
 
   return {
