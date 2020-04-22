@@ -605,4 +605,69 @@ describe('DelFiPrice', () => {
       expect(postC.gasUsed).toBeLessThan(2.8e6);
     }, 120000);
   });
-});
+
+  describe.only("getAnchorPrice", () => {
+    beforeAll(async () => {
+      ({
+        sources,
+        priceData,
+        delfi,
+        proxyPriceOracle,
+        ctokens,
+        postPrices
+      } = await setup(1));
+    });
+
+    it("returns one with 6 decimals when given usd or usdt", async () => {
+
+      let usdcPrice = "5812601720530109000000000000";
+      const converted_usdc_price = await call(delfi,'getAnchorPrice',["USDC", usdcPrice]);
+      expect(converted_usdc_price).toEqual(1e6.toString());
+
+      const converted_usdt_price = await call(delfi,'getAnchorPrice',["USDT", usdcPrice]);
+      expect(converted_usdt_price).toEqual(1e6.toString());
+
+    });
+
+    it("converts eth price through proxy usdc, with 6 decimals", async () => {
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex(1e18)]);
+      // ~ $172 eth
+      let usdcPrice = "5812601720530109000000000000";
+      const converted_eth_price = await call(delfi,'getAnchorPrice',["ETH", usdcPrice]);
+      expect(converted_eth_price).toEqual(172.04e6.toString());
+    });
+
+    // [open oracle symbol, proxy price in ether, open oracle price in usd]
+    [
+      ["ETH", 1e18, 172.04e6],
+      ["SAI", 5905879257418508, 1.016047e6],
+      ["DAI", 5905879257418508, 1.016047e6],
+
+      ["BAT", 931592500000000, 0.160271e6],
+      ["REP", 56128970000000000, 9.656427e6],
+      ["ZRX", 985525000000000, 0.169549e6],
+      ["BTC", "399920015996800660000000000000", 6880.223955e6] // 8 decimals underlying -> 10 extra decimals on proxy 
+    ].forEach( ([openOracleKey, proxyPrice, expectedOpenOraclePrice ]) => {
+      it(`converts  ${openOracleKey} price through proxy usdc, with 6 decimals`, async () => {
+        let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
+        await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(proxyPrice)]);
+        // ~ $172 eth
+        let usdcPrice = "5812601720530109000000000000";
+        const converted_price = await call(delfi,'getAnchorPrice',[openOracleKey, usdcPrice]);
+        expect(converted_price).toEqual(expectedOpenOraclePrice.toString());
+      });
+    });
+
+  });
+
+  describe.only("getUnderlyingPrice", () => {
+    it("returns 1 with 18 + 12 decimals for usd or usdt", async () => {
+    });
+
+    it("returns proxy price with 18 decimals for SAI", async () => {
+    });
+
+    it("returns source price with 18 decimals for everything else", async () => {
+    });
+  })
+})
