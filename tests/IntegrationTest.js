@@ -54,6 +54,7 @@ describe('Integration', () => {
 
       const web3 = new Web3(new DockerProvider('http://ganache:8545', reporter));
       const accounts = await web3.eth.getAccounts();
+      saddle.network_config.build_dir = '.dockerbuild_cp';
       const delfi = await saddle.getContractAt('DelFiPrice', '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24');
 
       expect(await delfi.methods.prices('BTC').call({from: accounts[0]})).numEquals(0);
