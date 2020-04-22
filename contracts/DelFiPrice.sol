@@ -5,7 +5,7 @@ import "./OpenOraclePriceData.sol";
 import "./OpenOracleView.sol";
 
 interface AnchorPriceOracle {
-     function getUnderlyingPrice(address) external returns (uint256);
+     function getUnderlyingPrice(address) external view returns (uint256);
 }
 
 
@@ -115,6 +115,10 @@ contract DelFiPrice is OpenOracleView {
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
+
+        prices["USDC"] = 1e6;
+        prices["USDT"] = 1e6;
+
         cEthAddress = tokens_.cEthAddress;
         cUsdcAddress = tokens_.cUsdcAddress;
         cDaiAddress = tokens_.cDaiAddress;
@@ -140,13 +144,14 @@ contract DelFiPrice is OpenOracleView {
             OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
         }
 
+        // load usdc for using in loop to convert anchor prices to dollars
+        uint256 usdcPrice = anchor.getUnderlyingPrice(cUsdcAddress);
+
         // Try to update the median
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             uint64 medianPrice = medianPrice(symbol, sources);
-            uint256 usdcPrice = anchor.getUnderlyingPrice(cUsdcAddress);
-            //TODO sort out proper precision and decimals here
-            uint64 anchorPrice = uint64(anchor.getUnderlyingPrice(getCTokenAddress(symbol)) / usdcPrice);
+            uint64 anchorPrice = getAnchorPrice(symbol, usdcPrice);
             if (anchorPrice == 0) {
                 emit PriceGuarded(symbol, medianPrice, anchorPrice);
             } else {
@@ -169,21 +174,61 @@ contract DelFiPrice is OpenOracleView {
      * @notice Flags that this contract is meant to be compatible with Compound v2 PriceOracle interface.
      * @return true, this contract is meant to be used by Compound v2 PriceOracle interface.
      */
-    function isPriceOracle() external pure returns (bool) {
-       return true;
+    function isPriceOracle() external pure returns (bool) { return true; }
+
+    // fetchs price in eth from proxy and converts to usd price using anchor usdc price
+    // anchor usdc price has 30 decimals, and anchor general price has 18 decimals,
+    // so multiplying by 1e18 and by 1e30 yields 1e6
+    function getAnchorPrice(string memory symbol, uint256 usdcPrice) public  returns (uint64) {
+        address tokenAddress = getCTokenAddress(symbol);
+
+        if ( tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress )  {
+            // hard code to 1 dollar
+            return 1e6;
+        }
+
+        uint priceInEth = anchor.getUnderlyingPrice(tokenAddress);
+        uint additionalScale;
+        if ( tokenAddress == cWbtcAddress ){
+            // wbtc proxy price is scaled 1e(36 - 8) = 1e28, so we need 8 more to get to 36
+            additionalScale = 1e8;
+        } else {
+            // all other tokens are scaled 1e18, so we need 18 more to get to 36
+            additionalScale = 1e18;
+        }
+        return uint64(priceInEth * additionalScale / usdcPrice);
     }
 
     /**
      * @notice Implements the method of the PriceOracle interface of Compound v2.
+     * @dev converts from 1e6 decimals of Open Oracle to 1e(36 - underlyingDecimals) of PriceOracleProxy
      * @param cToken The cToken address for price retrieval
      * @return The price for the given cToken address
      */
-    function getUnderlyingPrice(address cToken) external returns (uint256) {
+    function getUnderlyingPrice(address cToken) external view returns (uint256) {
+        uint256 priceSixDecimals;
+
         if(cToken == cSaiAddress) {
-            uint256 ethPerUsd = prices["ETH"];
-            return anchor.getUnderlyingPrice(cSaiAddress) / ethPerUsd;
+            uint256 usdPerEth = prices["ETH"];
+            uint priceEighteenDecimals = anchor.getUnderlyingPrice(cSaiAddress) * 1e6 / usdPerEth;
+            priceSixDecimals = priceEighteenDecimals / 1e12;
+        } else {
+            priceSixDecimals = prices[getOracleKey(cToken)];
         }
-        return prices[getOracleKey(cToken)];
+
+        // comptroller expects price to have 18 decimals,
+        // and additionally upscaled by 1e18 - underlyingdecimals
+        // base decimals is 1e6, so start by addint twelve
+        uint256 additionalScale;
+        if ( cToken == cUsdcAddress || cToken == cUsdtAddress )  {
+            additionalScale = 1e24;
+        } else if ( cToken == cWbtcAddress )  {
+            additionalScale = 1e22;
+        } else {
+            additionalScale = 1e12;
+        }
+
+        return priceSixDecimals * additionalScale;
     }
 
     /**
