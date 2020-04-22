@@ -1,5 +1,5 @@
 const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
-const { time, numToHex, address } = require('./Helpers');
+const { time, numToBigNum, numToHex, address } = require('./Helpers');
 
 async function setup(N) {
   const sources = [
@@ -606,8 +606,8 @@ describe('DelFiPrice', () => {
     }, 120000);
   });
 
-  describe.only("getAnchorPrice", () => {
-    beforeAll(async () => {
+  describe("getAnchorPrice", () => {
+    beforeEach(async () => {
       ({
         sources,
         priceData,
@@ -660,14 +660,91 @@ describe('DelFiPrice', () => {
 
   });
 
-  describe.only("getUnderlyingPrice", () => {
-    it("returns 1 with 18 + 12 decimals for usd or usdt", async () => {
+  describe("getUnderlyingPrice", () => {
+    beforeEach(async () => {
+      ({
+        sources,
+        priceData,
+        delfi,
+        proxyPriceOracle,
+        ctokens,
+        postPrices
+      } = await setup(1));
+
+      // set usdc price so anchoring can use it
+      let usdcPrice = "5812601720530109000000000000";
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, numToHex(usdcPrice)]);
     });
 
-    it("returns proxy price with 18 decimals for SAI", async () => {
+
+    ["USDC", "USDT"].forEach( (openOracleKey) => {
+      it(`returns 1 with 18 + 12 decimals for ${openOracleKey}`, async () => {
+        let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
+        const underlying_price = await call(delfi,'getUnderlyingPrice',[tokenAddress]);
+
+        expect(underlying_price).toEqual("1000000000000000000000000000000");
+      });
     });
 
-    it("returns source price with 18 decimals for everything else", async () => {
+    it("returns proxy price with 18 decimals for SAI, converted through Open Oracle Eth price", async () => {
+      // ["SAI", 5905879257418508, 1.016047],
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cSaiAddress, numToHex(5905879257418508)]);
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex(1e18)]);
+      // TODO: set sai price and usdc price for conversion
+
+      const post1 = await postPrices(
+        time() - 5,
+        [[['ETH', 172.04]]],
+        ['ETH'],
+        sources
+      );
+
+      const underlying_price = await call(delfi,'getUnderlyingPrice',[ctokens.cSaiAddress]);
+
+      expect(underlying_price).toEqual("1016047000000000000");
     });
-  })
-})
+
+    it("returns source price with 18 + 10 decimals for BTC", async () =>{
+      let tokenAddress = await call(delfi, 'getCTokenAddress', ["BTC"]);
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex("399920015996800660000000000000")]);
+      const post1 = await postPrices(
+        time() - 5,
+        [[["BTC", 6880.223955]]],
+        ["BTC"],
+        sources
+      );
+
+      const underlying_price = await call(delfi,'getUnderlyingPrice',[tokenAddress]);
+
+      const actualOpenOraclePrice = await call(delfi, 'prices', [ "BTC" ]);
+
+      expect(underlying_price).toEqual( numToBigNum(actualOpenOraclePrice).mul(numToBigNum("10000000000000000000000")).toString(10));
+    });
+
+    [
+      ["ETH", 1e18, 172.04],
+      ["DAI", 5905879257418508, 1.016047],
+
+      ["BAT", 931592500000000, 0.160271],
+      ["REP", 56128970000000000, 9.656427],
+      ["ZRX", 985525000000000, 0.169549],
+    ].forEach( ([openOracleKey, anchorPrice, openOraclePrice]) => {
+      it(`returns source price with 18 decimals for ${openOracleKey}`, async () => {
+        let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
+        await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(anchorPrice)]);
+        const post1 = await postPrices(
+          time() - 5,
+          [[[openOracleKey, openOraclePrice]]],
+          [openOracleKey],
+          sources
+        );
+
+        const underlying_price = await call(delfi,'getUnderlyingPrice',[tokenAddress]);
+
+        const actualOpenOraclePrice = await call(delfi, 'prices', [ openOracleKey ]);
+
+        expect(underlying_price).toEqual( numToBigNum(actualOpenOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
+      });
+    });
+  });
+});

@@ -1,7 +1,6 @@
 const Web3 = require('web3');
 
 const web3 = new Web3(); // no provider, since we won't make any calls
-var BN = web3.utils.BN;
 
 
 function address(n) {
@@ -17,8 +16,11 @@ function uint256(int) {
 }
 
 function numToHex(num) {
-  console.log(web3.utils.numberToHex(num))
 	return web3.utils.numberToHex(num);
+}
+
+function numToBigNum(num) {
+	return web3.utils.toBN(num);
 }
 
 function time(){
@@ -29,6 +31,7 @@ module.exports = {
 	address,
 	bytes,
 	time,
+	numToBigNum,
 	numToHex,
 	uint256
 };

@@ -171,7 +171,9 @@ contract DelFiPrice is OpenOracleView {
      * @notice Flags that this contract is meant to be compatible with Compound v2 PriceOracle interface.
      * @return true, this contract is meant to be used by Compound v2 PriceOracle interface.
      */
-    function isPriceOracle() external pure returns (bool) { return true; }
+    function isPriceOracle() external pure returns (bool) {
+        return true;
+    }
 
     // fetchs price in eth from proxy and converts to usd price using anchor usdc price
     // anchor usdc price has 30 decimals, and anchor general price has 18 decimals,
@@ -207,8 +209,12 @@ contract DelFiPrice is OpenOracleView {
 
         if(cToken == cSaiAddress) {
             uint256 usdPerEth = prices["ETH"];
-            uint priceEighteenDecimals = anchor.getUnderlyingPrice(cSaiAddress) * 1e6 / usdPerEth;
-            priceSixDecimals = priceEighteenDecimals / 1e12;
+            uint256 ethPerSai = anchor.getUnderlyingPrice(cSaiAddress);
+            // usdPerEth - 6 decimals
+            // ethPerSai - 18 decimals
+            // divide by 1e18 to drop down to 6
+            /* priceSixDecimals = usdPerEth * ethPerSai ; */
+            priceSixDecimals = usdPerEth * ethPerSai / 1e18;
         } else {
             priceSixDecimals = prices[getOracleKey(cToken)];
         }
