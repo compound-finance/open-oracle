@@ -195,7 +195,7 @@ contract DelFiPrice is OpenOracleView {
             // all other tokens are scaled 1e18, so we need 18 more to get to 36
             additionalScale = 1e18;
         }
-        return uint64(priceInEth * additionalScale / usdcPrice);
+        return uint64(mul(priceInEth, additionalScale) / usdcPrice);
     }
 
     /**
@@ -214,7 +214,7 @@ contract DelFiPrice is OpenOracleView {
             // ethPerSai - 18 decimals
             // divide by 1e18 to drop down to 6
             /* priceSixDecimals = usdPerEth * ethPerSai ; */
-            priceSixDecimals = usdPerEth * ethPerSai / 1e18;
+            priceSixDecimals = mul(usdPerEth, ethPerSai) / 1e18;
         } else {
             priceSixDecimals = prices[getOracleKey(cToken)];
         }
@@ -231,7 +231,7 @@ contract DelFiPrice is OpenOracleView {
             additionalScale = 1e12;
         }
 
-        return priceSixDecimals * additionalScale;
+        return mul(priceSixDecimals, additionalScale);
     }
 
     /**
@@ -316,4 +316,16 @@ contract DelFiPrice is OpenOracleView {
         }
         return array;
     }
+
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b, "SafeMath: multiplication overflow");
+
+        return c;
+    }
+
 }
