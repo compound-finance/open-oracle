@@ -67,9 +67,6 @@ contract DelFiPrice is OpenOracleView {
     bytes32 constant symbolZrx = keccak256(abi.encodePacked("ZRX"));
 
     /// @notice The binary representation for 'SAI' symbol, used for string comparison
-    bytes32 constant symbolSai = keccak256(abi.encodePacked("SAI"));
-
-    /// @notice The binary representation for 'SAI' symbol, used for string comparison
     bytes32 constant symbolUsdt = keccak256(abi.encodePacked("USDT"));
 
     /// @notice Address of the cEther contract
@@ -228,7 +225,6 @@ contract DelFiPrice is OpenOracleView {
         if (symbolHash == symbolWbtc) return cWbtcAddress;
         if (symbolHash == symbolBat) return cBatAddress;
         if (symbolHash == symbolZrx) return cZrxAddress;
-        if (symbolHash == symbolSai) return cSaiAddress;
         if (symbolHash == symbolUsdt) return cUsdtAddress;
         revert("Unknown token symbol");
     }
