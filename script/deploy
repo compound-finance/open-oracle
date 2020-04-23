@@ -12,12 +12,12 @@ if [ -z "$network" -o -z "$api_key" ]; then
 fi
 
 npx saddle compile
-npx saddle deploy OpenOraclePriceData -n "$network"
-sleep 15; # allow Etherscan time to see contract
-npx saddle verify "$api_key" OpenOraclePriceData -n "$network" -vvv
+# npx saddle deploy OpenOraclePriceData -n "$network"
+# sleep 15; # allow Etherscan time to see contract
+# npx saddle verify "$api_key" OpenOraclePriceData -n "$network" -vvv
 
 data_addr=`node -e "const contracts = require('./.build/${network}.json'); console.log(contracts.OpenOraclePriceData);"`
 
-npx saddle deploy DelFiPrice "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network"
+npx saddle deploy AnchoredPriceView "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network"
 sleep 15; # allow Etherscan time to see contract
-npx saddle verify "$api_key" DelFiPrice "$data_addr" "$reporters":array -n "$network"
+npx saddle verify "$api_key" AnchoredPriceView "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network" -n "$network"

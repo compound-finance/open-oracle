@@ -26,15 +26,17 @@ async function setup() {
     source.address,
     anchor,
     anchorMantissa,
-    {cEthAddress: ctokens.cEthAddress,
-     cUsdcAddress: ctokens.cUsdcAddress,
-     cDaiAddress: ctokens.cDaiAddress,
-     cRepAddress: ctokens.cRepAddress,
-     cWbtcAddress: ctokens.cWbtcAddress,
-     cBatAddress: ctokens.cBatAddress,
-     cZrxAddress: ctokens.cZrxAddress,
-     cSaiAddress: ctokens.cSaiAddress,
-     cUsdtAddress: ctokens.cUsdtAddress}
+    {
+      cEthAddress: ctokens.cEthAddress,
+      cUsdcAddress: ctokens.cUsdcAddress,
+      cDaiAddress: ctokens.cDaiAddress,
+      cRepAddress: ctokens.cRepAddress,
+      cWbtcAddress: ctokens.cWbtcAddress,
+      cBatAddress: ctokens.cBatAddress,
+      cZrxAddress: ctokens.cZrxAddress,
+      cSaiAddress: ctokens.cSaiAddress,
+      cUsdtAddress: ctokens.cUsdtAddress
+    }
   ]);
 
   async function postPrices(timestamp, prices2dArr, symbols, signer) {
@@ -71,12 +73,12 @@ async function setup() {
       gas: 43000
     });
 
-    await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex( "1000000000000000000" )], {
+    await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex("1000000000000000000")], {
       gas: 43000
     });
 
     const theRatio = "200000000000000000000000000000";
-    await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cWbtcAddress, numToHex( theRatio )], {
+    await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cWbtcAddress, numToHex(theRatio)], {
       gas: 43000
     });
   }
@@ -98,15 +100,15 @@ async function setup() {
 
 describe('AnchoredPriceView', () => {
   let source,
-      anchor,
-      anchorMantissa,
-      priceData,
-      delfi,
-      proxyPriceOracle,
-      ctokens,
-      postPrices,
-      primeAnchor,
-      getPrice;
+    anchor,
+    anchorMantissa,
+    priceData,
+    delfi,
+    proxyPriceOracle,
+    ctokens,
+    postPrices,
+    primeAnchor,
+    getPrice;
 
   const timestamp = time() - 5;
   describe('Anchoring', () => {
@@ -285,10 +287,10 @@ describe('AnchoredPriceView', () => {
     it("returns one with 6 decimals when given usd or usdt", async () => {
 
       let usdcPrice = "5812601720530109000000000000";
-      const converted_usdc_price = await call(delfi,'getAnchorPrice',[ctokens.cUsdcAddress, usdcPrice]);
+      const converted_usdc_price = await call(delfi, 'getAnchorPrice', [ctokens.cUsdcAddress, usdcPrice]);
       expect(converted_usdc_price).toEqual(1e6.toString());
 
-      const converted_usdt_price = await call(delfi,'getAnchorPrice',[ctokens.cUsdtAddress, usdcPrice]);
+      const converted_usdt_price = await call(delfi, 'getAnchorPrice', [ctokens.cUsdtAddress, usdcPrice]);
       expect(converted_usdt_price).toEqual(1e6.toString());
 
     });
@@ -297,7 +299,7 @@ describe('AnchoredPriceView', () => {
       await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex(1e18)]);
       // ~ $172 eth
       let usdcPrice = "5812601720530109000000000000";
-      const converted_eth_price = await call(delfi,'getAnchorPrice',[ctokens.cEthAddress, usdcPrice]);
+      const converted_eth_price = await call(delfi, 'getAnchorPrice', [ctokens.cEthAddress, usdcPrice]);
       expect(converted_eth_price).toEqual(172.04e6.toString());
     });
 
@@ -311,13 +313,13 @@ describe('AnchoredPriceView', () => {
       ["REP", 56128970000000000, 9.656427e6],
       ["ZRX", 985525000000000, 0.169549e6],
       ["BTC", "399920015996800660000000000000", 6880.223955e6] // 8 decimals underlying -> 10 extra decimals on proxy 
-    ].forEach( ([openOracleKey, proxyPrice, expectedOpenOraclePrice ]) => {
+    ].forEach(([openOracleKey, proxyPrice, expectedOpenOraclePrice]) => {
       it(`converts  ${openOracleKey} price through proxy usdc, with 6 decimals`, async () => {
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
         await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(proxyPrice)]);
         // ~ $172 eth
         let usdcPrice = "5812601720530109000000000000";
-        const converted_price = await call(delfi,'getAnchorPrice',[tokenAddress, usdcPrice]);
+        const converted_price = await call(delfi, 'getAnchorPrice', [tokenAddress, usdcPrice]);
         expect(converted_price).toEqual(expectedOpenOraclePrice.toString());
       });
     });
@@ -341,17 +343,17 @@ describe('AnchoredPriceView', () => {
     });
 
 
-    ["USDC", "USDT"].forEach( (openOracleKey) => {
+    ["USDC", "USDT"].forEach((openOracleKey) => {
       it(`returns 1 with 18 + 12 decimals for ${openOracleKey}`, async () => {
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
-        const underlying_price = await call(delfi,'getUnderlyingPrice',[tokenAddress]);
+        const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
         expect(underlying_price).toEqual("1000000000000000000000000000000");
       });
     });
 
 
-    it("returns source price with 18 + 10 decimals for BTC", async () =>{
+    it("returns source price with 18 + 10 decimals for BTC", async () => {
       let tokenAddress = await call(delfi, 'getCTokenAddress', ["BTC"]);
       await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex("399920015996800660000000000000")]);
       const post1 = await postPrices(
@@ -361,16 +363,16 @@ describe('AnchoredPriceView', () => {
         source
       );
 
-      const underlying_price = await call(delfi,'getUnderlyingPrice',[tokenAddress]);
+      const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
-      const actualOpenOraclePrice = await call(delfi, 'prices', [ "BTC" ]);
+      const actualOpenOraclePrice = await call(delfi, 'prices', ["BTC"]);
 
-      expect(underlying_price).toEqual( numToBigNum(actualOpenOraclePrice).mul(numToBigNum("10000000000000000000000")).toString(10));
+      expect(underlying_price).toEqual(numToBigNum(actualOpenOraclePrice).mul(numToBigNum("10000000000000000000000")).toString(10));
     });
 
     [
       ["ETH", 1e18, 172.04],
-    ].forEach( ([openOracleKey, anchorPrice, openOraclePrice]) => {
+    ].forEach(([openOracleKey, anchorPrice, openOraclePrice]) => {
       it(`returns source price with 18 decimals for ${openOracleKey}`, async () => {
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
         await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(anchorPrice)]);
@@ -381,11 +383,11 @@ describe('AnchoredPriceView', () => {
           source
         );
 
-        const underlying_price = await call(delfi,'getUnderlyingPrice',[tokenAddress]);
+        const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
         const actualOpenOraclePrice = openOraclePrice * 1e6;
 
-        expect(underlying_price).toEqual( numToBigNum(actualOpenOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
+        expect(underlying_price).toEqual(numToBigNum(actualOpenOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
       });
     });
 
@@ -395,7 +397,7 @@ describe('AnchoredPriceView', () => {
       ["BAT", 931592500000000, 160271],
       ["REP", 56128970000000000, 9656427],
       ["ZRX", 985525000000000, 169549]
-    ].forEach( ([openOracleKey, anchorPrice, openOraclePrice]) => {
+    ].forEach(([openOracleKey, anchorPrice, openOraclePrice]) => {
       it(`returns anchor price converted to dollars with 18 decimals for ${openOracleKey} converted through open oracle eth price`, async () => {
 
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
@@ -408,7 +410,7 @@ describe('AnchoredPriceView', () => {
           source
         );
 
-        const underlying_price = await call(delfi,'getUnderlyingPrice',[tokenAddress]);
+        const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
 
         expect(underlying_price).toEqual(numToBigNum(openOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
@@ -426,7 +428,7 @@ describe('AnchoredPriceView', () => {
           source
         );
 
-        const underlying_price = await call(delfi,'getUnderlyingPrice',[ctokens.cSaiAddress]);
+        const underlying_price = await call(delfi, 'getUnderlyingPrice', [ctokens.cSaiAddress]);
 
         expect(underlying_price).toEqual("1016047000000000000");
       });
