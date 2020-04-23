@@ -1,5 +1,5 @@
 pragma solidity ^0.6.6;
-import "../../contracts/DelFiPrice.sol";
+import "../../contracts/AnchoredPriceView.sol";
 
 
 // @dev mock version of price oracle proxy, allowing manually setting return values
