@@ -3608,10 +3608,10 @@ eth-query@^2.0.2, eth-query@^2.1.0, eth-query@^2.1.2:
     json-rpc-random-id "^1.0.0"
     xtend "^4.0.1"
 
-eth-saddle@0.1.17-alpha1:
-  version "0.1.17-alpha1"
-  resolved "https://registry.yarnpkg.com/eth-saddle/-/eth-saddle-0.1.17-alpha1.tgz#2c09cf80706a7a1f61d89e0c198f5d6b6e764a30"
-  integrity sha512-1ZqxLLQZT/eciWsjoKj6ocz73NSl46NKvbH6y5TDy+/5GjoGGKIj90xPa1ie8kEDGPa7vVIUm9bHCBovoYGKvw==
+eth-saddle@^0.1.17:
+  version "0.1.17"
+  resolved "https://registry.yarnpkg.com/eth-saddle/-/eth-saddle-0.1.17.tgz#54c7bf89970739f0154b382cfbdda9ccdae314f5"
+  integrity sha512-o+ZhnasyFmlBtmeAI8MV/pnCPtjxnkJ058qQ9H0k27Ew6f+Aj7k/k0HuEElCMkczELTa57UJIv0nZqjCVNARxw==
   dependencies:
     "@0x/sol-tracing-utils" "^7.0.3"
     "@0x/subproviders" "^6.0.0"

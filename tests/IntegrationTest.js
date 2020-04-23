@@ -39,7 +39,6 @@ async function waitForLogs(serviceLogPairs) {
   }
 }
 
-// Skip this test for now, until saddle script or :struct processing is added
 describe('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     try {
