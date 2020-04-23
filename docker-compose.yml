@@ -13,7 +13,7 @@ services:
       SADDLE_BUILD=/build npx saddle compile;
       SADDLE_BUILD=/build npx saddle contracts;
       GAS=6721975 SADDLE_BUILD=/build npx saddle deploy OpenOraclePriceData;
-      GAS=6721975 SADDLE_BUILD=/build npx saddle deploy DelFiPrice $$(cat /build/development.json | jq -r .OpenOraclePriceData) $$REPORTER_1_ADDRESS,$$REPORTER_2_ADDRESS:array $$ANCHOR_ADDRESS $$ANCHOR_MANTISSA_HEX $$CTOKENS:struct
+      GAS=6721975 SADDLE_BUILD=/build npx saddle deploy DelFiPrice $$(cat /build/development.json | jq -r .OpenOraclePriceData) $$REPORTER_1_ADDRESS,$$REPORTER_2_ADDRESS:array $$ANCHOR_ADDRESS $$ANCHOR_MANTISSA_HEX
     '"
     environment:
       - PROVIDER=http://ganache:8545
