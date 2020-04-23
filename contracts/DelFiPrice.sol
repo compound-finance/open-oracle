@@ -178,7 +178,7 @@ contract DelFiPrice is OpenOracleView {
     // fetchs price in eth from proxy and converts to usd price using anchor usdc price
     // anchor usdc price has 30 decimals, and anchor general price has 18 decimals,
     // so multiplying by 1e18 and by 1e30 yields 1e6
-    function getAnchorPrice(string memory symbol, uint256 usdcPrice) public  returns (uint64) {
+    function getAnchorPrice(string memory symbol, uint256 usdcPrice) public view returns (uint64) {
         address tokenAddress = getCTokenAddress(symbol);
 
         if ( tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress )  {
