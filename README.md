@@ -6,7 +6,7 @@ The Open Oracle is a standard and SDK allowing reporters to sign key-value pairs
 ## Contracts
 
 First, you will need solc 0.6.6 installed.
-Additionally, you will need TypeScript installed and will need to build the project by running `tsc`.
+Additionally for testing, you will need TypeScript installed and will need to build the open-oracle-reporter project by running `cd sdk/javascript && yarn`.
 
 To fetch dependencies run:
 
