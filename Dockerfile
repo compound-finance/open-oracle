@@ -15,9 +15,9 @@ COPY package.json /open-oracle/package.json
 RUN yarn install
 
 ENV PROVIDER PROVIDER
-ADD contracts contracts
-ADD tests tests
-ADD saddle.config.js saddle.config.js
+COPY contracts contracts
+COPY tests tests
+COPY saddle.config.js saddle.config.js
 RUN npx saddle compile
 
 ENTRYPOINT []
