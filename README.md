@@ -5,8 +5,14 @@ The Open Oracle is a standard and SDK allowing reporters to sign key-value pairs
 
 ## Contracts
 
-First, you will need solc 0.5.10 installed.
+First, you will need solc 0.6.6 installed.
 Additionally, you will need TypeScript installed and will need to build the project by running `tsc`.
+
+To fetch dependencies run:
+
+```
+yarn install
+```
 
 To compile everything run:
 
@@ -14,16 +20,10 @@ To compile everything run:
 yarn run compile
 ```
 
-To compile just the contracts run:
+To deploy contracts locally, you can run:
 
 ```
-yarn run saddle:compile
-```
-
-To deploy the Open Oracle locally, you can run:
-
-```
-yarn run saddle:deploy --network development Oracle
+yarn run deploy --network development OpenOraclePriceData
 ```
 
 Note: you will need to be running an Ethereum node locally in order for this to work.
@@ -32,7 +32,7 @@ E.g., start [ganache-cli](https://github.com/trufflesuite/ganache-cli) in anothe
 You can add a view in `MyView.sol` and run (default is `network=development`):
 
 ```
-yarn run saddle:deploy MyView arg1 arg2 ...
+yarn run deploy MyView arg1 arg2 ...
 ```
 
 To run tests:
@@ -41,6 +41,11 @@ To run tests:
 yarn run test
 ```
 
+To track deployed contracts in a saddle console:
+
+```
+yarn run console
+```
 ## Reporter SDK
 
 This repository contains a set of SDKs for reporters to easily sign "reporter" data in any supported languages. We currently support the following languages:
