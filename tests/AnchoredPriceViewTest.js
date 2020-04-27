@@ -130,18 +130,16 @@ describe('AnchoredPriceView', () => {
     });
 
     it('posting 0 anchor price should guard price and not revert', async () => {
-      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
-        gas: 43000
-      });
       const post1 = await postPrices(
         timestamp,
         [[['ETH', 91]]],
         ['ETH'],
         source
       );
+  
       expect(post1.events.PriceGuarded).not.toBe(undefined);
       expect(post1.events.PricePosted).toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(0);
+      expect(await getPrice('ETH')).numEquals(500000000);
     });
 
     it('posting within anchor should update stored value', async () => {
@@ -182,7 +180,7 @@ describe('AnchoredPriceView', () => {
       );
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(post1.events.PriceGuarded).not.toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(0);
+      expect(await getPrice('ETH')).numEquals(500000000);
     });
 
     it('should not update source price if anchor is much higher', async () => {
@@ -194,7 +192,7 @@ describe('AnchoredPriceView', () => {
       );
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(post1.events.PriceGuarded).not.toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(0);
+      expect(await getPrice('ETH')).numEquals(500000000);
     });
 
     it('posting all source for two assets should update stored values', async () => {
