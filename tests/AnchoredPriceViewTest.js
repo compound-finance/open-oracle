@@ -21,7 +21,7 @@ async function setup() {
   const priceData = await deploy('OpenOraclePriceData', []);
   const proxyPriceOracle = await deploy('ProxyPriceOracle');
   const anchor = proxyPriceOracle._address;
-  const delfi = await deploy('AnchoredPriceView', [
+  const delfi = await deploy('CompoundProtocolPriceView', [
     priceData._address,
     source.address,
     anchor,
