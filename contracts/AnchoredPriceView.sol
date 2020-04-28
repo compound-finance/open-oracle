@@ -48,6 +48,9 @@ contract AnchoredPriceView {
     /// @notice The mapping of medianized prices per symbol
     mapping(string => uint64) public prices;
 
+    /// @notice circuit breaker for using anchor price oracle directly
+    bool public breaker;
+
     /// @notice The binary representation for 'ETH' symbol , used for string comparison
     bytes32 constant symbolEth = keccak256(abi.encodePacked("ETH"));
 
@@ -107,6 +110,7 @@ contract AnchoredPriceView {
 
     /// @notice the Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
+    
 
     /**
      * @param data_ Address of the Oracle Data contract
@@ -286,6 +290,15 @@ contract AnchoredPriceView {
         if (cToken == cSaiAddress) return "SAI";
         if (cToken == cUsdtAddress) return "USDT";
         revert("Unknown token address");
+    }
+
+    function invalidate(bytes memory message, bytes memory signature) public {
+        (string memory decoded_message, address target) = abi.decode(message, (string, address));
+        require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalid message must be 'rotate'");
+        require(priceData.source(message, signature) == source, "invalidation message must come from the reporter");
+        target; //shh
+
+        breaker = true;
     }
 
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {

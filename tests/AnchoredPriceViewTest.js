@@ -1,4 +1,4 @@
-const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
+const { encode, sign, encodeRotationMessage } = require('../sdk/javascript/.tsbuilt/reporter');
 const { time, numToBigNum, numToHex, address } = require('./Helpers');
 
 async function setup() {
@@ -433,6 +433,52 @@ describe('AnchoredPriceView', () => {
         expect(underlying_price).toEqual("1016047000000000000");
       });
 
+    });
+  });
+
+  describe("invalidate", () => {
+    beforeEach(async () => {
+      ({
+        source,
+        priceData,
+        delfi,
+        proxyPriceOracle,
+        ctokens,
+        postPrices
+      } = await setup());
+    });
+
+    it("reverts if given wrong message", async () => {
+      const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
+      let encoded = web3.eth.abi.encodeParameters(['string', 'address'], ['stay still', rotationTarget]);
+      const [ signed ] = sign(encoded, source.privateKey);
+
+      await expect(
+        send(delfi, 'invalidate', [encoded, signed.signature])
+      ).rejects.toRevert("revert invalid message must be 'rotate'");
+    });
+
+    it("reverts if given wrong signature", async () => {
+      const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
+      let encoded = encodeRotationMessage(rotationTarget);
+      // sign rotation message with wrong key
+      const [ signed ] = sign(encoded, '0x666ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
+
+      await expect(
+        send(delfi, 'invalidate', [encoded, signed.signature + "1"])
+      ).rejects.toRevert("revert invalidation message must come from the reporter");
+
+    });
+
+    it("sets fallback flag to true if passes", async () => {
+      const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
+      let encoded = encodeRotationMessage(rotationTarget);
+      // sign rotation message with wrong key
+      const [ signed ] = sign(encoded, source.privateKey);
+      expect(await call(delfi, 'breaker', [])).toEqual(false);
+      await send(delfi, 'invalidate', [encoded, signed.signature]);
+
+      expect(await call(delfi, 'breaker', [])).toEqual(true);
     });
   });
 });
