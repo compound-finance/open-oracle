@@ -129,19 +129,17 @@ describe('AnchoredPriceView', () => {
       done();
     });
 
-    it('posting 0 anchor price should guard price and not revert', async () => {
-      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, 1], {
-        gas: 43000
-      });
+    it('posting no ETH price should guard price and not revert, returns anchor price', async () => {
       const post1 = await postPrices(
         timestamp,
         [[['ETH', 91]]],
         ['ETH'],
         source
       );
+  
       expect(post1.events.PriceGuarded).not.toBe(undefined);
       expect(post1.events.PricePosted).toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(0);
+      expect(await getPrice('ETH')).numEquals(500000000);
     });
 
     it('posting within anchor should update stored value', async () => {
@@ -173,7 +171,7 @@ describe('AnchoredPriceView', () => {
       expect(await getPrice('ETH')).numEquals(250e6);
     });
 
-    it('should not update source price if anchor is much lower', async () => {
+    it('should not update source price if anchor is much lower, returns anchor price', async () => {
       const post1 = await postPrices(
         timestamp,
         [[['ETH', 1000]]],
@@ -182,10 +180,10 @@ describe('AnchoredPriceView', () => {
       );
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(post1.events.PriceGuarded).not.toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(0);
+      expect(await getPrice('ETH')).numEquals(500000000);
     });
 
-    it('should not update source price if anchor is much higher', async () => {
+    it('should not update source price if anchor is much higher, returns anchor price', async () => {
       const post1 = await postPrices(
         timestamp,
         [[['ETH', 116]]],
@@ -194,7 +192,7 @@ describe('AnchoredPriceView', () => {
       );
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(post1.events.PriceGuarded).not.toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(0);
+      expect(await getPrice('ETH')).numEquals(500000000);
     });
 
     it('posting all source for two assets should update stored values', async () => {

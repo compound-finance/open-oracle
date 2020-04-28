@@ -45,8 +45,8 @@ contract AnchoredPriceView {
     /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 lowerBoundAnchorRatio;
 
-    /// @notice The mapping of medianized prices per symbol
-    mapping(string => uint64) public prices;
+    /// @notice The mapping of posted by source prices per symbol
+    mapping(string => uint64) _prices;
 
     /// @notice The binary representation for 'ETH' symbol , used for string comparison
     bytes32 constant symbolEth = keccak256(abi.encodePacked("ETH"));
@@ -170,14 +170,25 @@ contract AnchoredPriceView {
                 // Only update the view's price if the source price is within a bound, and it is a new median
                 if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
                     // only update and emit event if the source price is new, otherwise do nothing
-                    if (prices[symbol] != sourcePrice) {
-                        prices[symbol] = sourcePrice;
+                    if (_prices[symbol] != sourcePrice) {
+                        _prices[symbol] = sourcePrice;
                         emit PriceUpdated(symbol, sourcePrice);
                     }
                 } else {
                     emit PriceGuarded(symbol, sourcePrice, anchorPrice);
                 }
             }
+        }
+    }
+
+    function prices(string calldata symbol) external view returns (uint64) {
+        uint64 price = _prices[symbol];
+        // If price was posted by source, eturn it. Othrwise, return anchor price
+        if (price != 0) {
+            return price;
+        } else {
+            uint256 usdcPrice = anchor.getUnderlyingPrice(cUsdcAddress);
+            return getAnchorPrice(getCTokenAddress(symbol), usdcPrice);
         }
     }
 
@@ -226,9 +237,9 @@ contract AnchoredPriceView {
         if(cToken == cUsdcAddress || cToken == cUsdtAddress) {
             priceSixDecimals = oneDollar;
         } else if (cToken == cWbtcAddress || cToken == cEthAddress) {
-            priceSixDecimals = prices[getOracleKey(cToken)];
+            priceSixDecimals = _prices[getOracleKey(cToken)];
         } else {
-            uint256 usdPerEth = prices["ETH"];
+            uint256 usdPerEth = _prices["ETH"];
             uint256 ethPerToken = anchor.getUnderlyingPrice(cToken);
             // usdPerEth - 6 decimals
             // ethPerStandardErc20 - 18 decimals
