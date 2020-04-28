@@ -129,7 +129,7 @@ describe('AnchoredPriceView', () => {
       done();
     });
 
-    it('posting 0 anchor price should guard price and not revert', async () => {
+    it('posting no ETH price should guard price and not revert, returns anchor price', async () => {
       const post1 = await postPrices(
         timestamp,
         [[['ETH', 91]]],
@@ -171,7 +171,7 @@ describe('AnchoredPriceView', () => {
       expect(await getPrice('ETH')).numEquals(250e6);
     });
 
-    it('should not update source price if anchor is much lower', async () => {
+    it('should not update source price if anchor is much lower, returns anchor price', async () => {
       const post1 = await postPrices(
         timestamp,
         [[['ETH', 1000]]],
@@ -183,7 +183,7 @@ describe('AnchoredPriceView', () => {
       expect(await getPrice('ETH')).numEquals(500000000);
     });
 
-    it('should not update source price if anchor is much higher', async () => {
+    it('should not update source price if anchor is much higher, returns anchor price', async () => {
       const post1 = await postPrices(
         timestamp,
         [[['ETH', 116]]],
