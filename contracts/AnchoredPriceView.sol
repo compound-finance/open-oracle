@@ -225,6 +225,9 @@ contract AnchoredPriceView {
      * @return The price for the given cToken address
      */
     function getUnderlyingPrice(address cToken) external view returns (uint256) {
+        if (breaker == true) {
+            return anchor.getUnderlyingPrice(cToken);
+        }
         uint256 priceSixDecimals;
 
         if(cToken == cUsdcAddress || cToken == cUsdtAddress) {
@@ -293,10 +296,9 @@ contract AnchoredPriceView {
     }
 
     function invalidate(bytes memory message, bytes memory signature) public {
-        (string memory decoded_message, address target) = abi.decode(message, (string, address));
+        (string memory decoded_message, ) = abi.decode(message, (string, address));
         require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalid message must be 'rotate'");
         require(priceData.source(message, signature) == source, "invalidation message must come from the reporter");
-        target; //shh
 
         breaker = true;
     }

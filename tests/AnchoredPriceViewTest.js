@@ -415,10 +415,11 @@ describe('AnchoredPriceView', () => {
 
         expect(underlying_price).toEqual(numToBigNum(openOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
       });
+    });
 
-      it("returns proxy price with 18 decimals for SAI, converted through Open Oracle Eth price", async () => {
-        // ["SAI", 5905879257418508, 1.016047],
-        await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cSaiAddress, numToHex(5905879257418508)]);
+    it("returns proxy price with 18 decimals for SAI, converted through Open Oracle Eth price", async () => {
+      // ["SAI", 5905879257418508, 1.016047],
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cSaiAddress, numToHex(5905879257418508)]);
         await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex(1e18)]);
 
         const post1 = await postPrices(
@@ -433,6 +434,33 @@ describe('AnchoredPriceView', () => {
         expect(underlying_price).toEqual("1016047000000000000");
       });
 
+      [
+        ["ETH", 1e18],
+        ["SAI", 5905879257418508],
+        ["DAI", 5905879257418508],
+        ["USDT", "5905879257418508000000000000"],
+        ["USDC", "5905879257418508000000000000"],
+        ["BAT", 931592500000000],
+        ["REP", 56128970000000000],
+        ["ZRX", 985525000000000],
+        ["BTC", "399920015996800660000000000000"] // 8 decimals underlying -> 10 extra decimals on proxy 
+      ].forEach(([openOracleKey, proxyPrice]) => {
+        it(`returns anchor price if breaker is set for ${openOracleKey}`, async () => {
+          let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
+          await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(proxyPrice)]);
+
+          const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
+          let encoded = encodeRotationMessage(rotationTarget);
+          const [ signed ] = sign(encoded, source.privateKey);
+
+          expect(await call(delfi, 'breaker', [])).toEqual(false);
+
+          expect(await call(delfi, 'getUnderlyingPrice', [tokenAddress])).not.toEqual(proxyPrice.toString());
+          await send(delfi, 'invalidate', [encoded, signed.signature]);
+          expect(await call(delfi, 'breaker', [])).toEqual(true);
+
+          expect(await call(delfi, 'getUnderlyingPrice', [tokenAddress])).toEqual(proxyPrice.toString());
+      });
     });
   });
 
