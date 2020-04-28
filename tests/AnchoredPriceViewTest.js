@@ -21,7 +21,7 @@ async function setup() {
   const priceData = await deploy('OpenOraclePriceData', []);
   const proxyPriceOracle = await deploy('ProxyPriceOracle');
   const anchor = proxyPriceOracle._address;
-  const delfi = await deploy('CompoundProtocolPriceView', [
+  const delfi = await deploy('AnchoredPriceView', [
     priceData._address,
     source.address,
     anchor,
@@ -431,63 +431,6 @@ describe('AnchoredPriceView', () => {
         expect(underlying_price).toEqual("1016047000000000000");
       });
 
-    });
-  });
-
-  describe('prices', () => {
-    beforeEach(async done => {
-      ({
-        source,
-        proxyPriceOracle,
-        ctokens,
-        postPrices,
-        primeAnchor,
-        getPrice
-      } = await setup());
-      await primeAnchor();
-      done();
-    });
-
-    it('posting ETH and BTC prices only, other prices should be returned from an anchor', async () => {
-      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cZrxAddress, numToHex("2000000000000000000")], {
-        gas: 43000
-      });
-      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cRepAddress, numToHex("4000000000000000000")], {
-        gas: 43000
-      });
-      const post1 = await postPrices(
-        timestamp,
-        [
-          [['ETH', 510], ['BTC', 11000]],
-        ],
-        ['ETH', 'BTC'],
-        source
-      );
-      expect(post1.gasUsed).toBeLessThan(650000);
-
-      expect(await getPrice('ETH')).numEquals(510e6);
-      expect(await getPrice('BTC')).numEquals(11000e6);
-
-      expect(await getPrice('ZRX')).numEquals(1000e6);
-      expect(await getPrice('REP')).numEquals(2000e6);
-    });
-
-    it('posting ETH and BTC prices only, for other assets prices in anchor are not set, returns 0', async () => {
-      const post1 = await postPrices(
-        timestamp,
-        [
-          [['ETH', 510], ['BTC', 11000]],
-        ],
-        ['ETH', 'BTC'],
-        source
-      );
-      expect(post1.gasUsed).toBeLessThan(650000);
-
-      expect(await getPrice('ETH')).numEquals(510e6);
-      expect(await getPrice('BTC')).numEquals(11000e6);
-
-      expect(await getPrice('ZRX')).numEquals(0);
-      expect(await getPrice('REP')).numEquals(0);
     });
   });
 });
