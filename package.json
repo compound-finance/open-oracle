@@ -21,7 +21,8 @@
   "scripts": {
     "test": "npx saddle test",
     "console": "npx -n --experimental-repl-await saddle console",
-    "compile": "npx saddle compile"
+    "compile": "npx saddle compile",
+    "deploy": "npx saddle deploy"
   },
   "resolutions": {
     "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz"
