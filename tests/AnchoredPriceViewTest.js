@@ -1,4 +1,4 @@
-const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
+const { encode, sign, encodeRotationMessage } = require('../sdk/javascript/.tsbuilt/reporter');
 const { time, numToBigNum, numToHex, address } = require('./Helpers');
 
 async function setup() {
@@ -413,10 +413,11 @@ describe('AnchoredPriceView', () => {
 
         expect(underlying_price).toEqual(numToBigNum(openOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
       });
+    });
 
-      it("returns proxy price with 18 decimals for SAI, converted through Open Oracle Eth price", async () => {
-        // ["SAI", 5905879257418508, 1.016047],
-        await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cSaiAddress, numToHex(5905879257418508)]);
+    it("returns proxy price with 18 decimals for SAI, converted through Open Oracle Eth price", async () => {
+      // ["SAI", 5905879257418508, 1.016047],
+      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cSaiAddress, numToHex(5905879257418508)]);
         await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex(1e18)]);
 
         const post1 = await postPrices(
@@ -431,6 +432,79 @@ describe('AnchoredPriceView', () => {
         expect(underlying_price).toEqual("1016047000000000000");
       });
 
+      [
+        ["ETH", 1e18],
+        ["SAI", 5905879257418508],
+        ["DAI", 5905879257418508],
+        ["USDT", "5905879257418508000000000000"],
+        ["USDC", "5905879257418508000000000000"],
+        ["BAT", 931592500000000],
+        ["REP", 56128970000000000],
+        ["ZRX", 985525000000000],
+        ["BTC", "399920015996800660000000000000"] // 8 decimals underlying -> 10 extra decimals on proxy 
+      ].forEach(([openOracleKey, proxyPrice]) => {
+        it(`returns anchor price if breaker is set for ${openOracleKey}`, async () => {
+          let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
+          await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(proxyPrice)]);
+
+          const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
+          let encoded = encodeRotationMessage(rotationTarget);
+          const [ signed ] = sign(encoded, source.privateKey);
+
+          expect(await call(delfi, 'breaker', [])).toEqual(false);
+
+          expect(await call(delfi, 'getUnderlyingPrice', [tokenAddress])).not.toEqual(proxyPrice.toString());
+          await send(delfi, 'invalidate', [encoded, signed.signature]);
+          expect(await call(delfi, 'breaker', [])).toEqual(true);
+
+          expect(await call(delfi, 'getUnderlyingPrice', [tokenAddress])).toEqual(proxyPrice.toString());
+      });
+    });
+  });
+
+  describe("invalidate", () => {
+    beforeEach(async () => {
+      ({
+        source,
+        priceData,
+        delfi,
+        proxyPriceOracle,
+        ctokens,
+        postPrices
+      } = await setup());
+    });
+
+    it("reverts if given wrong message", async () => {
+      const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
+      let encoded = web3.eth.abi.encodeParameters(['string', 'address'], ['stay still', rotationTarget]);
+      const [ signed ] = sign(encoded, source.privateKey);
+
+      await expect(
+        send(delfi, 'invalidate', [encoded, signed.signature])
+      ).rejects.toRevert("revert invalid message must be 'rotate'");
+    });
+
+    it("reverts if given wrong signature", async () => {
+      const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
+      let encoded = encodeRotationMessage(rotationTarget);
+      // sign rotation message with wrong key
+      const [ signed ] = sign(encoded, '0x666ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
+
+      await expect(
+        send(delfi, 'invalidate', [encoded, signed.signature + "1"])
+      ).rejects.toRevert("revert invalidation message must come from the reporter");
+
+    });
+
+    it("sets fallback flag to true if passes", async () => {
+      const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
+      let encoded = encodeRotationMessage(rotationTarget);
+      // sign rotation message with wrong key
+      const [ signed ] = sign(encoded, source.privateKey);
+      expect(await call(delfi, 'breaker', [])).toEqual(false);
+      await send(delfi, 'invalidate', [encoded, signed.signature]);
+
+      expect(await call(delfi, 'breaker', [])).toEqual(true);
     });
   });
 });
