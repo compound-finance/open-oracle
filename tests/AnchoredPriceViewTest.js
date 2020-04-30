@@ -136,10 +136,10 @@ describe('AnchoredPriceView', () => {
         ['ETH'],
         source
       );
-  
+
       expect(post1.events.PriceGuarded).not.toBe(undefined);
       expect(post1.events.PricePosted).toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(500000000);
+      expect(await call(delfi, '_prices', ['ETH'])).numEquals(0);
     });
 
     it('posting within anchor should update stored value', async () => {
@@ -180,7 +180,7 @@ describe('AnchoredPriceView', () => {
       );
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(post1.events.PriceGuarded).not.toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(500000000);
+      expect(await call(delfi, '_prices', ['ETH'])).numEquals(0);
     });
 
     it('should not update source price if anchor is much higher, returns anchor price', async () => {
@@ -192,7 +192,7 @@ describe('AnchoredPriceView', () => {
       );
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(post1.events.PriceGuarded).not.toBe(undefined);
-      expect(await getPrice('ETH')).numEquals(500000000);
+      expect(await call(delfi, '_prices', ['ETH'])).numEquals(0);
     });
 
     it('posting all source for two assets should update stored values', async () => {
@@ -326,46 +326,47 @@ describe('AnchoredPriceView', () => {
 
   describe("getUnderlyingPrice", () => {
     beforeEach(async () => {
-      ({
+      ( {
         source,
         priceData,
         delfi,
         proxyPriceOracle,
         ctokens,
-        postPrices
-      } = await setup(1));
+        postPrices,
+        primeAnchor
+      } = await setup() );
 
-      // set usdc price so anchoring can use it
-      let usdcPrice = "5812601720530109000000000000";
-      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cUsdcAddress, numToHex(usdcPrice)]);
+      await primeAnchor();
+      await postPrices(
+        timestamp,
+        [
+          [['ETH', 500], ['BTC', 11000]],
+        ],
+        ['ETH', 'BTC'],
+        source
+      );
     });
 
 
     ["USDC", "USDT"].forEach((openOracleKey) => {
-      it(`returns 1 with 18 + 12 decimals for ${openOracleKey}`, async () => {
+      it(`returns 1 converted to ETH through source ETH with 18 + 12 decimals for ${openOracleKey}`, async () => {
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
         const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
-        expect(underlying_price).toEqual("1000000000000000000000000000000");
+        expect(underlying_price).toEqual("2000000000000000000000000000");
       });
     });
 
 
-    it("returns source price with 18 + 10 decimals for BTC", async () => {
+    it("returns source price converted to ETH with 18 + 10 decimals for BTC", async () => {
       let tokenAddress = await call(delfi, 'getCTokenAddress', ["BTC"]);
-      await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex("399920015996800660000000000000")]);
-      const post1 = await postPrices(
-        time() - 5,
-        [[["BTC", 6880.223955]]],
-        ["BTC"],
-        source
-      );
-
       const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
       const actualOpenOraclePrice = await call(delfi, 'prices', ["BTC"]);
 
-      expect(underlying_price).toEqual(numToBigNum(actualOpenOraclePrice).mul(numToBigNum("10000000000000000000000")).toString(10));
+      expect(underlying_price).numEquals(
+        "220000000000000000000000000000"
+        );
     });
 
     [
@@ -383,9 +384,7 @@ describe('AnchoredPriceView', () => {
 
         const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
-        const actualOpenOraclePrice = openOraclePrice * 1e6;
-
-        expect(underlying_price).toEqual(numToBigNum(actualOpenOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
+        expect(underlying_price).numEquals(anchorPrice);
       });
     });
 
@@ -396,41 +395,17 @@ describe('AnchoredPriceView', () => {
       ["REP", 56128970000000000, 9656427],
       ["ZRX", 985525000000000, 169549]
     ].forEach(([openOracleKey, anchorPrice, openOraclePrice]) => {
-      it(`returns anchor price converted to dollars with 18 decimals for ${openOracleKey} converted through open oracle eth price`, async () => {
+      it(`returns anchor price for unsourced ${openOracleKey}`, async () => {
 
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
         await send(proxyPriceOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(anchorPrice)]);
-        await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex(1e18)]);
-        const post1 = await postPrices(
-          time() - 5,
-          [[['ETH', 172.04]]],
-          ['ETH'],
-          source
-        );
 
         const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
 
-        expect(underlying_price).toEqual(numToBigNum(openOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
+        expect(underlying_price).numEquals(anchorPrice);
       });
     });
-
-    it("returns proxy price with 18 decimals for SAI, converted through Open Oracle Eth price", async () => {
-      // ["SAI", 5905879257418508, 1.016047],
-      await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cSaiAddress, numToHex(5905879257418508)]);
-        await send(proxyPriceOracle, 'setUnderlyingPrice', [ctokens.cEthAddress, numToHex(1e18)]);
-
-        const post1 = await postPrices(
-          time() - 5,
-          [[['ETH', 172.04]]],
-          ['ETH'],
-          source
-        );
-
-        const underlying_price = await call(delfi, 'getUnderlyingPrice', [ctokens.cSaiAddress]);
-
-        expect(underlying_price).toEqual("1016047000000000000");
-      });
 
       [
         ["ETH", 1e18],
@@ -453,11 +428,10 @@ describe('AnchoredPriceView', () => {
 
           expect(await call(delfi, 'breaker', [])).toEqual(false);
 
-          expect(await call(delfi, 'getUnderlyingPrice', [tokenAddress])).not.toEqual(proxyPrice.toString());
           await send(delfi, 'invalidate', [encoded, signed.signature]);
           expect(await call(delfi, 'breaker', [])).toEqual(true);
 
-          expect(await call(delfi, 'getUnderlyingPrice', [tokenAddress])).toEqual(proxyPrice.toString());
+          expect(await call(delfi, 'getUnderlyingPrice', [tokenAddress])).numEquals(proxyPrice);
       });
     });
   });

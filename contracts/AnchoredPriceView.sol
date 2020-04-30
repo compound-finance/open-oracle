@@ -15,13 +15,13 @@ interface AnchorPriceOracle {
  */
 contract AnchoredPriceView {
     /// @notice standard amount for the Dollar
-    uint constant oneDollar = 1e6;
+    uint256 constant oneDollar = 1e6;
 
     /// @notice The event emitted when the median price is updated
-    event PriceUpdated(string symbol, uint64 price);
+    event PriceUpdated(string symbol, uint256 price);
 
-    /// @notice The event emitted when new prices are posted but the median price is not updated due to the anchor
-    event PriceGuarded(string symbol, uint64 median, uint64 anchor);
+    /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
+    event PriceGuarded(string symbol, uint256 source, uint256 anchor);
 
     /// @notice The CToken contracts addresses
     struct CTokens {
@@ -45,8 +45,9 @@ contract AnchoredPriceView {
     /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 lowerBoundAnchorRatio;
 
+
     /// @notice The mapping of posted by source prices per symbol
-    mapping(string => uint64) _prices;
+    mapping(string => uint256) public _prices;
 
     /// @notice circuit breaker for using anchor price oracle directly
     bool public breaker;
@@ -110,7 +111,6 @@ contract AnchoredPriceView {
 
     /// @notice the Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
-    
 
     /**
      * @param data_ Address of the Oracle Data contract
@@ -131,6 +131,9 @@ contract AnchoredPriceView {
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
+
+        _prices["USDC"] = oneDollar;
+        _prices["USDT"] = oneDollar;
 
         cEthAddress = tokens_.cEthAddress;
         cUsdcAddress = tokens_.cUsdcAddress;
@@ -164,13 +167,13 @@ contract AnchoredPriceView {
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             address tokenAddress = getCTokenAddress(symbol);
-            uint64 sourcePrice = priceData.getPrice(source, symbol);
-            uint64 anchorPrice = getAnchorPrice(tokenAddress, usdcPrice);
+            uint256 sourcePrice = priceData.getPrice(source, symbol);
+            uint256 anchorPrice = getAnchorPrice(tokenAddress, usdcPrice);
 
             if (anchorPrice == 0 || tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress) {
                 emit PriceGuarded(symbol, sourcePrice, anchorPrice);
             } else {
-                uint256 anchorRatioMantissa = uint256(sourcePrice) * 100e16 / anchorPrice;
+                uint256 anchorRatioMantissa = sourcePrice * 100e16 / anchorPrice;
                 // Only update the view's price if the source price is within a bound, and it is a new median
                 if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
                     // only update and emit event if the source price is new, otherwise do nothing
@@ -185,34 +188,34 @@ contract AnchoredPriceView {
         }
     }
 
-    function prices(string calldata symbol) external view returns (uint64) {
-        uint64 price = _prices[symbol];
-        // If price was posted by source, eturn it. Othrwise, return anchor price
+    /**
+     * @notice Returns price denominated in USD, with 6 decimals
+     * @dev If price was posted by source, return it. Otherwise, return anchor price converted through source ETH price.
+     */
+    function prices(string calldata symbol) external view returns (uint256) {
+        uint256 price = _prices[symbol];
+
         if (price != 0) {
             return price;
         } else {
-            uint256 usdcPrice = anchor.getUnderlyingPrice(cUsdcAddress);
-            return getAnchorPrice(getCTokenAddress(symbol), usdcPrice);
+            uint256 usdPerEth = _prices["ETH"];
+            uint256 ethPerToken = anchor.getUnderlyingPrice(getCTokenAddress(symbol));
+
+            // ethPerToken has 18 decimals since the usdt, usdc, wbtc tokens hit
+            // usdPerEth has 6 decimals
+            // scaling by 1e18 and dividing leaves 1e6, as desired
+            return mul(usdPerEth, 1e18) / ethPerToken;
         }
     }
 
     /**
-     * @notice Flags that this contract is meant to be compatible with Compound v2 PriceOracle interface.
-     * @return true, this contract is meant to be used as Compound v2 PriceOracle interface.
-     */
-    function isPriceOracle() external pure returns (bool) {
-        return true;
-    }
-
-    /**
      * @dev fetch price in eth from proxy and convert to usd price using anchor usdc price.
-     * @dev Anchor usdc price has 30 decimals, and anchor general price has 18 decimals, so multiplying by 1e18 and by 1e30 yields 1e6
+     * @dev Anchor usdc price has 30 decimals, and anchor general price has 18 decimals, so multiplying 1e18 by 1e18 and dividing by 1e30 yields 1e6
      */
-    function getAnchorPrice(address tokenAddress, uint256 usdcPrice) public view returns (uint64) {
-
+    function getAnchorPrice(address tokenAddress, uint256 usdcPrice) public view returns (uint256) {
         if ( tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress )  {
             // hard code to 1 dollar
-            return uint64(oneDollar);
+            return oneDollar;
         }
 
         uint priceInEth = anchor.getUnderlyingPrice(tokenAddress);
@@ -226,11 +229,11 @@ contract AnchoredPriceView {
         }
 
         // usdcPrice has 30 decimals, so final result has 6
-        return uint64(mul(priceInEth, additionalScale) / usdcPrice);
+        return mul(priceInEth, additionalScale) / usdcPrice;
     }
 
     /**
-     * @notice Implements the method of the PriceOracle interface of Compound v2.
+     * @notice Implements the method of the PriceOracle interface of Compound v2 and returns returns the Eth price for an asset.
      * @dev converts from 1e6 decimals of Open Oracle to 1e(36 - underlyingDecimals) of PriceOracleProxy
      * @param cToken The cToken address for price retrieval
      * @return The price for the given cToken address
@@ -239,34 +242,34 @@ contract AnchoredPriceView {
         if (breaker == true) {
             return anchor.getUnderlyingPrice(cToken);
         }
-        uint256 priceSixDecimals;
 
-        if(cToken == cUsdcAddress || cToken == cUsdtAddress) {
-            priceSixDecimals = oneDollar;
-        } else if (cToken == cWbtcAddress || cToken == cEthAddress) {
-            priceSixDecimals = _prices[getOracleKey(cToken)];
+        uint256 usdPerToken = _prices[getOracleKey(cToken)];
+
+        if ( usdPerToken == 0 ) {
+            return anchor.getUnderlyingPrice(cToken);
         } else {
             uint256 usdPerEth = _prices["ETH"];
-            uint256 ethPerToken = anchor.getUnderlyingPrice(cToken);
-            // usdPerEth - 6 decimals
-            // ethPerStandardErc20 - 18 decimals
-            // divide by 1e18 to drop down to 6 decimals
-            priceSixDecimals = mul(usdPerEth, ethPerToken) / 1e18;
-        }
+            uint256 ethPerToken = mul(usdPerToken, 1e6) / usdPerEth;
+            uint256 additionalScale = getAdditionalScale(cToken);
 
-        // comptroller expects price to have 18 decimals,
-        // and additionally upscaled by 1e18 - underlyingdecimals
-        // base decimals is 1e6, so start by addint twelve
-        uint256 additionalScale;
-        if ( cToken == cUsdcAddress || cToken == cUsdtAddress )  {
-            additionalScale = 1e24;
-        } else if ( cToken == cWbtcAddress )  {
-            additionalScale = 1e22;
-        } else {
-            additionalScale = 1e12;
+            return mul(ethPerToken, additionalScale);
         }
+    }
 
-        return mul(priceSixDecimals, additionalScale);
+    /**
+     * comptroller expects price to have 18 decimals,
+     * additionally upscaled by 1e18 - underlyingdecimals
+     * base decimals is 1e6, so start by addint twelve
+     */
+    function getAdditionalScale(address cToken) public view returns (uint256) {
+        // total scale 1e30
+        if (cToken == cUsdcAddress) return 1e24;
+        if (cToken == cUsdtAddress) return 1e24;
+        // total scale 1e28
+        if (cToken == cWbtcAddress) return 1e22;
+        // total scale 1e18
+        if (cToken == cEthAddress) return 1e12;
+        revert("Requested additional scale for token served by proxy");
     }
 
     /**
@@ -320,7 +323,7 @@ contract AnchoredPriceView {
         }
 
         uint256 c = a * b;
-        require(c / a == b, "SafeMath: multiplication overflow");
+        require(c / a == b, "multiplication overflow");
 
         return c;
     }
