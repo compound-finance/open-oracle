@@ -15,13 +15,13 @@ interface AnchorPriceOracle {
  */
 contract AnchoredPriceView {
     /// @notice standard amount for the Dollar
-    uint64 constant oneDollar = 1e6;
+    uint256 constant oneDollar = 1e6;
 
     /// @notice The event emitted when the median price is updated
-    event PriceUpdated(string symbol, uint64 price);
+    event PriceUpdated(string symbol, uint256 price);
 
-    /// @notice The event emitted when new prices are posted but the median price is not updated due to the anchor
-    event PriceGuarded(string symbol, uint64 median, uint64 anchor);
+    /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
+    event PriceGuarded(string symbol, uint256 source, uint256 anchor);
 
     /// @notice The CToken contracts addresses
     struct CTokens {
@@ -45,8 +45,9 @@ contract AnchoredPriceView {
     /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 lowerBoundAnchorRatio;
 
+
     /// @notice The mapping of posted by source prices per symbol
-    mapping(string => uint64) public _prices;
+    mapping(string => uint256) public _prices;
 
     /// @notice circuit breaker for using anchor price oracle directly
     bool public breaker;
@@ -166,13 +167,13 @@ contract AnchoredPriceView {
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             address tokenAddress = getCTokenAddress(symbol);
-            uint64 sourcePrice = priceData.getPrice(source, symbol);
-            uint64 anchorPrice = getAnchorPrice(tokenAddress, usdcPrice);
+            uint256 sourcePrice = priceData.getPrice(source, symbol);
+            uint256 anchorPrice = getAnchorPrice(tokenAddress, usdcPrice);
 
             if (anchorPrice == 0 || tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress) {
                 emit PriceGuarded(symbol, sourcePrice, anchorPrice);
             } else {
-                uint256 anchorRatioMantissa = uint256(sourcePrice) * 100e16 / anchorPrice;
+                uint256 anchorRatioMantissa = sourcePrice * 100e16 / anchorPrice;
                 // Only update the view's price if the source price is within a bound, and it is a new median
                 if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
                     // only update and emit event if the source price is new, otherwise do nothing
@@ -191,8 +192,8 @@ contract AnchoredPriceView {
      * @notice Returns price denominated in USD, with 6 decimals
      * @dev If price was posted by source, return it. Otherwise, return anchor price converted through source ETH price.
      */
-    function prices(string calldata symbol) external view returns (uint64) {
-        uint64 price = _prices[symbol];
+    function prices(string calldata symbol) external view returns (uint256) {
+        uint256 price = _prices[symbol];
 
         if (price != 0) {
             return price;
@@ -203,28 +204,18 @@ contract AnchoredPriceView {
             // ethPerToken has 18 decimals since the usdt, usdc, wbtc tokens hit
             // usdPerEth has 6 decimals
             // scaling by 1e18 and dividing leaves 1e6, as desired
-            return uint64(mul(usdPerEth, 1e18) / ethPerToken);
+            return mul(usdPerEth, 1e18) / ethPerToken;
         }
-    }
-
-
-    /**
-     * @notice Flags that this contract is meant to be compatible with Compound v2 PriceOracle interface.
-     * @return true, this contract is meant to be used as Compound v2 PriceOracle interface.
-     */
-    function isPriceOracle() external pure returns (bool) {
-        return true;
     }
 
     /**
      * @dev fetch price in eth from proxy and convert to usd price using anchor usdc price.
      * @dev Anchor usdc price has 30 decimals, and anchor general price has 18 decimals, so multiplying 1e18 by 1e18 and dividing by 1e30 yields 1e6
      */
-    function getAnchorPrice(address tokenAddress, uint256 usdcPrice) public view returns (uint64) {
-
+    function getAnchorPrice(address tokenAddress, uint256 usdcPrice) public view returns (uint256) {
         if ( tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress )  {
             // hard code to 1 dollar
-            return uint64(oneDollar);
+            return oneDollar;
         }
 
         uint priceInEth = anchor.getUnderlyingPrice(tokenAddress);
@@ -238,7 +229,7 @@ contract AnchoredPriceView {
         }
 
         // usdcPrice has 30 decimals, so final result has 6
-        return uint64(mul(priceInEth, additionalScale) / usdcPrice);
+        return mul(priceInEth, additionalScale) / usdcPrice;
     }
 
     /**

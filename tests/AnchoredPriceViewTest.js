@@ -349,7 +349,7 @@ describe('AnchoredPriceView', () => {
 
 
     ["USDC", "USDT"].forEach((openOracleKey) => {
-      it(`returns 1 converted to ETH throush source ETH with 18 + 12 decimals for ${openOracleKey}`, async () => {
+      it(`returns 1 converted to ETH through source ETH with 18 + 12 decimals for ${openOracleKey}`, async () => {
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
         const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
