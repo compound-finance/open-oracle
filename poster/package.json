@@ -15,6 +15,7 @@
   "devDependencies": {
     "@types/jest": "^24.0.23",
     "@types/node": "^12.12.14",
+    "@types/zen-observable": "^0.8.0",
     "ganache-core": "^2.8.0",
     "jest": "^24.9.0",
     "jest-junit": "^10.0.0",
