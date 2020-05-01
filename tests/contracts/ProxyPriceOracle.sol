@@ -1,9 +1,9 @@
 pragma solidity ^0.6.6;
-import "../../contracts/AnchoredPriceView.sol";
+import "../../contracts/CompoundProxyOracleAnchor.sol";
 
 
 // @dev mock version of price oracle proxy, allowing manually setting return values
-contract ProxyPriceOracle is AnchorPriceOracle {
+contract ProxyPriceOracle is ProxyPriceOracleI {
 
     mapping(address => uint256) public prices;
 
