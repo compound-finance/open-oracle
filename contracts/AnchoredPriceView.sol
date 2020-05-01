@@ -4,14 +4,16 @@ pragma experimental ABIEncoderV2;
 import "./OpenOraclePriceData.sol";
 import "./CompoundProxyOracleAnchor.sol";
 
-
+interface CompoundProtocolView {
+     function getUnderlyingPrice(address) external view returns (uint256);
+}
 /**
  * @notice Price feed conforming to Price Oracle Proxy interface and
  * using a single open oracle reporter, anchored to and falling back to
  * the Compound v2 oracle system.
  * @author Compound Labs, Inc.
  */
-contract AnchoredPriceView {
+contract AnchoredPriceView is CompoundProtocolView {
     /// @notice standard amount for the Dollar
     uint256 constant oneDollar = 1e6;
 
@@ -132,14 +134,13 @@ contract AnchoredPriceView {
      * @param cToken The cToken address for price retrieval
      * @return The price for the given cToken address
      */
-    function getUnderlyingPrice(address cToken) external view returns (uint256) {
+    function getUnderlyingPrice(address cToken) external view override returns (uint256) {
         if (breaker == true) {
             return anchor.getUnderlyingPrice(cToken);
         }
-
         uint256 usdPerToken = _prices[anchor.getOracleKey(cToken)];
 
-        if ( usdPerToken == 0 ) {
+        if (usdPerToken == 0) {
             return anchor.getUnderlyingPrice(cToken);
         } else {
             uint256 usdPerEth = _prices["ETH"];
@@ -149,22 +150,6 @@ contract AnchoredPriceView {
             return mul(ethPerToken, additionalScale);
         }
     }
-
-    // /**
-    //  * comptroller expects price to have 18 decimals,
-    //  * additionally upscaled by 1e18 - underlyingdecimals
-    //  * base decimals is 1e6, so start by addint twelve
-    //  */
-    // function getAdditionalScale(address cToken) public view returns (uint256) {
-    //     // total scale 1e30
-    //     if (cToken == anchor.cUsdcAddress()) return 1e24;
-    //     if (cToken == anchor.cUsdtAddress()) return 1e24;
-    //     // total scale 1e28
-    //     if (cToken == anchor.cWbtcAddress()) return 1e22;
-    //     // total scale 1e18
-    //     if (cToken == anchor.cEthAddress()) return 1e12;
-    //     revert("Requested additional scale for token served by proxy");
-    // }
 
     function invalidate(bytes memory message, bytes memory signature) public {
         (string memory decoded_message, ) = abi.decode(message, (string, address));
