@@ -27,7 +27,32 @@ function time(){
 	return Math.floor(new Date() / 1000);
 }
 
+function sendRPC(web3, method, params) {
+  return new Promise((resolve, reject) => {
+    if (!web3.currentProvider || typeof (web3.currentProvider) === 'string') {
+      return reject(`cannot send from currentProvider=${web3.currentProvider}`);
+    }
+
+    web3.currentProvider.send(
+      {
+        jsonrpc: '2.0',
+        method: method,
+        params: params,
+        id: new Date().getTime() // Id of the request; anything works, really
+      },
+      (err, response) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(response);
+        }
+      }
+    );
+  });
+}
+
 module.exports = {
+  sendRPC,
 	address,
 	bytes,
 	time,

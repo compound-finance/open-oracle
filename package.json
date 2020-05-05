@@ -25,6 +25,7 @@
     "deploy": "npx saddle deploy"
   },
   "resolutions": {
+    "**/ganache-core": "https://github.com/compound-finance/ganache-core.git#compound",
     "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz"
   }
 }
