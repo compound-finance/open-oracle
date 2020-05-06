@@ -1,31 +1,41 @@
 pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
-import "../OpenOraclePriceData.sol";
 import "./SymbolConfiguration.sol";
-import "./PriceOracleProxy.sol";
+
+interface CErc20 {
+    function underlying() external view returns (address);
+}
+
+interface OpenOraclePriceData {
+    function getPrice(address source, string calldata key) external view returns (uint64);
+    function put(bytes calldata message, bytes calldata signature) external returns (string memory);
+    function source(bytes calldata message, bytes calldata signature) external pure returns (address);
+}
+
+interface AnchorOracle {
+    function numBlocksPerPeriod() external view returns (uint); // approximately 1 hour: 60 seconds/minute * 60 minutes/hour * 1 block/15 seconds
+
+    function assetPrices(address asset) external view returns (uint);
+
+
+    /* struct Anchor { */
+    /*     // floor(block.number / numBlocksPerPeriod) + 1 */
+    /*     uint period; */
+
+    /*     // Price in ETH, scaled by 10**18 */
+    /*     uint priceMantissa; */
+    /* } */
+    function anchors(address asset) external view returns (uint, uint);
+}
+
 
 /**
  * @notice Price feed conforming to Price Oracle Proxy interface.
  * @dev Use a single open oracle reporter and anchored to and falling back to the Compound v2 oracle system.
  * @author Compound Labs, Inc.
  */
-contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
-    /// @notice standard amount for the Dollar
-    uint256 constant oneDollar = 1e6;
-
-    /// @notice The event emitted when the median price is updated
-    event PriceUpdated(string symbol, uint256 price);
-
-    /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
-    event PriceGuarded(string symbol, uint256 source, uint256 anchor);
-
-    /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
-    uint256 upperBoundAnchorRatio;
-
-    /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
-    uint256 lowerBoundAnchorRatio;
-
+contract AnchoredView is SymbolConfiguration {
     /// @notice The mapping of posted by source prices per symbol
     mapping(string => uint256) public _prices;
 
@@ -35,8 +45,26 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
     /// @notice the Open Oracle Reporter price source
     address public immutable source;
 
+    /// @notice the anchor oracle ( Compouni Oracle V1 )
+    AnchorOracle public immutable anchor;
+
     /// @notice the Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
+
+    /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    uint256 immutable upperBoundAnchorRatio;
+
+    /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    uint256 immutable lowerBoundAnchorRatio;
+
+    /// @notice standard amount for the Dollar
+    uint256 constant oneDollar = 1e6;
+
+    /// @notice The event emitted when the median price is updated
+    event PriceUpdated(string symbol, uint256 price);
+
+    /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
+    event PriceGuarded(string symbol, uint256 source, uint256 anchor);
 
     /**
      * @param data_ Address of the Oracle Data contract
@@ -49,8 +77,9 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
                 address source_,
                 address anchor_,
                 uint anchorToleranceMantissa_,
-                CTokens memory tokens_) SymbolConfiguration(tokens_) PriceOracleProxy(anchor_) public {
+                CTokens memory tokens_) SymbolConfiguration(tokens_) public {
         source = source_;
+        anchor = AnchorOracle(anchor_);
         priceData = data_;
 
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
@@ -77,19 +106,19 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
         }
 
         // load usdc for using in loop to convert anchor prices to dollars
-        uint256 usdcPrice = getUnderlyingPrice(cUsdcAddress);
+        uint256 usdcPrice = readAnchor(cUsdcAddress);
 
         // Try to update the view storage
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             address tokenAddress = getCTokenAddress(symbol);
             uint256 sourcePrice = priceData.getPrice(source, symbol);
-            uint256 anchorPrice = getAnchorPrice(tokenAddress, usdcPrice);
+            uint256 anchorPrice = getAnchorInUsd(tokenAddress, usdcPrice);
 
             if (anchorPrice == 0 || tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress) {
                 emit PriceGuarded(symbol, sourcePrice, anchorPrice);
             } else {
-                uint256 anchorRatioMantissa = sourcePrice * 100e16 / anchorPrice;
+                uint256 anchorRatioMantissa = mul(sourcePrice, 100e16) / anchorPrice;
                 // Only update the view's price if the source price is within a bound, and it is a new median
                 if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
                     // only update and emit event if the source price is new, otherwise do nothing
@@ -97,28 +126,15 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
                         _prices[symbol] = sourcePrice;
                         emit PriceUpdated(symbol, sourcePrice);
                     }
-                } else if (anchorStale(tokenAddress)){
-                    /* if outside of anchor, check for staleness */
-                    // so only pay extra gas if outside
-                    // eventually, set flag
+                } else if (anchorStale()) {
                     _prices[symbol] = sourcePrice;
                     emit PriceUpdated(symbol, sourcePrice);
-                }else {
+                } else {
                     emit PriceGuarded(symbol, sourcePrice, anchorPrice);
                 }
             }
         }
     }
-
-    function anchorStale(address cTokenAddress) public returns (bool) {
-        // get anchor timestamp
-        
-        // see if it is staleness
-        // set flag for this symbol? everything? keep checking?
-        return false;
-        
-    }
-
     /**
      * @notice Returns price denominated in USD, with 6 decimals
      * @dev If price was posted by source, return it. Otherwise, return anchor price converted through source ETH price.
@@ -130,7 +146,7 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
             return price;
         } else {
             uint256 usdPerEth = _prices["ETH"];
-            uint256 ethPerToken = anchor.getUnderlyingPrice(getCTokenAddress(symbol));
+            uint256 ethPerToken = readAnchor(getCTokenAddress(symbol));
 
             // ethPerToken has 18 decimals since the usdt, usdc, wbtc tokens hit
             // usdPerEth has 6 decimals
@@ -143,13 +159,14 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
      * @dev fetch price in eth from proxy and convert to usd price using anchor usdc price.
      * @dev Anchor usdc price has 30 decimals, and anchor general price has 18 decimals, so multiplying 1e18 by 1e18 and dividing by 1e30 yields 1e6
      */
-    function getAnchorPrice(address tokenAddress, uint256 usdcPrice) public view returns (uint256) {
+    function getAnchorInUsd(address tokenAddress, uint256 usdcPrice) public view returns (uint256) {
+        // TODO: can get rid of trhis if handle decimals more elegantly
         if ( tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress )  {
             // hard code to 1 dollar
             return oneDollar;
         }
 
-        uint priceInEth = _getUnderlyingPrice(tokenAddress);
+        uint priceInEth = readAnchor(tokenAddress);
         uint additionalScale;
         if ( tokenAddress == cWbtcAddress ){
             // wbtc proxy price is scaled 1e(36 - 8) = 1e28, so we need 8 more to get to 36
@@ -171,13 +188,13 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
      */
     function getUnderlyingPrice(address cToken) external view returns (uint256) {
         if (breaker == true) {
-            return getV2Price(cToken);
+            return readAnchor(cToken);
         }
 
         uint256 usdPerToken = _prices[getOracleKey(cToken)];
 
         if ( usdPerToken == 0 ) {
-            return getV2Price(cToken);
+            return readAnchor(cToken);
         } else {
             uint256 usdPerEth = _prices["ETH"];
             uint256 ethPerToken = mul(usdPerToken, 1e6) / usdPerEth;
@@ -187,6 +204,51 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
         }
     }
 
+    /**
+     * @notice Get the underlying price of a listed cToken asset
+     * @param cTokenAddress The cToken to get the underlying price of
+     * @return The underlying asset price mantissa (scaled by 1e18)
+     */
+    function readAnchor(address cTokenAddress) public view returns (uint) {
+        if (cTokenAddress == cEthAddress) {
+            // ether always worth 1
+            return 1e18;
+        }
+
+        if (cTokenAddress == cUsdcAddress || cTokenAddress == cUsdtAddress) {
+            return anchor.assetPrices(usdcOracleKey);
+        }
+
+        if (cTokenAddress == cDaiAddress) {
+            return anchor.assetPrices(daiOracleKey);
+        }
+
+        if (cTokenAddress == cSaiAddress) {
+            return saiPrice;
+        }
+
+        // otherwise just read from v1 oracle
+        address underlying = CErc20(cTokenAddress).underlying();
+        return anchor.assetPrices(underlying);
+    }
+
+    // @notice determine if anchor is stale by checking last update for usdc
+    function anchorStale() public view returns (bool) {
+        // all anchor prices are converted through usdc price, so if it is stale they are all stale
+        (uint latestUsdcAnchorPeriod,) = anchor.anchors(usdcOracleKey);
+        uint usdcAnchorBlockNumber = mul(latestUsdcAnchorPeriod, anchor.numBlocksPerPeriod());
+        uint blocksSinceUpdate = usdcAnchorBlockNumber - block.number;
+
+        // one day in 15 second blocks without an update
+        if (blocksSinceUpdate > 5760) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+
+    ///@notice invalidate the source, and fall back to using anchor directly in all cases
     function invalidate(bytes memory message, bytes memory signature) public {
         (string memory decoded_message, ) = abi.decode(message, (string, address));
         require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalid message must be 'rotate'");
@@ -195,6 +257,7 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
         breaker = true;
     }
 
+    // @notice overflow proof multiplication
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
         if (a == 0) {
             return 0;
@@ -204,33 +267,5 @@ contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
         require(c / a == b, "multiplication overflow");
 
         return c;
-    }
-
-    /**
-     * @notice Get the underlying price of a listed cToken asset
-     * @param cTokenAddress The cToken to get the underlying price of
-     * @return The underlying asset price mantissa (scaled by 1e18)
-     */
-    function _getV2Price(address cTokenAddress) public view returns (uint) {
-        if (cTokenAddress == cEthAddress) {
-            // ether always worth 1
-            return 1e18;
-        }
-
-        if (cTokenAddress == cUsdcAddress || cTokenAddress == cUsdtAddress) {
-            return v1PriceOracle.assetPrices(usdcOracleKey);
-        }
-
-        if (cTokenAddress == cDaiAddress) {
-            return v1PriceOracle.assetPrices(daiOracleKey);
-        }
-
-        if (cTokenAddress == cSaiAddress) {
-            return saiPrice;
-        }
-
-        // otherwise just read from v1 oracle
-        address underlying = CErc20(cTokenAddress).underlying();
-        return v1PriceOracle.assetPrices(underlying);
     }
 }

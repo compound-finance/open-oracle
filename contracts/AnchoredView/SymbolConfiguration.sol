@@ -4,6 +4,15 @@ pragma experimental ABIEncoderV2;
 // verbose configuration of anchored view, transforming
 // address to symbols and such
 contract SymbolConfiguration {
+    /// @notice Handpicked key for USDC
+    address public constant usdcOracleKey = address(1);
+
+    /// @notice Handpicked key for DAI
+    address public constant daiOracleKey = address(2);
+
+    /// @notice Frozen SAI price in ETH
+    uint public saiPrice = 1e18;
+
     /// @notice The CToken contracts addresses
     struct CTokens {
         address cEthAddress;
