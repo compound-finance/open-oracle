@@ -3,14 +3,14 @@ pragma experimental ABIEncoderV2;
 
 import "../OpenOraclePriceData.sol";
 import "./SymbolConfiguration.sol";
-import "./ProxyBase.sol";
+import "./PriceOracleProxy.sol";
 
 /**
  * @notice Price feed conforming to Price Oracle Proxy interface.
  * @dev Use a single open oracle reporter and anchored to and falling back to the Compound v2 oracle system.
  * @author Compound Labs, Inc.
  */
-contract AnchoredView is ProxyBase, SymbolConfiguration {
+contract AnchoredView is PriceOracleProxy, SymbolConfiguration {
     /// @notice standard amount for the Dollar
     uint256 constant oneDollar = 1e6;
 
@@ -19,9 +19,6 @@ contract AnchoredView is ProxyBase, SymbolConfiguration {
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
     event PriceGuarded(string symbol, uint256 source, uint256 anchor);
-
-    /// @notice The reporter address whose prices checked against the median for safety
-    AnchorPriceOracle immutable anchor;
 
     /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 upperBoundAnchorRatio;
@@ -34,6 +31,9 @@ contract AnchoredView is ProxyBase, SymbolConfiguration {
 
     /// @notice circuit breaker for using anchor price oracle directly
     bool public breaker;
+
+    /// @notice the Open Oracle Reporter price source
+    address public immutable source;
 
     /// @notice the Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
@@ -49,7 +49,7 @@ contract AnchoredView is ProxyBase, SymbolConfiguration {
                 address source_,
                 address anchor_,
                 uint anchorToleranceMantissa_,
-                CTokens memory tokens_) SymbolConfiguration(tokens_), ProxyBase(anchor) public {
+                CTokens memory tokens_) SymbolConfiguration(tokens_) PriceOracleProxy(anchor_) public {
         source = source_;
         priceData = data_;
 
@@ -110,11 +110,12 @@ contract AnchoredView is ProxyBase, SymbolConfiguration {
         }
     }
 
-    function anchorStale(address cTokenAddress) returns (bool) {
+    function anchorStale(address cTokenAddress) public returns (bool) {
         // get anchor timestamp
         
         // see if it is staleness
         // set flag for this symbol? everything? keep checking?
+        return false;
         
     }
 
@@ -207,7 +208,7 @@ contract AnchoredView is ProxyBase, SymbolConfiguration {
 
     /**
      * @notice Get the underlying price of a listed cToken asset
-     * @param cToken The cToken to get the underlying price of
+     * @param cTokenAddress The cToken to get the underlying price of
      * @return The underlying asset price mantissa (scaled by 1e18)
      */
     function _getV2Price(address cTokenAddress) public view returns (uint) {
