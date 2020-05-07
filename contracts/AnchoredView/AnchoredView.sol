@@ -79,11 +79,11 @@ contract AnchoredView is SymbolConfiguration {
      */
     constructor(OpenOraclePriceData data_,
                 address source_,
-                address anchor_,
+                AnchorOracle anchor_,
                 uint anchorToleranceMantissa_,
                 CTokens memory tokens_) SymbolConfiguration(tokens_) public {
         source = source_;
-        anchor = AnchorOracle(anchor_);
+        anchor = anchor_;
         priceData = data_;
 
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
