@@ -2,15 +2,10 @@ pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 import "./SymbolConfiguration.sol";
+import "../OpenOraclePriceData.sol";
 
 interface CErc20 {
     function underlying() external view returns (address);
-}
-
-interface OpenOraclePriceData {
-    function getPrice(address source, string calldata key) external view returns (uint64);
-    function put(bytes calldata message, bytes calldata signature) external returns (string memory);
-    function source(bytes calldata message, bytes calldata signature) external pure returns (address);
 }
 
 interface AnchorOracle {
@@ -42,6 +37,9 @@ contract AnchoredView is SymbolConfiguration {
     /// @notice circuit breaker for using anchor price oracle directly
     bool public breaker;
 
+    /// @notice circuit breaker for using source price without anchor
+    bool public anchored = true;
+
     /// @notice the Open Oracle Reporter price source
     address public immutable source;
 
@@ -65,6 +63,12 @@ contract AnchoredView is SymbolConfiguration {
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
     event PriceGuarded(string symbol, uint256 source, uint256 anchor);
+
+    /// @notice The event emitted when source invalidates itself
+    event SourceInvalidated(address source);
+
+    /// @notice The event emitted when the anchor is cut for staleness
+    event AnchorCut(address anchor);
 
     /**
      * @param data_ Address of the Oracle Data contract
@@ -119,14 +123,14 @@ contract AnchoredView is SymbolConfiguration {
                 emit PriceGuarded(symbol, sourcePrice, anchorPrice);
             } else {
                 uint256 anchorRatioMantissa = mul(sourcePrice, 100e16) / anchorPrice;
-                // Only update the view's price if the source price is within a bound, and it is a new median
+                // Only update the view's price if the source price is within a bound
                 if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
-                    // only update and emit event if the source price is new, otherwise do nothing
+                    // only update and emit event if value changes
                     if (_prices[symbol] != sourcePrice) {
                         _prices[symbol] = sourcePrice;
                         emit PriceUpdated(symbol, sourcePrice);
                     }
-                } else if (anchorStale()) {
+                } else if (!anchored) {
                     _prices[symbol] = sourcePrice;
                     emit PriceUpdated(symbol, sourcePrice);
                 } else {
@@ -232,30 +236,33 @@ contract AnchoredView is SymbolConfiguration {
         return anchor.assetPrices(underlying);
     }
 
-    // @notice determine if anchor is stale by checking last update for usdc
-    function anchorStale() public view returns (bool) {
-        // all anchor prices are converted through usdc price, so if it is stale they are all stale
-        (uint latestUsdcAnchorPeriod,) = anchor.anchors(usdcOracleKey);
-        uint usdcAnchorBlockNumber = mul(latestUsdcAnchorPeriod, anchor.numBlocksPerPeriod());
-        uint blocksSinceUpdate = usdcAnchorBlockNumber - block.number;
-
-        // one day in 15 second blocks without an update
-        if (blocksSinceUpdate > 5760) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-
-    ///@notice invalidate the source, and fall back to using anchor directly in all cases
+    /// @notice invalidate the source, and fall back to using anchor directly in all cases
     function invalidate(bytes memory message, bytes memory signature) public {
         (string memory decoded_message, ) = abi.decode(message, (string, address));
         require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalid message must be 'rotate'");
         require(priceData.source(message, signature) == source, "invalidation message must come from the reporter");
 
         breaker = true;
+        emit SourceInvalidated(source);
     }
+
+    /// @notice invalidate the anchor, and fall back to using source without anchor
+
+    /// @dev determine if anchor is stale by checking when usdc was last updated
+    // @dev all anchor prices are converted through usdc price, so if it is stale they are all stale
+    function cutAnchor() public {
+        (uint latestUsdcAnchorPeriod,) = anchor.anchors(usdcOracleKey);
+
+        uint usdcAnchorBlockNumber = mul(latestUsdcAnchorPeriod, anchor.numBlocksPerPeriod());
+        uint blocksSinceUpdate = block.number - usdcAnchorBlockNumber;
+
+        // one day in 15 second blocks without an update
+        if (blocksSinceUpdate > 5760) {
+            anchored = false;
+            emit AnchorCut(address(anchor));
+        }
+    }
+
 
     // @notice overflow proof multiplication
     function mul(uint256 a, uint256 b) internal pure returns (uint256) {
