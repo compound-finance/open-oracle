@@ -26,6 +26,14 @@ contract SymbolConfiguration {
         address cUsdtAddress;
     }
 
+    /// @notice The CToken contracts addresses
+    struct CTokenMetadata {
+        bytes32 oracleKey;
+        uint anchorAdditionalScale;
+        uint underlyingPriceAdditionalScale;
+        address cTokenAddress;
+    }
+
     /// @notice The binary representation for token symbols, used for string comparison
     bytes32 constant symbolEth = keccak256(abi.encodePacked("ETH"));
     bytes32 constant symbolUsdc = keccak256(abi.encodePacked("USDC"));
@@ -65,19 +73,47 @@ contract SymbolConfiguration {
     }
 
     /**
+     * @notice Returns the  for symbol
+     * @param symbol The symbol to map to cToken address
+     * @return The configuration metadata for the symbol
+     */
+    function getCTokenConfig(string memory symbol) public view returns (CTokenMetadata memory) {
+        address cToken = getCTokenAddress(symbol);
+        return getCTokenConfig(cToken);
+    }
+
+
+
+    function getCTokenConfig(address cToken) public view returns(CTokenMetadata memory) {
+        return CTokenMetadata({
+                    oracleKey: getOracleKey(cToken),
+                    anchorAdditionalScale: getAdditionalScaleForAnchorPrice(cToken),
+                    underlyingPriceAdditionalScale: getAdditionalScaleForUnderlyingPrice(cToken),
+                    cTokenAddress: cToken
+                    });
+    }
+
+    /**
      * comptroller expects price to have 18 decimals,
      * additionally upscaled by 1e18 - underlyingdecimals
      * base decimals is 1e6, so start by addint twelve
      */
-    function getAdditionalScale(address cToken) public view returns (uint256) {
-        // total scale 1e30
+    function getAdditionalScaleForUnderlyingPrice(address cToken) public view returns (uint256) {
         if (cToken == cUsdcAddress) return 1e24;
         if (cToken == cUsdtAddress) return 1e24;
-        // total scale 1e28
         if (cToken == cWbtcAddress) return 1e22;
-        // total scale 1e18
         if (cToken == cEthAddress) return 1e12;
-        revert("Requested additional scale for token served by proxy");
+        revert("requesting additional scale for ");
+    }
+
+    /**
+     * comptroller expects price to have 18 decimals,
+     * additionally upscaled by 1e18 - underlyingdecimals
+     * base decimals is 1e6, so start by addint twelve
+     */
+    function getAdditionalScaleForAnchorPrice(address cToken) public view returns (uint256) {
+        if (cToken == cWbtcAddress) return 1e8;
+        return 1e18;
     }
 
     /**
@@ -117,3 +153,4 @@ contract SymbolConfiguration {
         revert("Unknown token address");
     }
 }
+

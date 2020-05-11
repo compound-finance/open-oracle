@@ -58,6 +58,10 @@ contract AnchoredView is SymbolConfiguration {
     /// @notice standard amount for the Dollar
     uint256 constant oneDollar = 1e6;
 
+    /// @notice average blocks per day, for checking anchor staleness
+    /// @dev 1 day / 15
+    uint256 constant blocksInADay = 5760;
+
     /// @notice The event emitted when the median price is updated
     event PriceUpdated(string symbol, uint256 price);
 
@@ -257,7 +261,7 @@ contract AnchoredView is SymbolConfiguration {
         uint blocksSinceUpdate = block.number - usdcAnchorBlockNumber;
 
         // one day in 15 second blocks without an update
-        if (blocksSinceUpdate > 5760) {
+        if (blocksSinceUpdate > blocksInADay) {
             anchored = false;
             emit AnchorCut(address(anchor));
         }
