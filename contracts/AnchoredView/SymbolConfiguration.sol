@@ -21,7 +21,7 @@ contract SymbolConfiguration {
     address public immutable cZrxAnchorKey;
 
     /// Frozen rices for SAI and eth, so no oracle key
-    uint public saiAnchorPrice = 1e18;
+    uint public saiAnchorPrice = 5285551943761727;
     uint public ethAnchorPrice = 1e18;
 
     /// @notice The CToken contracts addresses

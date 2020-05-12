@@ -164,6 +164,7 @@ contract AnchoredView is SymbolConfiguration {
      * @dev Anchor usdc price has 30 decimals, and anchor general price has 18 decimals, so multiplying 1e18 by 1e18 and dividing by 1e30 yields 1e6
      */
     function getAnchorInUsd(address cToken, uint ethPerUsdc) public view returns (uint) {
+        if (cToken == cUsdcAddress || cToken == cUsdtAddress) return 1e6;
         CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
         uint ethPerToken = readAnchor(tokenConfig);
 
@@ -177,7 +178,7 @@ contract AnchoredView is SymbolConfiguration {
      * @param cToken The cToken address for price retrieval
      * @return The price for the given cToken address
      */
-    function getUnderlyingPrice(address cToken) public view returns (uint) {
+    function getUnderlyingPrice(address cToken) public returns (uint) {
         CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
         if (breaker == true) {
             return readAnchor(tokenConfig);
@@ -195,7 +196,9 @@ contract AnchoredView is SymbolConfiguration {
 
             // factoring out extra 6 decimals from source eth price brings us back to decimals given by anchor
             uint ethPerToken = readAnchor(tokenConfig);
-            usdPerToken = mul(usdPerEth, ethPerToken) / 1e6;
+            emit PriceUpdated("eth per token", ethPerToken);
+            emit PriceUpdated("usd per eth", usdPerEth);
+            return mul(usdPerEth, ethPerToken) / 1e6;
         }
     }
 

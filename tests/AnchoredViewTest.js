@@ -82,9 +82,8 @@ async function setup() {
     return call(delfi, 'prices', [symbol]);
   }
 
-  async function primeAnchor() {
+  async function primeAnchor(usdRatio = "2000000000000000000000000000") {
     // sets up anchor for $500 eth and 10k btc
-    const usdRatio = "2000000000000000000000000000";
     await send(anchorOracle, 'setPrice', [tokens.usdc, numToHex(usdRatio)]);
 
     const theRatio = "200000000000000000000000000000";
@@ -138,7 +137,7 @@ describe('AnchoredPriceView', () => {
       done();
     });
 
-    it.only('posting no ETH price should guard price', async () => {
+    it('posting no ETH price should guard price', async () => {
       const post1 = await postPrices(timestamp, [[['ETH', 91]]], ['ETH']);
 
       expect(post1.events.PriceGuarded).not.toBe(undefined);
@@ -248,6 +247,16 @@ describe('AnchoredPriceView', () => {
       expect(post1.events.PriceUpdated).toBe(undefined);
       expect(await getPrice('ETH')).numEquals(500e6);
     });
+
+    it('guards when posting usdc or usdt', async () => {
+      let post1 = await postPrices(timestamp, [[['USDC', 1.01], ['USDT', 0.99] ]], ['USDC', 'USDT']);
+
+      expect(post1.events.PriceUpdated).toBe(undefined);
+      expect(post1.events.PriceGuarded[0].returnValues.symbol).toEqual('USDC');
+      expect(post1.events.PriceGuarded[1].returnValues.symbol).toEqual('USDT');
+      expect(await getPrice('USDC')).numEquals(1e6);
+      expect(await getPrice('USDT')).numEquals(1e6);
+    });
   });
 
   describe("getAnchorInUsd", () => {
@@ -266,18 +275,10 @@ describe('AnchoredPriceView', () => {
 
     });
 
-    it("converts eth price through proxy usdc, with 6 decimals", async () => {
-      await send(anchorOracle, 'setPrice', [cTokens.cEth._address, numToHex(1e18)]);
-      // ~ $172 eth
-      let usdcPrice = "5812601720530109000000000000";
-      const converted_eth_price = await call(delfi, 'getAnchorInUsd', [cTokens.cEth._address, usdcPrice]);
-      expect(converted_eth_price).toEqual(172.04e6.toString());
-    });
-
     // [open oracle symbol, proxy price in ether, open oracle price in usd]
     [
       ["ETH", 1e18, 172.04e6],
-      ["SAI", 5905879257418508, 1.016047e6],
+      ["SAI", 5285551943761727, 0.909326e6], // sai priced at 189, so drops to 90 cents here
       ["DAI", 5905879257418508, 1.016047e6],
 
       ["BAT", 931592500000000, 0.160271e6],
@@ -309,38 +310,44 @@ describe('AnchoredPriceView', () => {
         source
       } = await setup() );
 
-      await primeAnchor();
+      // // ~ $172 eth
+      await primeAnchor("5812601720530109000000000000");
       await postPrices(
         timestamp,
-        [[['ETH', 500], ['BTC', 11000]]],
-        ['ETH', 'BTC']);
+        [[['ETH', 172.00]]],
+        ['ETH']);
     });
 
 
     ["USDC", "USDT"].forEach((openOracleKey) => {
-      it(`returns 1 converted to ETH through source ETH with 18 + 12 decimals for ${openOracleKey}`, async () => {
+      it(`returns 1 with 36 - 6 for ${openOracleKey}`, async () => {
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
         const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
-        expect(underlying_price).toEqual("2000000000000000000000000000");
+        expect(underlying_price).toEqual("1000000000000000000000000000000");
       });
     });
 
 
-    it("returns source price converted to ETH with 18 + 10 decimals for BTC", async () => {
+    it("returns source price with 36 - 8 decimals for BTC ", async () => {
+      await postPrices(
+        timestamp,
+        [[['BTC', 3443.00]]],
+        ['BTC']);
       let tokenAddress = await call(delfi, 'getCTokenAddress', ["BTC"]);
       const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
       const actualOpenOraclePrice = await call(delfi, 'prices', ["BTC"]);
 
-      expect(underlying_price).numEquals("220000000000000000000000000000");
+      expect(underlying_price).numEquals("34430000000000000000000000000000");
     });
 
     [
-      ["ETH", 1e18, 172.04],
+      ["ETH", 1e18, 173.04],
     ].forEach(([openOracleKey, anchorPrice, openOraclePrice]) => {
-      it(`returns source price with 18 decimals for ${openOracleKey}`, async () => {
+      it(`returns source price with 36 - 18 decimals for ${openOracleKey}`, async () => {
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
+        /// XXX set a usdc price so this updates
         await send(anchorOracle, 'setPrice', [tokenAddress, numToHex(anchorPrice)]);
         const post1 = await postPrices(
           time() - 5,
@@ -350,33 +357,38 @@ describe('AnchoredPriceView', () => {
         );
 
         const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
+        const actualOpenOraclePrice = openOraclePrice * 1e6;
 
-        expect(underlying_price).numEquals(anchorPrice);
+        expect(underlying_price).toEqual(numToBigNum(actualOpenOraclePrice).mul(numToBigNum("1000000000000")).toString(10));
       });
     });
 
     [
-      ["SAI", 5905879257418508, 1016047],
-      ["DAI", 5905879257418508, 1016047],
-      ["BAT", 931592500000000, 160271],
-      ["REP", 56128970000000000, 9656427],
-      ["ZRX", 985525000000000, 169549]
+      ["DAI", 5905879257418508, "1016047467446280116"],
+      ["BAT", 931592500000000, "160271173700000000"],
+      ["REP", 56128970000000000, "9656427998800000000"],
+      ["ZRX", 985525000000000, "169549721000000000"]
     ].forEach(([openOracleKey, anchorPrice, openOraclePrice]) => {
-      it(`returns anchor price for unsourced ${openOracleKey}`, async () => {
+      it(`returns anchor price converted to dollars with 18 decimals for ${openOracleKey} converted through open oracle eth price`, async () => {
 
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
         await send(anchorOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(anchorPrice)]);
+        const post1 = await postPrices(
+          time() - 5,
+          [[['ETH', 172.04]]],
+          ['ETH'],
+          source
+        );
 
         const underlying_price = await call(delfi, 'getUnderlyingPrice', [tokenAddress]);
 
-
-        expect(underlying_price).numEquals(anchorPrice);
+        expect(underlying_price).toEqual(openOraclePrice);
       });
     });
 
       [
         ["ETH", 1e18],
-        ["SAI", 5905879257418508],
+        ["SAI", 5285551943761727],
         ["DAI", 5905879257418508],
         ["USDT", "5905879257418508000000000000"],
         ["USDC", "5905879257418508000000000000"],
