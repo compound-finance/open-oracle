@@ -138,7 +138,7 @@ describe('AnchoredPriceView', () => {
       done();
     });
 
-    it('posting no ETH price should guard price and not revert, returns anchor price', async () => {
+    it.only('posting no ETH price should guard price', async () => {
       const post1 = await postPrices(timestamp, [[['ETH', 91]]], ['ETH']);
 
       expect(post1.events.PriceGuarded).not.toBe(undefined);
@@ -152,7 +152,7 @@ describe('AnchoredPriceView', () => {
       expect(post1.gasUsed).toBeLessThan(253000);
       expect(post1.events.PriceUpdated.returnValues.symbol).toBe('ETH');
       expect(post1.events.PriceUpdated.returnValues.price).numEquals(492e6);
-      expect(await getPrice('ETH')).numEquals(492e6);
+      expect(await call(delfi, 'prices', ['ETH'])).numEquals(492e6);
 
       // double the dollar ratio
       await send(anchorOracle, 'setPrice', [tokens.usdc, "4000000000000000000000000000"]);
