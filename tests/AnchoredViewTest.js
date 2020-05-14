@@ -268,6 +268,7 @@ describe('AnchoredPriceView', () => {
 
       let usdcPrice = "5812601720530109000000000000";
       const converted_usdc_price = await call(delfi, 'getAnchorInUsd', [cTokens.cUsdc._address, usdcPrice]);
+      const converted_usdc_price_p = await send(delfi, 'getAnchorInUsd', [cTokens.cUsdc._address, usdcPrice]);
       expect(converted_usdc_price).toEqual(1e6.toString());
 
       const converted_usdt_price = await call(delfi, 'getAnchorInUsd', [cTokens.cUsdt._address, usdcPrice]);
