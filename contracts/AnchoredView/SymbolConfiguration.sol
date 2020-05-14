@@ -6,8 +6,6 @@ interface CErc20 {
     function underlying() external view returns (address);
 }
 
-// verbose configuration of anchored view, transforming
-// address to symbols and such
 contract SymbolConfiguration {
     /// special cased anchor oracle keys
     address public constant cUsdcAnchorKey = address(1);

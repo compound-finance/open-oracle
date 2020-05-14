@@ -27,22 +27,22 @@ interface AnchorOracle {
  * @author Compound Labs, Inc.
  */
 contract AnchoredView is SymbolConfiguration {
-    /// @notice The mapping of posted by reporter prices per symbol
+    /// @notice The mapping of anchored reporter prices by symbol
     mapping(string => uint) public _prices;
 
-    /// @notice circuit breaker for using anchor price oracle directly
+    /// @notice Circuit breaker for using anchor price oracle directly
     bool public breaker;
 
-    /// @notice circuit breaker for using reporter price without anchor
+    /// @notice Circuit breaker for using reporter price without anchor
     bool public anchored = true;
 
     /// @notice the Open Oracle Reporter price reporter
     address public immutable reporter;
 
-    /// @notice the anchor oracle ( Compouni Oracle V1 )
+    /// @notice The anchor oracle ( Compound Oracle V1 )
     AnchorOracle public immutable anchor;
 
-    /// @notice the Open Oracle Price Data contract
+    /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
     /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
@@ -51,7 +51,7 @@ contract AnchoredView is SymbolConfiguration {
     /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint immutable lowerBoundAnchorRatio;
 
-    /// @notice average blocks per day, for checking anchor staleness
+    /// @notice Average blocks per day, for checking anchor staleness
     /// @dev 1 day / 15
     uint constant blocksInADay = 5760;
 
@@ -230,7 +230,7 @@ contract AnchoredView is SymbolConfiguration {
     /// @notice invalidate the anchor, and fall back to using reporter without anchor
 
     /// @dev determine if anchor is stale by checking when usdc was last updated
-    // @dev all anchor prices are converted through usdc price, so if it is stale they are all stale
+    /// @dev all anchor prices are converted through usdc price, so if it is stale they are all stale
     function cutAnchor() external {
         (uint latestUsdcAnchorPeriod,) = anchor.anchors(cUsdcAnchorKey);
 
