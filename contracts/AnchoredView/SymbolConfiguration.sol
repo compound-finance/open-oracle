@@ -1,17 +1,29 @@
 pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
-// verbose configuration of anchored view, transforming
-// address to symbols and such
+
+interface CErc20 {
+    function underlying() external view returns (address);
+}
+
 contract SymbolConfiguration {
-    /// @notice Handpicked key for USDC
-    address public constant usdcOracleKey = address(1);
+    /// special cased anchor oracle keys
+    address public constant cUsdcAnchorKey = address(1);
+    address public constant cUsdtAnchorKey = address(1);
+    address public constant cDaiAnchorKey = address(2);
 
-    /// @notice Handpicked key for DAI
-    address public constant daiOracleKey = address(2);
+    /// @notice standard amount for the Dollar
+    uint constant oneDollar = 1e6;
 
-    /// @notice Frozen SAI price in ETH
-    uint public saiPrice = 1e18;
+    // Address of the oracle key (underlying) for cTokens non special keyed tokens
+    address public immutable cRepAnchorKey;
+    address public immutable cWbtcAnchorKey;
+    address public immutable cBatAnchorKey;
+    address public immutable cZrxAnchorKey;
+
+    // Frozen prices for SAI and eth, so no oracle key
+    uint public constant saiAnchorPrice = 5285551943761727;
+    uint public constant ethAnchorPrice = 1e18;
 
     /// @notice The CToken contracts addresses
     struct CTokens {
@@ -26,7 +38,22 @@ contract SymbolConfiguration {
         address cUsdtAddress;
     }
 
-    /// @notice The binary representation for token symbols, used for string comparison
+    enum PriceSource {ANCHOR, FIXED_USD, REPORTER}
+    enum AnchorSource {ANCHOR, FIXED_USD, FIXED_ETH}
+
+    /// @notice Immutable configuration for a cToken
+    struct CTokenMetadata {
+        address cTokenAddress;
+        address anchorOracleKey;
+        string openOracleKey;
+        uint baseUnit;
+        PriceSource priceSource;
+        AnchorSource anchorSource;
+        uint fixedAnchorPrice;
+        uint fixedReporterPrice;
+    }
+
+    // The binary representation for token symbols, used for string comparison
     bytes32 constant symbolEth = keccak256(abi.encodePacked("ETH"));
     bytes32 constant symbolUsdc = keccak256(abi.encodePacked("USDC"));
     bytes32 constant symbolDai = keccak256(abi.encodePacked("DAI"));
@@ -37,8 +64,7 @@ contract SymbolConfiguration {
     bytes32 constant symbolSai = keccak256(abi.encodePacked("SAI"));
     bytes32 constant symbolUsdt = keccak256(abi.encodePacked("USDT"));
 
-    /// @notice Address of the cToken contracts
-    ///  @dev must be updated to list a new token
+    //  Address of the cToken contracts
     address public immutable cEthAddress;
     address public immutable cUsdcAddress;
     address public immutable cDaiAddress;
@@ -49,9 +75,7 @@ contract SymbolConfiguration {
     address public immutable cSaiAddress;
     address public immutable cUsdtAddress;
 
-    /**
-     * @param tokens_ The CTokens struct that contains addresses for CToken contracts
-     */
+    /// @param tokens_ The CTokens struct that contains addresses for CToken contracts
     constructor(CTokens memory tokens_) public {
         cEthAddress = tokens_.cEthAddress;
         cUsdcAddress = tokens_.cUsdcAddress;
@@ -62,22 +86,156 @@ contract SymbolConfiguration {
         cZrxAddress = tokens_.cZrxAddress;
         cSaiAddress = tokens_.cSaiAddress;
         cUsdtAddress = tokens_.cUsdtAddress;
+
+        cRepAnchorKey = CErc20(tokens_.cRepAddress).underlying();
+        cWbtcAnchorKey = CErc20(tokens_.cWbtcAddress).underlying();
+        cBatAnchorKey = CErc20(tokens_.cBatAddress).underlying();
+        cZrxAnchorKey = CErc20(tokens_.cZrxAddress).underlying();
     }
 
     /**
-     * comptroller expects price to have 18 decimals,
-     * additionally upscaled by 1e18 - underlyingdecimals
-     * base decimals is 1e6, so start by addint twelve
+     * @notice Returns the CTokenMetadata for a symbol
+     * @param symbol The symbol to map to cTokenMetadata
+     * @return The configuration metadata for the symbol
      */
-    function getAdditionalScale(address cToken) public view returns (uint256) {
-        // total scale 1e30
-        if (cToken == cUsdcAddress) return 1e24;
-        if (cToken == cUsdtAddress) return 1e24;
-        // total scale 1e28
-        if (cToken == cWbtcAddress) return 1e22;
-        // total scale 1e18
-        if (cToken == cEthAddress) return 1e12;
-        revert("Requested additional scale for token served by proxy");
+    function getCTokenConfig(string memory symbol) public view returns (CTokenMetadata memory) {
+        address cToken = getCTokenAddress(symbol);
+        return getCTokenConfig(cToken);
+    }
+
+    /**
+     * @notice Returns the CTokenMetadata for an address
+     * @param cToken The address to map to cTokenMetadata
+     * @return The configuration metadata for the address
+     */
+    function getCTokenConfig(address cToken) public view returns(CTokenMetadata memory) {
+        if (cToken == cEthAddress) {
+            return CTokenMetadata({
+                        openOracleKey: "ETH",
+                        anchorOracleKey: address(0),
+                        baseUnit: 1e18,
+                        cTokenAddress: cEthAddress,
+                        priceSource: PriceSource.REPORTER,
+                        anchorSource: AnchorSource.FIXED_ETH,
+                        fixedReporterPrice: 0,
+                        fixedAnchorPrice: 1e18
+                        });
+        }
+
+        if (cToken == cUsdcAddress) {
+            return CTokenMetadata({
+                        openOracleKey: "USDC",
+                        anchorOracleKey: cUsdcAnchorKey,
+                        baseUnit: 1e6,
+                        cTokenAddress: cUsdcAddress,
+                        priceSource: PriceSource.FIXED_USD,
+                        anchorSource: AnchorSource.FIXED_USD,
+                        fixedReporterPrice: oneDollar,
+                        fixedAnchorPrice: oneDollar
+                        });
+        }
+
+        if (cToken == cDaiAddress) {
+            return CTokenMetadata({
+                        openOracleKey: "DAI",
+                        anchorOracleKey: cDaiAnchorKey,
+                        baseUnit: 1e18,
+                        cTokenAddress: cDaiAddress,
+                        priceSource: PriceSource.ANCHOR,
+                        anchorSource: AnchorSource.ANCHOR,
+                        fixedReporterPrice: 0,
+                        fixedAnchorPrice: 0
+                        });
+        }
+
+        if (cToken == cRepAddress) {
+            return CTokenMetadata({
+                        openOracleKey: "REP",
+                        anchorOracleKey: cRepAnchorKey,
+                        baseUnit: 1e18,
+                        cTokenAddress: cRepAddress,
+                        priceSource: PriceSource.ANCHOR,
+                        anchorSource: AnchorSource.ANCHOR,
+                        fixedReporterPrice: 0,
+                        fixedAnchorPrice: 0
+                        });
+        }
+
+        if (cToken == cWbtcAddress) {
+            return CTokenMetadata({
+                        openOracleKey: "BTC",
+                        anchorOracleKey: cWbtcAnchorKey,
+                        baseUnit: 1e8,
+                        cTokenAddress: cWbtcAddress,
+                        priceSource: PriceSource.REPORTER,
+                        anchorSource: AnchorSource.ANCHOR,
+                        fixedReporterPrice: 0,
+                        fixedAnchorPrice: 0
+                        });
+        }
+
+        if (cToken == cBatAddress) {
+            return CTokenMetadata({
+                        openOracleKey: "BAT",
+                        anchorOracleKey: cBatAnchorKey,
+                        baseUnit: 1e18,
+                        cTokenAddress: cBatAddress,
+                        priceSource: PriceSource.ANCHOR,
+                        anchorSource: AnchorSource.ANCHOR,
+                        fixedReporterPrice: 0,
+                        fixedAnchorPrice: 0
+                        });
+        }
+
+        if (cToken == cZrxAddress){
+            return CTokenMetadata({
+                        openOracleKey: "ZRX",
+                        anchorOracleKey: cZrxAnchorKey,
+                        baseUnit: 1e18,
+                        cTokenAddress: cZrxAddress,
+                        priceSource: PriceSource.ANCHOR,
+                        anchorSource: AnchorSource.ANCHOR,
+                        fixedReporterPrice: 0,
+                        fixedAnchorPrice: 0
+                        });
+        }
+
+        if (cToken == cSaiAddress){
+            return CTokenMetadata({
+                        openOracleKey: "SAI",
+                        anchorOracleKey: address(0),
+                        baseUnit: 1e18,
+                        cTokenAddress: cSaiAddress,
+                        priceSource: PriceSource.ANCHOR,
+                        anchorSource: AnchorSource.FIXED_ETH,
+                        fixedAnchorPrice: saiAnchorPrice,
+                        fixedReporterPrice: 0
+                        });
+        }
+
+        if (cToken == cUsdtAddress){
+            return CTokenMetadata({
+                        openOracleKey: "USDT",
+                        anchorOracleKey: cUsdtAnchorKey,
+                        baseUnit: 1e6,
+                        cTokenAddress: cUsdtAddress,
+                        priceSource: PriceSource.FIXED_USD,
+                        anchorSource: AnchorSource.FIXED_USD,
+                        fixedReporterPrice: oneDollar,
+                        fixedAnchorPrice: oneDollar
+                        });
+        }
+
+        return CTokenMetadata({
+                    openOracleKey: "UNCONFIGURED",
+                    anchorOracleKey: address(0),
+                    baseUnit: 0,
+                    cTokenAddress: address(0),
+                    priceSource: PriceSource.FIXED_USD,
+                    anchorSource: AnchorSource.FIXED_USD,
+                    fixedReporterPrice: 0,
+                    fixedAnchorPrice: 0
+                    });
     }
 
     /**
@@ -96,24 +254,7 @@ contract SymbolConfiguration {
         if (symbolHash == symbolZrx) return cZrxAddress;
         if (symbolHash == symbolSai) return cSaiAddress;
         if (symbolHash == symbolUsdt) return cUsdtAddress;
-        revert("Unknown token symbol");
-    }
-
-    /**
-     * @notice Returns the symbol for cToken address
-     * @param cToken The cToken address to map to symbol
-     * @return The symbol for the given cToken address
-     */
-    function getOracleKey(address cToken) public view returns (string memory) {
-        if (cToken == cEthAddress) return "ETH";
-        if (cToken == cUsdcAddress) return "USDC";
-        if (cToken == cDaiAddress) return "DAI";
-        if (cToken == cRepAddress) return "REP";
-        if (cToken == cWbtcAddress) return "BTC";
-        if (cToken == cBatAddress) return "BAT";
-        if (cToken == cZrxAddress) return "ZRX";
-        if (cToken == cSaiAddress) return "SAI";
-        if (cToken == cUsdtAddress) return "USDT";
-        revert("Unknown token address");
+        return address(0);
     }
 }
+
