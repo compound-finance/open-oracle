@@ -9,32 +9,32 @@ interface AnchorOracle {
 
     function assetPrices(address asset) external view returns (uint);
 
+    struct Anchor {
+        // floor(block.number / numBlocksPerPeriod) + 1
+        uint period;
 
-    /* struct Anchor { */
-    /*     // floor(block.number / numBlocksPerPeriod) + 1 */
-    /*     uint period; */
-
-    /*     // Price in ETH, scaled by 10**18 */
-    /*     uint priceMantissa; */
-    /* } */
-    function anchors(address asset) external view returns (uint, uint);
+        // Price in ETH, scaled by 10**18
+        uint priceMantissa;
+    }
+    function anchors(address asset) external view returns (Anchor memory);
 }
 
 
 /**
  * @notice Price feed conforming to Price Oracle Proxy interface.
  * @dev Use a single open oracle reporter and anchored to and falling back to the Compound v2 oracle system.
+ * @dev The reporter must report at a minimum the USD/ETH price, so that anchor ETH/TOKEN prices can be converted to USD/TOKEN
  * @author Compound Labs, Inc.
  */
 contract AnchoredView is SymbolConfiguration {
     /// @notice The mapping of anchored reporter prices by symbol
     mapping(string => uint) public _prices;
 
-    /// @notice Circuit breaker for using anchor price oracle directly
-    bool public breaker;
+    /// @notice Circuit breaker for using anchor price oracle directly, ignoring reporter
+    bool public reporterBreaker;
 
     /// @notice Circuit breaker for using reporter price without anchor
-    bool public anchored = true;
+    bool public anchorBreaker;
 
     /// @notice the Open Oracle Reporter price reporter
     address public immutable reporter;
@@ -86,9 +86,6 @@ contract AnchoredView is SymbolConfiguration {
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
-
-        _prices["USDC"] = oneDollar;
-        _prices["USDT"] = oneDollar;
     }
 
     /**
@@ -117,22 +114,18 @@ contract AnchoredView is SymbolConfiguration {
 
             uint reporterPrice = priceData.getPrice(reporter, symbol);
             uint anchorPrice = getAnchorInUsd(tokenAddress, usdcPrice);
+            
+            uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
+            bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
 
-            if (tokenAddress == cUsdcAddress || tokenAddress == cUsdtAddress || anchorPrice == 0)  {
-                emit PriceGuarded(symbol, reporterPrice, anchorPrice);
-            } else {
-                uint anchorRatio = mul(reporterPrice, 100e16) / anchorPrice;
-                bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
-
-                if (withinAnchor || !anchored) {
-                    // only update and emit event if value changes
-                    if (_prices[symbol] != reporterPrice) {
-                        _prices[symbol] = reporterPrice;
-                        emit PriceUpdated(symbol, reporterPrice);
-                    }
-                } else {
-                    emit PriceGuarded(symbol, reporterPrice, anchorPrice);
+            if (withinAnchor || anchorBreaker) {
+                // only update and emit event if value changes
+                if (_prices[symbol] != reporterPrice) {
+                    _prices[symbol] = reporterPrice;
+                    emit PriceUpdated(symbol, reporterPrice);
                 }
+            } else {
+                emit PriceGuarded(symbol, reporterPrice, anchorPrice);
             }
         }
     }
@@ -158,7 +151,7 @@ contract AnchoredView is SymbolConfiguration {
      * @dev fetch price in eth from proxy and convert to usd price using anchor usdc price.
      * @dev Anchor price has 36 - underlying decimals, so scale back up to 36 decimals before dividing by by usdc price  (30 decimals), yielding 6 decimal usd price
      */
-    function getAnchorInUsd(address cToken, uint ethPerUsdc) public  returns (uint) {
+    function getAnchorInUsd(address cToken, uint ethPerUsdc) public view returns (uint) {
         CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
         if (tokenConfig.anchorSource == AnchorSource.FIXED_USD) {
             return tokenConfig.fixedAnchorPrice;
@@ -177,7 +170,7 @@ contract AnchoredView is SymbolConfiguration {
      */
     function getUnderlyingPrice(address cToken) public view returns (uint) {
         CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
-        if (breaker == true) {
+        if (reporterBreaker == true) {
             return readAnchor(tokenConfig);
         }
 
@@ -223,7 +216,7 @@ contract AnchoredView is SymbolConfiguration {
         require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalid message must be 'rotate'");
         require(priceData.source(message, signature) == reporter, "invalidation message must come from the reporter");
 
-        breaker = true;
+        reporterBreaker = true;
         emit ReporterInvalidated(reporter);
     }
 
@@ -232,14 +225,14 @@ contract AnchoredView is SymbolConfiguration {
     /// @dev determine if anchor is stale by checking when usdc was last updated
     /// @dev all anchor prices are converted through usdc price, so if it is stale they are all stale
     function cutAnchor() external {
-        (uint latestUsdcAnchorPeriod,) = anchor.anchors(cUsdcAnchorKey);
+        AnchorOracle.Anchor memory latestUsdcAnchor = anchor.anchors(cUsdcAnchorKey);
 
-        uint usdcAnchorBlockNumber = mul(latestUsdcAnchorPeriod, anchor.numBlocksPerPeriod());
+        uint usdcAnchorBlockNumber = mul(latestUsdcAnchor.period, anchor.numBlocksPerPeriod());
         uint blocksSinceUpdate = block.number - usdcAnchorBlockNumber;
 
         // one day in 15 second blocks without an update
         if (blocksSinceUpdate > blocksInADay) {
-            anchored = false;
+            anchorBreaker = true;
             emit AnchorCut(address(anchor));
         }
     }

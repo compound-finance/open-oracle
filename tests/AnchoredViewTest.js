@@ -179,7 +179,7 @@ describe('AnchoredPriceView', () => {
     it('should updates source price if anchor is cut, even if  price outside of anchor', async () => {
       await sendRPC(web3, 'evm_mineBlockNumber', 5760);
       await send(delfi, 'cutAnchor', []);
-      expect(await call(delfi, 'anchored')).toEqual(false);
+      expect(await call(delfi, 'anchorBreaker')).toEqual(true);
 
       const post1 = await postPrices(timestamp, [[['ETH', 1000]]], ['ETH']);
       expect(post1.events.PriceUpdated).not.toBe(undefined);
@@ -248,12 +248,14 @@ describe('AnchoredPriceView', () => {
       expect(await getPrice('ETH')).numEquals(500e6);
     });
 
-    it('guards when posting usdc or usdt', async () => {
+    it('guards when posts usdc or usdt, but reads fixed price only', async () => {
       let post1 = await postPrices(timestamp, [[['USDC', 1.01], ['USDT', 0.99] ]], ['USDC', 'USDT']);
 
-      expect(post1.events.PriceUpdated).toBe(undefined);
-      expect(post1.events.PriceGuarded[0].returnValues.symbol).toEqual('USDC');
-      expect(post1.events.PriceGuarded[1].returnValues.symbol).toEqual('USDT');
+      expect(post1.events.PriceGuarded).toBe(undefined);
+      expect(post1.events.PriceUpdated[0].returnValues.symbol).toEqual('USDC');
+      expect(post1.events.PriceUpdated[0].returnValues.price).numEquals(1.01e6);
+      expect(post1.events.PriceUpdated[1].returnValues.symbol).toEqual('USDT');
+      expect(post1.events.PriceUpdated[1].returnValues.price).numEquals(0.99e6);
       expect(await getPrice('USDC')).numEquals(1e6);
       expect(await getPrice('USDT')).numEquals(1e6);
     });
@@ -398,7 +400,7 @@ describe('AnchoredPriceView', () => {
         ["ZRX", 985525000000000],
         ["BTC", "399920015996800660000000000000"] // 8 decimals underlying -> 10 extra decimals on proxy 
       ].forEach(([openOracleKey, proxyPrice]) => {
-        it(`returns anchor price if breaker is set for ${openOracleKey}`, async () => {
+        it(`returns anchor price if reporterBreaker is set for ${openOracleKey}`, async () => {
           let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
           if (openOracleKey == "USDT") {
             await send(anchorOracle, 'setUnderlyingPrice', [cTokens.cUsdc._address, numToHex(proxyPrice)]);
@@ -410,10 +412,10 @@ describe('AnchoredPriceView', () => {
           let encoded = encodeRotationMessage(rotationTarget);
           const [ signed ] = sign(encoded, source.privateKey);
 
-          expect(await call(delfi, 'breaker', [])).toEqual(false);
+          expect(await call(delfi, 'reporterBreaker', [])).toEqual(false);
 
           await send(delfi, 'invalidate', [encoded, signed.signature]);
-          expect(await call(delfi, 'breaker', [])).toEqual(true);
+          expect(await call(delfi, 'reporterBreaker', [])).toEqual(true);
 
           expect(await call(delfi, 'getUnderlyingPrice', [tokenAddress])).numEquals(proxyPrice);
       });
@@ -459,10 +461,10 @@ describe('AnchoredPriceView', () => {
       let encoded = encodeRotationMessage(rotationTarget);
       // sign rotation message with wrong key
       const [ signed ] = sign(encoded, source.privateKey);
-      expect(await call(delfi, 'breaker', [])).toEqual(false);
+      expect(await call(delfi, 'reporterBreaker', [])).toEqual(false);
       await send(delfi, 'invalidate', [encoded, signed.signature]);
 
-      expect(await call(delfi, 'breaker', [])).toEqual(true);
+      expect(await call(delfi, 'reporterBreaker', [])).toEqual(true);
     });
   });
 
@@ -482,19 +484,19 @@ describe('AnchoredPriceView', () => {
       await send(anchorOracle, 'setAnchorPeriod', [tokens.usdc, 12000 /  blocksPerPeriod]);
 
       var cut = await send(delfi, 'cutAnchor', []);
-      expect(await call(delfi, 'anchored')).toEqual(true);
+      expect(await call(delfi, 'anchorBreaker')).toEqual(false);
 
       // one more block has passed, so now cuttable
       // now on block 17761 aka 5761 blocks past last anchor
       cut = await send(delfi, 'cutAnchor', []);
-      expect(await call(delfi, 'anchored')).toEqual(false);
+      expect(await call(delfi, 'anchorBreaker')).toEqual(true);
       expect(cut.events.AnchorCut.returnValues.anchor).toEqual(anchorOracle._address);
     });
 
     it("no op if anchor is up to date", async () => {
       await sendRPC(web3, 'evm_mineBlockNumber', [0]);
       let cut = await send(delfi, 'cutAnchor', []);
-      expect(await call(delfi, 'anchored')).toEqual(true);
+      expect(await call(delfi, 'anchorBreaker')).toEqual(false);
     });
 
   });
