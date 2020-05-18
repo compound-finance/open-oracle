@@ -15,13 +15,13 @@ contract SymbolConfiguration {
     /// @notice standard amount for the Dollar
     uint constant oneDollar = 1e6;
 
-    /// Address of the oracle key (underlying) for cTokens non special keyed tokens
+    // Address of the oracle key (underlying) for cTokens non special keyed tokens
     address public immutable cRepAnchorKey;
     address public immutable cWbtcAnchorKey;
     address public immutable cBatAnchorKey;
     address public immutable cZrxAnchorKey;
 
-    /// Frozen prices for SAI and eth, so no oracle key
+    // Frozen prices for SAI and eth, so no oracle key
     uint public constant saiAnchorPrice = 5285551943761727;
     uint public constant ethAnchorPrice = 1e18;
 
@@ -53,7 +53,7 @@ contract SymbolConfiguration {
         uint fixedReporterPrice;
     }
 
-    /// The binary representation for token symbols, used for string comparison
+    // The binary representation for token symbols, used for string comparison
     bytes32 constant symbolEth = keccak256(abi.encodePacked("ETH"));
     bytes32 constant symbolUsdc = keccak256(abi.encodePacked("USDC"));
     bytes32 constant symbolDai = keccak256(abi.encodePacked("DAI"));
@@ -64,7 +64,7 @@ contract SymbolConfiguration {
     bytes32 constant symbolSai = keccak256(abi.encodePacked("SAI"));
     bytes32 constant symbolUsdt = keccak256(abi.encodePacked("USDT"));
 
-    ///  Address of the cToken contracts
+    //  Address of the cToken contracts
     address public immutable cEthAddress;
     address public immutable cUsdcAddress;
     address public immutable cDaiAddress;
@@ -226,7 +226,16 @@ contract SymbolConfiguration {
                         });
         }
 
-        revert("Unknown token address");
+        return CTokenMetadata({
+                    openOracleKey: "UNCONFIGURED",
+                    anchorOracleKey: address(0),
+                    baseUnit: 0,
+                    cTokenAddress: address(0),
+                    priceSource: PriceSource.FIXED_USD,
+                    anchorSource: AnchorSource.FIXED_USD,
+                    fixedReporterPrice: 0,
+                    fixedAnchorPrice: 0
+                    });
     }
 
     /**
@@ -245,7 +254,7 @@ contract SymbolConfiguration {
         if (symbolHash == symbolZrx) return cZrxAddress;
         if (symbolHash == symbolSai) return cSaiAddress;
         if (symbolHash == symbolUsdt) return cUsdtAddress;
-        revert("Unknown token address");
+        return address(0);
     }
 }
 

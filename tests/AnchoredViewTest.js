@@ -233,6 +233,14 @@ describe('AnchoredPriceView', () => {
       ).rejects.toRevert();
     });
 
+    it('allows writing unconfigured tokens to storage, but not view', async () => {
+      await postPrices(timestamp, [[['BLETH', 500]]], ['BLETH']);
+
+      expect(await getPrice('BLETH')).numEquals(0);
+      expect(await call(priceData, 'getPrice', [source.address, 'BLETH'])).numEquals(500e6);
+    });
+
+
     it('posting from non-source should not change median or emit event', async () => {
       await postPrices(timestamp, [[['ETH', 500]]], ['ETH']);
 
@@ -248,7 +256,7 @@ describe('AnchoredPriceView', () => {
       expect(await getPrice('ETH')).numEquals(500e6);
     });
 
-    it('guards when posts usdc or usdt, but reads fixed price only', async () => {
+    it('guards when posts usdc or usdt, but reads fixed price always', async () => {
       let post1 = await postPrices(timestamp, [[['USDC', 1.01], ['USDT', 0.99] ]], ['USDC', 'USDT']);
 
       expect(post1.events.PriceGuarded).toBe(undefined);

@@ -108,24 +108,24 @@ contract AnchoredView is SymbolConfiguration {
 
         // Try to update the view storage
         for (uint i = 0; i < symbols.length; i++) {
-            string memory symbol = symbols[i];
+            CTokenMetadata memory tokenConfig = getCTokenConfig(symbols[i]);
+            // symbol is not supported in the view, but allow writing to data
+            if (tokenConfig.cTokenAddress == address(0)) continue;
 
-            address tokenAddress = getCTokenAddress(symbol);
-
-            uint reporterPrice = priceData.getPrice(reporter, symbol);
-            uint anchorPrice = getAnchorInUsd(tokenAddress, usdcPrice);
+            uint reporterPrice = priceData.getPrice(reporter, tokenConfig.openOracleKey);
+            uint anchorPrice = getAnchorInUsd(tokenConfig, usdcPrice);
             
             uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
             bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
 
             if (withinAnchor || anchorBreaker) {
                 // only update and emit event if value changes
-                if (_prices[symbol] != reporterPrice) {
-                    _prices[symbol] = reporterPrice;
-                    emit PriceUpdated(symbol, reporterPrice);
+                if (_prices[tokenConfig.openOracleKey] != reporterPrice) {
+                    _prices[tokenConfig.openOracleKey] = reporterPrice;
+                    emit PriceUpdated(tokenConfig.openOracleKey, reporterPrice);
                 }
             } else {
-                emit PriceGuarded(symbol, reporterPrice, anchorPrice);
+                emit PriceGuarded(tokenConfig.openOracleKey, reporterPrice, anchorPrice);
             }
         }
     }
@@ -153,6 +153,10 @@ contract AnchoredView is SymbolConfiguration {
      */
     function getAnchorInUsd(address cToken, uint ethPerUsdc) public view returns (uint) {
         CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
+        return getAnchorInUsd(tokenConfig, ethPerUsdc);
+    }
+
+    function getAnchorInUsd(CTokenMetadata memory tokenConfig, uint ethPerUsdc) internal view returns (uint) {
         if (tokenConfig.anchorSource == AnchorSource.FIXED_USD) {
             return tokenConfig.fixedAnchorPrice;
         }
