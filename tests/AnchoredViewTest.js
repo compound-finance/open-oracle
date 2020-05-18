@@ -106,7 +106,7 @@ async function setup() {
 }
 
 
-describe('AnchoredPriceView', () => {
+describe('AnchoredView', () => {
   let source,
       anchorMantissa,
       priceData,

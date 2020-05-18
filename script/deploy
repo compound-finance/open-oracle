@@ -22,6 +22,6 @@ npx saddle deploy DelFiPrice "$data_addr" "$reporters":array "$anchor_address" "
 sleep 15; # allow Etherscan time to see contract
 npx saddle verify "$api_key" DelFiPrice "$data_addr" "$reporters":array -n "$network"
 
-npx saddle deploy AnchoredPriceView "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network"
+npx saddle deploy AnchoredView "$data_addr" "$reporter" "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network"
 sleep 15; # allow Etherscan time to see contract
-npx saddle verify "$api_key" AnchoredPriceView "$data_addr" "$reporters":array "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network"
+npx saddle verify "$api_key" AnchoredView "$data_addr" "$reporter" "$anchor_address" "$anchor_tolerance_mantissa" "$ctokens":struct -n "$network"
