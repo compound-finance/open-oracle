@@ -42,17 +42,20 @@ async function waitForLogs(serviceLogPairs) {
 describe('Integration', () => {
   it('deploys the contracts, starts reporters and posts the right prices', async () => {
     try {
+      await execute(`rm -rf ".dockerbuild"`);
+      await execute(`rm -rf ".dockerbuild_cp"`);
       const deployer = `${projectName}_deployer_1`;
       const reporter = `${projectName}_reporter-1_1`;
 
-      await compose.upOne(["poster"], composeOptions);
-      await waitForLogs({deployer: "Deployed DelFiPrice", poster: "main completed"});
+      await compose.upAll(composeOptions);
+      await waitForLogs({deployer: "Deployed DelFiPrice", poster: "main completed", "reporter-1": "Reporter listening", ganache: "Listening on 0.0.0.0:8545"});
 
       await execute(`docker cp "${deployer}:/build" ".dockerbuild_cp"`);
 
       const web3 = new Web3(new DockerProvider('http://ganache:8545', reporter));
       const accounts = await web3.eth.getAccounts();
-      const delfi = await contract.getContractAt(web3, 'DelFiPrice', {build_dir: '.dockerbuild_cp', trace: false}, '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24');
+
+      const delfi = await contract.getContractAt(web3, 'DelFiPrice', {build_dir: '.dockerbuild_cp', trace: false, extra_build_files: []}, '0x5b1869D9A4C187F2EAa108f3062412ecf0526b24');
 
       expect(await delfi.methods.prices('BTC').call({from: accounts[0]})).numEquals(0);
       expect(await delfi.methods.prices('ETH').call({from: accounts[0]})).numEquals('260000000');

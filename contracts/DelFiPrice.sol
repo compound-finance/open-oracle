@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 import "./OpenOraclePriceData.sol";
@@ -9,40 +9,71 @@ import "./OpenOracleView.sol";
  * @author Compound Labs, Inc.
  */
 contract DelFiPrice is OpenOracleView {
-    /**
-     * @notice The event emitted when a price is written to storage
-     */
-    event Price(string symbol, uint64 price);
+    /// @notice The event emitted when the median price is updated
+    event PriceUpdated(string symbol, uint64 price);
 
-    /**
-     * @notice The mapping of medianized prices per symbol
-     */
+    /// @notice The event emitted when new prices are posted but the median price is not updated due to the anchor
+    event PriceGuarded(string symbol, uint64 median, uint64 anchor);
+
+    /// @notice The reporter address whose prices checked against the median for safety
+    address anchor;
+
+    /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    uint256 upperBoundAnchorRatio;
+
+    /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    uint256 lowerBoundAnchorRatio;
+
+    /// @notice The mapping of medianized prices per symbol
     mapping(string => uint64) public prices;
 
-    constructor(OpenOraclePriceData data_, address[] memory sources_) public OpenOracleView(data_, sources_) {}
+    /**
+     * @param data_ Address of the Oracle Data contract
+     * @param sources_ The reporter addresses whose prices will be used to calculate the median
+     * @param anchor_ The reporter address whose prices checked against the median for safety
+     * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 10e16 means a new median that is 10% off from the anchor will still be saved
+     */
+    constructor(OpenOraclePriceData data_, address[] memory sources_, address anchor_, uint anchorToleranceMantissa_) public OpenOracleView(data_, sources_) {
+        anchor = anchor_;
+        require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
+        upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
+        lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
+    }
 
     /**
      * @notice Primary entry point to post and recalculate prices
-     * @dev We let anyone pay to post anything, but only sources count for prices.
+     * @dev We let anyone pay to post anything, but only sources count for prices
      * @param messages The messages to post to the oracle
      * @param signatures The signatures for the corresponding messages
      */
     function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
 
-        // Post the messages, whatever they are
+        // Save the prices
         for (uint i = 0; i < messages.length; i++) {
             OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
         }
 
-        // Recalculate the asset prices for the symbols to update
+        // Try to update the median
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
-
-            // Calculate the median price, write to storage, and emit an event
-            uint64 price = medianPrice(symbol, sources);
-            prices[symbol] = price;
-            emit Price(symbol, price);
+            uint64 medianPrice = medianPrice(symbol, sources);
+            uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
+            if (anchorPrice == 0) {
+                emit PriceGuarded(symbol, medianPrice, anchorPrice);
+            } else {
+                uint256 anchorRatioMantissa = uint256(medianPrice) * 100e16 / anchorPrice;
+                // Only update the view's price if the median of the sources is within a bound, and it is a new median
+                if (anchorRatioMantissa <= upperBoundAnchorRatio && anchorRatioMantissa >= lowerBoundAnchorRatio) {
+                    // only update and emit event if the median price is new, otherwise do nothing
+                    if (prices[symbol] != medianPrice) {
+                        prices[symbol] = medianPrice;
+                        emit PriceUpdated(symbol, medianPrice);
+                    }
+                } else {
+                    emit PriceGuarded(symbol, medianPrice, anchorPrice);
+                }
+            }
         }
     }
 
@@ -62,7 +93,16 @@ contract DelFiPrice is OpenOracleView {
         }
 
         uint64[] memory sortedPrices = sort(postedPrices);
-        return sortedPrices[N / 2];
+        // if N is even, get the left and right medians and average them
+        if (N % 2 == 0) {
+            uint64 left = sortedPrices[(N / 2) - 1];
+            uint64 right = sortedPrices[N / 2];
+            uint128 sum = uint128(left) + uint128(right);
+            return uint64(sum / 2);
+        } else {
+            // if N is odd, just return the median
+            return sortedPrices[N / 2];
+        }
     }
 
     /**
