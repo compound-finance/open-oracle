@@ -6,6 +6,30 @@ module.exports = {
   contracts: process.env['SADDLE_CONTRACTS'] || "contracts/*.sol contracts/**/*.sol tests/contracts/*.sol",  // Glob to match contract files
   tests: ['**/tests/*Test.js'],                         // Glob to match test files
   networks: {                                           // Define configuration for each network
+    ropsten: {
+      providers: [
+        {env: "PROVIDER"},
+        {file: "~/.ethereum/ropsten-url"},                    // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
+      ],
+      web3: {
+        gas: [
+          {env: "GAS"},
+          {default: "8000000"}
+        ],
+        gas_price: [
+          {env: "GAS_PRICE"},
+          {default: "12000000000"}
+        ],
+        options: {
+          transactionConfirmationBlocks: 1,
+          transactionBlockTimeout: 5
+        }
+      },
+      accounts: [
+        {env: "ACCOUNT"},
+        {file: "~/.ethereum/ropsten"}                         // Load from given file with contents as the private key (e.g. 0x...)
+      ]
+    },
     development: {
       providers: [                                      // How to load provider (processed in order)
         { env: "PROVIDER" },                              // Try to load Http provider from `PROVIDER` env variable (e.g. env PROVIDER=http://...)
