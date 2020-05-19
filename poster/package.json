@@ -1,6 +1,6 @@
 {
   "name": "open-oracle-poster",
-  "version": "1.0.17",
+  "version": "1.0.21",
   "description": "A Customizable Poster for the Compound Open Oracle",
   "main": ".tsbuilt/poster.js",
   "bin": ".tsbuilt/index.js",
@@ -15,7 +15,6 @@
   "devDependencies": {
     "@types/jest": "^24.0.23",
     "@types/node": "^12.12.14",
-    "ganache-core": "^2.8.0",
     "jest": "^24.9.0",
     "jest-junit": "^10.0.0",
     "ts-jest": "^24.2.0",
@@ -23,8 +22,13 @@
   },
   "dependencies": {
     "@types/web3": "^1.2.2",
+    "bignumber.js": "^9.0.0",
     "node-fetch": "^2.6.0",
     "web3": "1.2.4",
     "yargs": "^15.0.2"
+  },
+  "resolutions": {
+    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz",
+    "**/ganache-core": "https://github.com/compound-finance/ganache-core.git#compound"
   }
 }

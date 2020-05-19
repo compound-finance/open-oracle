@@ -131,6 +131,9 @@ module.exports = {
   // The test environment that will be used for testing
   testEnvironment: "node",
 
+  // Timeout of a test in milliseconds, default timeout is 5000 ms.
+  testTimeout: 10000,
+
   // Options that will be passed to the testEnvironment
   // testEnvironmentOptions: {},
 
