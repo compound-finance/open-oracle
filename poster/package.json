@@ -1,6 +1,6 @@
 {
   "name": "open-oracle-poster",
-  "version": "1.0.17",
+  "version": "1.0.21",
   "description": "A Customizable Poster for the Compound Open Oracle",
   "main": ".tsbuilt/poster.js",
   "bin": ".tsbuilt/index.js",
@@ -26,5 +26,8 @@
     "node-fetch": "^2.6.0",
     "web3": "1.2.4",
     "yargs": "^15.0.2"
+  },
+  "resolutions": {
+    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz"
   }
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.6.6;
 
 import "./OpenOracleData.sol";
 
@@ -26,6 +26,7 @@ contract OpenOracleView {
      * @param sources_ The list of source addresses to include in the aggregate value
      */
     constructor(OpenOracleData data_, address[] memory sources_) public {
+        require(sources_.length > 0, "Must initialize with sources");
         data = data_;
         sources = sources_;
     }
