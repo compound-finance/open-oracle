@@ -141,7 +141,7 @@ contract SymbolConfiguration {
                         anchorOracleKey: cDaiAnchorKey,
                         baseUnit: 1e18,
                         cTokenAddress: cDaiAddress,
-                        priceSource: PriceSource.ANCHOR,
+                        priceSource: PriceSource.REPORTER,
                         anchorSource: AnchorSource.ANCHOR,
                         fixedReporterPrice: 0,
                         fixedAnchorPrice: 0
@@ -154,7 +154,7 @@ contract SymbolConfiguration {
                         anchorOracleKey: cRepAnchorKey,
                         baseUnit: 1e18,
                         cTokenAddress: cRepAddress,
-                        priceSource: PriceSource.ANCHOR,
+                        priceSource: PriceSource.REPORTER,
                         anchorSource: AnchorSource.ANCHOR,
                         fixedReporterPrice: 0,
                         fixedAnchorPrice: 0
@@ -180,7 +180,7 @@ contract SymbolConfiguration {
                         anchorOracleKey: cBatAnchorKey,
                         baseUnit: 1e18,
                         cTokenAddress: cBatAddress,
-                        priceSource: PriceSource.ANCHOR,
+                        priceSource: PriceSource.REPORTER,
                         anchorSource: AnchorSource.ANCHOR,
                         fixedReporterPrice: 0,
                         fixedAnchorPrice: 0
@@ -193,7 +193,7 @@ contract SymbolConfiguration {
                         anchorOracleKey: cZrxAnchorKey,
                         baseUnit: 1e18,
                         cTokenAddress: cZrxAddress,
-                        priceSource: PriceSource.ANCHOR,
+                        priceSource: PriceSource.REPORTER,
                         anchorSource: AnchorSource.ANCHOR,
                         fixedReporterPrice: 0,
                         fixedAnchorPrice: 0

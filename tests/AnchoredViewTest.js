@@ -66,7 +66,7 @@ async function setup() {
         encode(
           'prices',
           timestamp,
-          prices.map(([symbol, price]) => [symbol, price])
+          prices
         ),
         signer.privateKey
       );
@@ -355,11 +355,18 @@ describe('AnchoredView', () => {
 
     [
       ["ETH", 1e18, 173.04],
+      ["DAI", 5905879257418508, 1.01604],
+      ["BAT", 931592500000000, 0.16027],
+      ["REP", 56128970000000000, 9.6564],
+      ["ZRX", 985525000000000, 0.169549]
     ].forEach(([openOracleKey, anchorPrice, openOraclePrice]) => {
       it(`returns source price with 36 - 18 decimals for ${openOracleKey}`, async () => {
         let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
-        /// XXX set a usdc price so this updates
-        await send(anchorOracle, 'setPrice', [tokenAddress, numToHex(anchorPrice)]);
+        if (openOracleKey == "ETH") {
+          await send(anchorOracle, 'setPrice', [tokenAddress, numToHex(anchorPrice)]);
+        } else {
+          await send(anchorOracle, 'setUnderlyingPrice', [tokenAddress, numToHex(anchorPrice)]);
+        }
         const post1 = await postPrices(
           time() - 5,
           [[[openOracleKey, openOraclePrice]]],
@@ -375,10 +382,7 @@ describe('AnchoredView', () => {
     });
 
     [
-      ["DAI", 5905879257418508, "1016047467446280116"],
-      ["BAT", 931592500000000, "160271173700000000"],
-      ["REP", 56128970000000000, "9656427998800000000"],
-      ["ZRX", 985525000000000, "169549721000000000"]
+      // all current tokens have a reporter price
     ].forEach(([openOracleKey, anchorPrice, openOraclePrice]) => {
       it(`returns anchor price converted to dollars with 18 decimals for ${openOracleKey} converted through open oracle eth price`, async () => {
 
