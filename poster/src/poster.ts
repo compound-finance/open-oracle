@@ -3,6 +3,7 @@ import fetch from 'node-fetch';
 import Web3 from 'web3';
 import { TransactionConfig } from 'web3-core';
 import AbiCoder from 'web3-eth-abi';
+import { fetchDataAddress, fetchPreviousAssetPrice, fetchSourceAddress } from './prev_price';
 
 async function main(sources : string,
                     senderKey : string,
@@ -11,6 +12,22 @@ async function main(sources : string,
                     gas: number,
                     web3 : Web3) {
   const payloads = await fetchPayloads(sources.split(","));
+  const dataAddress = await fetchDataAddress(viewAddress, web3);
+
+  payloads.forEach(async payload => {
+    const sourceAddress = await fetchSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
+    console.log("source address = ", sourceAddress);
+
+    for (const [asset, price] of Object.entries(payload.prices)) {
+      console.log("ASSET = ", asset);
+      console.log("PRICE = ", price);
+
+      const prev_price = await fetchPreviousAssetPrice(sourceAddress, asset, dataAddress, web3);
+      console.log("PREV PRICE = ", prev_price)
+    }
+
+  })
+  
   const gasPrice = await fetchGasPrice();
   const trxData = buildTrxData(payloads, functionSig);
 
