@@ -3,13 +3,13 @@ import { TransactionConfig } from 'web3-core';
 import AbiCoder from 'web3-eth-abi';
 import { findTypes } from './poster';
 
-async function fetchPreviousAssetPrice(sourceAddress: string, symbol: string, dataAddress: string, web3 : Web3) {
+async function getPreviousPrice(sourceAddress: string, asset: string, dataAddress: string, web3 : Web3) {
     const functionSig = 'getPrice(address,string)';
     const types = findTypes(functionSig);
   
     const callData = (<any>AbiCoder).encodeFunctionSignature(functionSig) +
            (<any>AbiCoder)
-             .encodeParameters(types, [sourceAddress, symbol.toUpperCase()])
+             .encodeParameters(types, [sourceAddress, asset.toUpperCase()])
              .replace('0x', '');
     const call = <TransactionConfig> {
       data: callData,
@@ -17,11 +17,11 @@ async function fetchPreviousAssetPrice(sourceAddress: string, symbol: string, da
       to: dataAddress
     }
     const price = web3.utils.hexToNumber(await web3.eth.call(call));
-    console.log(`Previous price of ${symbol.toUpperCase()} for source ${sourceAddress} = ${price}`);
+    console.log(`Previous price of ${asset.toUpperCase()} for source ${sourceAddress} = ${price}`);
     return price;
   }
   
-  async function fetchDataAddress(viewAddress: string, web3: Web3) {
+  async function getDataAddress(viewAddress: string, web3: Web3) {
     const callData = (<any>AbiCoder).encodeFunctionSignature('data()') 
     const call = <TransactionConfig> {
       data: callData,
@@ -30,7 +30,7 @@ async function fetchPreviousAssetPrice(sourceAddress: string, symbol: string, da
     return web3.eth.abi.decodeParameter('address', await web3.eth.call(call)).toString();
   }
   
-  async function fetchSourceAddress(dataAddress: string, message: string, signature: string, web3 : Web3) {
+  async function getSourceAddress(dataAddress: string, message: string, signature: string, web3 : Web3) {
     const functionSig = 'source(bytes,bytes)';
     const types = findTypes(functionSig);
   
@@ -47,8 +47,8 @@ async function fetchPreviousAssetPrice(sourceAddress: string, symbol: string, da
   }
 
   export {
-   fetchPreviousAssetPrice, 
-   fetchSourceAddress, 
-   fetchDataAddress
+   getPreviousPrice, 
+   getSourceAddress, 
+   getDataAddress
   }
   

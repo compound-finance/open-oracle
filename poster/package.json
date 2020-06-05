@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@types/web3": "^1.2.2",
+    "bignumber.js": "^9.0.0",
     "node-fetch": "^2.6.0",
     "web3": "1.2.4",
     "yargs": "^15.0.2"

@@ -3,42 +3,54 @@ import fetch from 'node-fetch';
 import Web3 from 'web3';
 import { TransactionConfig } from 'web3-core';
 import AbiCoder from 'web3-eth-abi';
-import { fetchDataAddress, fetchPreviousAssetPrice, fetchSourceAddress } from './prev_price';
+import { getDataAddress, getPreviousPrice, getSourceAddress } from './prev_price';
+import { BigNumber as BN } from 'bignumber.js';
 
 async function main(sources : string,
                     senderKey : string,
                     viewAddress : string,
                     functionSig : string,
                     gas: number,
+                    delta: number,
                     web3 : Web3) {
   const payloads = await fetchPayloads(sources.split(","));
-  const dataAddress = await fetchDataAddress(viewAddress, web3);
+  const dataAddress = await getDataAddress(viewAddress, web3);
 
-  payloads.forEach(async payload => {
-    const sourceAddress = await fetchSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
-    console.log("source address = ", sourceAddress);
+  let updatePrices = false;
 
+  await Promise.all(payloads.map(async payload => {
+    const sourceAddress = await getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
+    
     for (const [asset, price] of Object.entries(payload.prices)) {
-      console.log("ASSET = ", asset);
-      console.log("PRICE = ", price);
+      const prev_price = await getPreviousPrice(sourceAddress, asset, dataAddress, web3);
 
-      const prev_price = await fetchPreviousAssetPrice(sourceAddress, asset, dataAddress, web3);
-      console.log("PREV PRICE = ", prev_price)
+      // Update only if price is different by more than delta %
+      if (!withinRange(delta, price, prev_price)) {
+        updatePrices = true;
+        break;
+      }
     }
+  }))
 
-  })
-  
-  const gasPrice = await fetchGasPrice();
-  const trxData = buildTrxData(payloads, functionSig);
-
-  const trx = <TransactionConfig> {
-    data: trxData,
-    to: viewAddress,
-    gasPrice: gasPrice,
-    gas: gas
+  if (updatePrices) {
+    const gasPrice = await fetchGasPrice();
+    const trxData = buildTrxData(payloads, functionSig);
+    
+    const trx = <TransactionConfig> {
+      data: trxData,
+      to: viewAddress,
+      gasPrice: gasPrice,
+      gas: gas
+    }
+    
+    return await postWithRetries(trx, senderKey, web3);
   }
+}
 
-  return await postWithRetries(trx, senderKey, web3);
+function withinRange(delta:number, price: string, prev_price: number) {
+   const minDifference = new BN(prev_price).multipliedBy(delta).dividedBy(100);
+   const difference = new BN(prev_price).minus(new BN(price).multipliedBy(1e6)).abs();
+   return difference.isLessThanOrEqualTo(minDifference);
 }
 
 async function fetchPayloads(sources : string[], fetchFn=fetch) : Promise<DelFiReporterPayload[]> {
