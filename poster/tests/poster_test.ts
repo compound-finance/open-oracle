@@ -1,4 +1,4 @@
-import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads} from '../src/poster';
+import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads, withinRange} from '../src/poster';
 import Web3 from 'web3';
 
 const endpointResponses = {
@@ -124,3 +124,12 @@ describe('building a function call', () => {
     expect(data).toEqual(officialWeb3Encoding);
   });
 });
+
+describe('checking that numbers are within range', () => {
+  test('withinRange', () => {
+    expect(withinRange(0.01, 9687.654999, 9696640000)).toEqual(false);
+    expect(withinRange(0.1, 9687.654999, 9696640000)).toEqual(true);
+    expect(withinRange(5, 9687.654999, 9696640000)).toEqual(true);
+    expect(withinRange(5, 1, 1e6)).toEqual(true);
+  })
+})

@@ -25,7 +25,7 @@ async function main(sources : string,
       const prev_price = await getPreviousPrice(sourceAddress, asset, dataAddress, web3);
 
       // Update only if price is different by more than delta %
-      if (!withinRange(delta, price, prev_price)) {
+      if (!withinRange(delta, Number(price), prev_price)) {
         updatePrices = true;
         break;
       }
@@ -47,7 +47,7 @@ async function main(sources : string,
   }
 }
 
-function withinRange(delta:number, price: string, prev_price: number) {
+function withinRange(delta:number, price: number, prev_price: number) {
    const minDifference = new BN(prev_price).multipliedBy(delta).dividedBy(100);
    const difference = new BN(prev_price).minus(new BN(price).multipliedBy(1e6)).abs();
    return difference.isLessThanOrEqualTo(minDifference);
@@ -188,5 +188,6 @@ export {
   findTypes,
   fetchGasPrice,
   fetchPayloads,
-  main
+  main,
+  withinRange
 }
