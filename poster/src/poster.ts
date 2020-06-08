@@ -17,15 +17,15 @@ async function main(sources : string,
   const dataAddress = await getDataAddress(viewAddress, web3);
 
   let updatePrices = false;
-
   await Promise.all(payloads.map(async payload => {
     const sourceAddress = await getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
     
     for (const [asset, price] of Object.entries(payload.prices)) {
       const prev_price = await getPreviousPrice(sourceAddress, asset, dataAddress, web3);
 
-      // Update only if price is different by more than delta %
-      if (!withinRange(delta, Number(price), prev_price)) {
+      // Update price if new price is different by more than delta % from previous price
+      // Update all asset prices if only 1 asset price is different
+      if (!inDeltaRange(delta, Number(price), prev_price)) {
         updatePrices = true;
         break;
       }
@@ -47,7 +47,11 @@ async function main(sources : string,
   }
 }
 
-function withinRange(delta:number, price: number, prev_price: number) {
+// if new price is less that delta percent different form the old price, do not post new price
+function inDeltaRange(delta:number, price: number, prev_price: number) {
+  // Always update prices if delta is set to 0 or delta is not within expected range [0..100]%
+   if (delta <= 0 || delta > 100) return false;
+
    const minDifference = new BN(prev_price).multipliedBy(delta).dividedBy(100);
    const difference = new BN(prev_price).minus(new BN(price).multipliedBy(1e6)).abs();
    return difference.isLessThanOrEqualTo(minDifference);
@@ -189,5 +193,5 @@ export {
   fetchGasPrice,
   fetchPayloads,
   main,
-  withinRange
+  inDeltaRange
 }
