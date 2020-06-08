@@ -3503,7 +3503,7 @@ functional-red-black-tree@^1.0.1, functional-red-black-tree@~1.0.1:
   resolved "https://registry.yarnpkg.com/functional-red-black-tree/-/functional-red-black-tree-1.0.1.tgz#1b0ab3bd553b2a0d6399d29c0e3ea0b252078327"
   integrity sha1-GwqzvVU7Kg1jmdKcDj6gslIHgyc=
 
-"ganache-core@https://github.com/compound-finance/ganache-core.git#compound":
+ganache-core@^2.8.0, "ganache-core@https://github.com/compound-finance/ganache-core.git#compound":
   version "2.10.2"
   resolved "https://github.com/compound-finance/ganache-core.git#f779cc61864176c8432caed0cc7f698d58113947"
   dependencies:
