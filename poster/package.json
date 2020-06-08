@@ -29,6 +29,7 @@
     "yargs": "^15.0.2"
   },
   "resolutions": {
-    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz"
+    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz",
+    "**/ganache-core": "https://github.com/compound-finance/ganache-core.git#compound"
   }
 }
