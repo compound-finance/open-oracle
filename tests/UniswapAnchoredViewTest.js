@@ -168,5 +168,4 @@ describe('UniswapAnchoredView', () => {
     });
 
   });
-
-  })
+});
