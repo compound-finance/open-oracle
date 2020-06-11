@@ -1,4 +1,6 @@
-pragma solidity ^0.6.6;
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.6.10;
 
 import "./OpenOracleData.sol";
 
@@ -20,8 +22,8 @@ contract OpenOraclePriceData is OpenOracleData {
     }
 
     /**
-     * @notice The most recent authenticated data from all sources
-     * @dev This is private because dynamic mapping keys preclude auto-generated getters.
+     * @dev The most recent authenticated data from all sources.
+     *  This is private because dynamic mapping keys preclude auto-generated getters.
      */
     mapping(address => mapping(string => Datum)) private data;
 
@@ -41,7 +43,7 @@ contract OpenOraclePriceData is OpenOracleData {
 
         // Only update if newer than stored, according to source
         Datum storage prior = data[source][key];
-        if (timestamp > prior.timestamp && timestamp < block.timestamp + 60 minutes) {
+        if (timestamp > prior.timestamp && timestamp < block.timestamp + 60 minutes && source != address(0)) {
             data[source][key] = Datum(timestamp, value);
             emit Write(source, key, timestamp, value);
         } else {

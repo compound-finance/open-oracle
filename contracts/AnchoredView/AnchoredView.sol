@@ -1,4 +1,6 @@
-pragma solidity ^0.6.6;
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 import "./SymbolConfiguration.sol";
@@ -45,14 +47,13 @@ contract AnchoredView is SymbolConfiguration {
     /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
-    /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    /// @dev The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint immutable upperBoundAnchorRatio;
 
-    /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    /// @dev The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint immutable lowerBoundAnchorRatio;
 
-    /// @notice Average blocks per day, for checking anchor staleness
-    /// @dev 1 day / 15
+    /// @dev Average blocks per day, for checking anchor staleness (1 day / 15)
     uint constant blocksInADay = 5760;
 
     /// @notice The event emitted when the median price is updated
@@ -114,7 +115,6 @@ contract AnchoredView is SymbolConfiguration {
 
             uint reporterPrice = priceData.getPrice(reporter, tokenConfig.openOracleKey);
             uint anchorPrice = getAnchorInUsd(tokenConfig, usdcPrice);
-
             uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
             bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
 
@@ -217,7 +217,7 @@ contract AnchoredView is SymbolConfiguration {
     /// @notice invalidate the reporter, and fall back to using anchor directly in all cases
     function invalidate(bytes memory message, bytes memory signature) public {
         (string memory decoded_message, ) = abi.decode(message, (string, address));
-        require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalid message must be 'rotate'");
+        require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalidation message must be 'rotate'");
         require(priceData.source(message, signature) == reporter, "invalidation message must come from the reporter");
 
         reporterBreaker = true;

@@ -63,5 +63,5 @@ describe('Integration', () => {
     } finally {
       await compose.down({cwd: root});
     }
-  }, 60000);
+  }, 180000);
 });

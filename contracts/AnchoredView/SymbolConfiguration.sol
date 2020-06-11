@@ -1,4 +1,6 @@
-pragma solidity ^0.6.6;
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 
@@ -13,7 +15,7 @@ contract SymbolConfiguration {
     address public constant cDaiAnchorKey = address(2);
 
     /// @notice standard amount for the Dollar
-    uint constant oneDollar = 1e6;
+    uint public constant oneDollar = 1e6;
 
     // Address of the oracle key (underlying) for cTokens non special keyed tokens
     address public immutable cRepAnchorKey;
