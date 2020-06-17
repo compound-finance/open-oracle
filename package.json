@@ -7,6 +7,7 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
+    "bignumber.js": "^9.0.0",
     "eth-saddle": "^0.1.17",
     "web3": "^1.2.4",
     "yargs": "^15.0.2"
