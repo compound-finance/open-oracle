@@ -4,10 +4,9 @@ pragma experimental ABIEncoderV2;
 import "./UniswapContracts.sol";
 
 /**
- * @notice 
- * @dev 
- * @dev
- * @author
+ * @notice Uniswap Oracle based on https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/examples/ExampleOracleSimple.sol.
+ * @dev A simple oracle for storing TWAP for 6 assets pairs - ETH, WBTC, ZRX, BAT, REP, DAI.
+ * @author Compound Labs, Inc.
  */
 contract UniswapOracle {
     using FixedPoint for *;
@@ -61,7 +60,6 @@ contract UniswapOracle {
     }
 
     function initTokenPair(string memory symbol, address _pair) internal {
-        // IUniswapV2Pair pair = IUniswapV2Pair(UniswapV2Library.pairFor(factory_, token, wethAddress_));
         IUniswapV2Pair pair = IUniswapV2Pair(_pair); 
 
         uint112 reserve0;
@@ -79,7 +77,7 @@ contract UniswapOracle {
     function update(string calldata symbol) external {
         (uint price0Cumulative, uint price1Cumulative, uint32 blockTimestamp) =
             UniswapV2OracleLibrary.currentCumulativePrices(pairPrices[symbol].pair);
-        uint32 timeElapsed = blockTimestamp - pairPrices[symbol].blockTimestampLast; // overflow is desired
+        uint32 timeElapsed = blockTimestamp - pairPrices[symbol].blockTimestampLast;
 
         // ensure that at least one full period has passed since the last update
         require(timeElapsed >= PERIOD, "UniswapOracle: PERIOD_NOT_ELAPSED");
@@ -95,7 +93,6 @@ contract UniswapOracle {
     }
 
     // note this will always return 0 before update has been called successfully for the first time.
-    // TODO return price in USD
     function getPrice(string calldata symbol) external view returns (uint price0Average, uint price1Average) {
         return (pairPrices[symbol].price0Average.mul(1e18).decode144(), pairPrices[symbol].price1Average.mul(1e18).decode144());
     }
