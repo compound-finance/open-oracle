@@ -40,9 +40,11 @@ contract UniswapOracle {
 
     mapping(string => TokenPriceData) pairPrices;
 
-    uint public constant PERIOD = 30 minutes;
+    uint public immutable period;
 
-    constructor(TokenPairs memory pairs) public { 
+    constructor(uint period_, TokenPairs memory pairs) public { 
+        period = period_;
+
         USDC_ETH_pair = pairs.USDC_ETH_pair;
         DAI_ETH_pair = pairs.DAI_ETH_pair;
         BAT_ETH_pair = pairs.BAT_ETH_pair;
@@ -80,7 +82,7 @@ contract UniswapOracle {
         uint32 timeElapsed = blockTimestamp - pairPrices[symbol].blockTimestampLast;
 
         // ensure that at least one full period has passed since the last update
-        require(timeElapsed >= PERIOD, "UniswapOracle: PERIOD_NOT_ELAPSED");
+        require(timeElapsed >= period, "UniswapOracle: PERIOD_NOT_ELAPSED");
 
         // overflow is desired, casting never truncates
         // cumulative price is in (uq112x112 price * seconds) units so we simply wrap it after division by time elapsed

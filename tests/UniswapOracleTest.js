@@ -55,7 +55,7 @@ async function setup() {
     "32429167300960843298079679680",
   ]);
 
-  const uniswapOracle = await deploy("UniswapOracle", [
+  const uniswapOracle = await deploy("UniswapOracle", [0,
     {
       USDC_ETH_pair: usdc_eth_pair._address,
       DAI_ETH_pair: dai_eth_pair._address,
@@ -88,30 +88,12 @@ async function setup() {
   };
 }
 
-async function getPairData(pair) {
-  const price0Cumulative = await pair.methods.price0CumulativeLast().call();
-  const price1Cumulative = await pair.methods.price1CumulativeLast().call();
-  const {
-    reserve0,
-    reserve1,
-    blockTimestampLast,
-  } = await pair.methods.getReserves().call();
-  return {
-    reserve0,
-    reserve1,
-    blockTimestampLast,
-    price0Cumulative,
-    price1Cumulative,
-  };
-}
-
 describe("UniswapOracle", () => {
-  let uniswapOracle;
   let update;
   let getPrice;
   let sleep;
 
-  describe("UniswapOracle get asset prices", () => {
+  describe("get TWAP asset prices", () => {
     beforeEach(async (done) => {
       ({
         usdc_eth_pair,
@@ -128,9 +110,8 @@ describe("UniswapOracle", () => {
       const price1 = await getPrice("ETH");
       expect(price1.price0Average).numEquals(0);
       expect(price1.price1Average).numEquals(0);
-      // expect(post1.events.PriceUpdated.returnValues.price).numEquals(492e6);
-      // expect(await call(delfi, 'prices', ['ETH'])).numEquals(492e6);
-
+      
+      await sleep(2000);
       await update("ETH");
       await sleep(2000);
       await update("ETH");
@@ -156,24 +137,156 @@ describe("UniswapOracle", () => {
       ).toBe("230.623626");
     });
 
-    // it("DAI_ETH pair price", async () => {
-    //   const price1 = await getPrice("DAI");
+    it("DAI_ETH pair price", async () => {
+      const price1 = await getPrice("DAI");
+      expect(price1.price0Average).numEquals(0);
+      expect(price1.price1Average).numEquals(0);
 
-    //   await update("DAI");
-    //   await sleep(2000);
-    //   await update("DAI");
+      await sleep(2000);
+      await update("DAI");
+      await sleep(2000);
+      await update("DAI");
 
-    //   const price2 = await getPrice("DAI");
-    //   console.log("DAI res = ", price2.price0Average);
-    //   console.log("DAI res = ", price2.price1Average);
-    //   console.log(
-    //     "DAI res price = ",
-    //     new BigNumber(price2.price0Average).div(new BigNumber(1e18)).toString()
-    //   );
-    //   console.log(
-    //     "DAI res price = ",
-    //     new BigNumber(price2.price1Average).div(new BigNumber(1e18)).toString()
-    //   );
-    // });
+      const price2 = await getPrice("DAI");
+      expect(price2.price0Average).toBe("4405985580676962");
+      expect(price2.price1Average).toBe("226963974731472890029");
+
+      // Real world prices
+      // 1 DAI = 0.00440598558067696 ETH
+      expect(
+        new BigNumber(price2.price0Average)
+          .div(new BigNumber(1e18))
+          .toString()
+      ).toBe("0.004405985580676962");
+
+      // 1 ETH = 226.963974731472890029 DAI
+      expect(
+        new BigNumber(price2.price1Average)
+          .div(new BigNumber(1e18))
+          .toString()
+      ).toBe("226.963974731472890029");
+    });
+
+    it("BAT_ETH pair price", async () => {
+      const price1 = await getPrice("BAT");
+      expect(price1.price0Average).numEquals(0);
+      expect(price1.price1Average).numEquals(0);
+
+      await sleep(2000);
+      await update("BAT");
+      await sleep(2000);
+      await update("BAT");
+
+      const price2 = await getPrice("BAT");
+      expect(price2.price0Average).toBe("954583752449035");
+      expect(price2.price1Average).toBe("1047577017139089639061");
+
+      // Real world prices
+      // 1 BAT = 0.000954583752449035 ETH
+      expect(
+        new BigNumber(price2.price0Average)
+          .div(new BigNumber(1e18))
+          .toString()
+      ).toBe("0.000954583752449035");
+
+      // 1 ETH = 1047.577017139089639061 BAT
+      expect(
+        new BigNumber(price2.price1Average)
+          .div(new BigNumber(1e18))
+          .toString()
+      ).toBe("1047.577017139089639061");
+    });
+
+    it("REP_ETH pair price", async () => {
+      const price1 = await getPrice("REP");
+      expect(price1.price0Average).numEquals(0);
+      expect(price1.price1Average).numEquals(0);
+
+      await sleep(2000);
+      await update("REP");
+      await sleep(2000);
+      await update("REP");
+
+      const price2 = await getPrice("REP");
+      expect(price2.price0Average).toBe("67550851545180011");
+      expect(price2.price1Average).toBe("14803662383606968440");
+
+      // Real world prices
+      // 1 REP = 0.067550851545180011 ETH
+      expect(
+        new BigNumber(price2.price0Average)
+          .div(new BigNumber(1e18))
+          .toString()
+      ).toBe("0.067550851545180011");
+
+      // 1 ETH = 14.80366238360696844 REP
+      expect(
+        new BigNumber(price2.price1Average)
+          .div(new BigNumber(1e18))
+          .toString()
+      ).toBe("14.80366238360696844");
+    });
+
+    it("WETH_ZRX pair price", async () => {
+      const price1 = await getPrice("ZRX");
+      expect(price1.price0Average).numEquals(0);
+      expect(price1.price1Average).numEquals(0);
+
+      await sleep(2000);
+      await update("ZRX");
+      await sleep(2000);
+      await update("ZRX");
+
+      const price2 = await getPrice("ZRX");
+      expect(price2.price0Average).toBe("677285752097071129533");
+      expect(price2.price1Average).toBe("1476481672475336");
+
+      // Real world prices
+      // 1 ETH = 677.285752097071129533 ZRX
+      expect(
+        new BigNumber(price2.price0Average)
+          .div(new BigNumber(1e18))
+          .toString()
+      ).toBe("677.285752097071129533");
+
+      // 1 ZRX = 0.001476481672475336 ETH
+      expect(
+        new BigNumber(price2.price1Average)
+          .div(new BigNumber(1e18))
+          .toString()
+      ).toBe("0.001476481672475336");
+    });
+
+    it("WBTC_ETH pair price", async () => {
+      const price1 = await getPrice("BTC");
+      expect(price1.price0Average).numEquals(0);
+      expect(price1.price1Average).numEquals(0);
+
+      await sleep(2000);
+      await update("BTC");
+      await sleep(2000);
+      await update("BTC");
+
+      const price2 = await getPrice("BTC");
+      expect(price2.price0Average).toBe("406478994406953391707546813071");
+      expect(price2.price1Average).toBe("2460151");
+
+      // Real world prices
+      // 1 WBTC = 40.64789944069533917075 ETH
+      expect(
+        new BigNumber(price2.price0Average)
+          .div(new BigNumber(1e18))
+          .div(new BigNumber(1e10))
+          .toString()
+      ).toBe("40.64789944069533917075");
+
+      // 1 ETH = 0.02460151 WBTC
+      expect(
+        new BigNumber(price2.price1Average)
+          .div(new BigNumber(1e18))
+          .multipliedBy(new BigNumber(1e10))
+          .toString()
+      ).toBe("0.02460151");
+    });
   });
 });
