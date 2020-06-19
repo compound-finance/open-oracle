@@ -25,7 +25,12 @@ jobs:
           keys:
           - v1-sdk-dependencies-{{ checksum "sdk/javascript/package.json" }}
           - v1-sdk-dependencies-
-      - run: yarn install
+      - run: yarn install --ignore-optional --ignore-platform || ( \
+          echo "Yarn install failed, cleaning cache" && \
+          yarn cache clean && \
+          echo "Trying yarn install again..." && \
+          yarn install --ignore-optional --ignore-platform
+        )
       - save_cache:
           paths:
             - node_modules
