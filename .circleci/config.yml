@@ -29,8 +29,7 @@ jobs:
           echo "Yarn install failed, cleaning cache" && \
           yarn cache clean && \
           echo "Trying yarn install again..." && \
-          yarn install --ignore-optional --ignore-platform
-        )
+          yarn install --ignore-optional --ignore-platform)
       - save_cache:
           paths:
             - node_modules
