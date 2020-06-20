@@ -25,7 +25,7 @@ jobs:
           keys:
           - v1-sdk-dependencies-{{ checksum "sdk/javascript/package.json" }}
           - v1-sdk-dependencies-
-      - run: yarn cache clean && yarn install --froze-lockfile
+      - run: yarn install
       - save_cache:
           paths:
             - node_modules
