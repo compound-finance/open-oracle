@@ -6,7 +6,6 @@ import "./UniswapLib.sol";
 
 contract UniswapLaggingWindowOracle {
     using FixedPoint for *;
-    using SafeMath for uint;
 
     struct Observation {
         uint timestamp;
