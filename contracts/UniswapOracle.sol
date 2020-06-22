@@ -1,7 +1,7 @@
 pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
-import "./UniswapContracts.sol";
+import "./UniswapLib.sol";
 
 /**
  * @notice Uniswap Oracle based on https://github.com/Uniswap/uniswap-v2-periphery/blob/master/contracts/examples/ExampleOracleSimple.sol.

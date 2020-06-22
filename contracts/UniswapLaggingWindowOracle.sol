@@ -1,7 +1,7 @@
 pragma solidity =0.6.6;
 pragma experimental ABIEncoderV2;
 
-import "./UniswapContracts.sol";
+import "./UniswapLib.sol";
 
 
 contract UniswapLaggingWindowOracle {
