@@ -3,25 +3,58 @@ import fetch from 'node-fetch';
 import Web3 from 'web3';
 import { TransactionConfig } from 'web3-core';
 import AbiCoder from 'web3-eth-abi';
+import { getDataAddress, getPreviousPrice, getSourceAddress } from './prev_price';
+import { BigNumber as BN } from 'bignumber.js';
 
 async function main(sources : string,
                     senderKey : string,
                     viewAddress : string,
                     functionSig : string,
                     gas: number,
+                    delta: number,
                     web3 : Web3) {
   const payloads = await fetchPayloads(sources.split(","));
-  const gasPrice = await fetchGasPrice();
-  const trxData = buildTrxData(payloads, functionSig);
+  const dataAddress = await getDataAddress(viewAddress, web3);
 
-  const trx = <TransactionConfig> {
-    data: trxData,
-    to: viewAddress,
-    gasPrice: gasPrice,
-    gas: gas
+  let updatePrices = false;
+  await Promise.all(payloads.map(async payload => {
+    const sourceAddress = await getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
+    
+    for (const [asset, price] of Object.entries(payload.prices)) {
+      const prev_price = await getPreviousPrice(sourceAddress, asset, dataAddress, web3);
+
+      // Update price if new price is different by more than delta % from previous price
+      // Update all asset prices if only 1 asset price is different
+      if (!inDeltaRange(delta, Number(price), prev_price)) {
+        updatePrices = true;
+        break;
+      }
+    }
+  }))
+
+  if (updatePrices) {
+    const gasPrice = await fetchGasPrice();
+    const trxData = buildTrxData(payloads, functionSig);
+    
+    const trx = <TransactionConfig> {
+      data: trxData,
+      to: viewAddress,
+      gasPrice: gasPrice,
+      gas: gas
+    }
+    
+    return await postWithRetries(trx, senderKey, web3);
   }
+}
 
-  return await postWithRetries(trx, senderKey, web3);
+// if new price is less that delta percent different form the old price, do not post new price
+function inDeltaRange(delta:number, price: number, prev_price: number) {
+  // Always update prices if delta is set to 0 or delta is not within expected range [0..100]%
+   if (delta <= 0 || delta > 100) return false;
+
+   const minDifference = new BN(prev_price).multipliedBy(delta).dividedBy(100);
+   const difference = new BN(prev_price).minus(new BN(price).multipliedBy(1e6)).abs();
+   return difference.isLessThanOrEqualTo(minDifference);
 }
 
 async function fetchPayloads(sources : string[], fetchFn=fetch) : Promise<DelFiReporterPayload[]> {
@@ -159,5 +192,6 @@ export {
   findTypes,
   fetchGasPrice,
   fetchPayloads,
-  main
+  main,
+  inDeltaRange
 }
