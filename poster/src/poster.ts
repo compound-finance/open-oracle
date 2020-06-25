@@ -12,42 +12,57 @@ async function main(sources : string,
                     functionSig : string,
                     gas: number,
                     delta: number,
+                    assets: string,
                     web3 : Web3) {
   const payloads = await fetchPayloads(sources.split(","));
   const dataAddress = await getDataAddress(viewAddress, web3);
+  const supportedAssets = assets.split(",");
 
-  let updatePrices = false;
   await Promise.all(payloads.map(async payload => {
     const sourceAddress = await getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
     
+    const filteredPrices = {};
+    const filteredMessages: string[] = [];
+    const filteredSignatures: string[] = [];
+    let index = 0;
     for (const [asset, price] of Object.entries(payload.prices)) {
+      // Post only prices for supported assets
+      if (!supportedAssets.includes(asset)) continue;
       const prev_price = await getPreviousPrice(sourceAddress, asset, dataAddress, web3);
+      console.log(`For asset ${asset}: prev price = ${prev_price}, new price = ${price}`);
 
       // Update price if new price is different by more than delta % from previous price
       // Update all asset prices if only 1 asset price is different
       if (!inDeltaRange(delta, Number(price), prev_price)) {
-        updatePrices = true;
-        break;
+        filteredPrices[asset] = price;
+        filteredMessages.push(payload.messages[index]);
+        filteredSignatures.push(payload.signatures[index]);
       }
+      index++;
     }
+    payload.prices = filteredPrices;
+    payload.messages = filteredMessages;
+    payload.signatures = filteredSignatures;
   }))
 
-  if (updatePrices) {
+  // Filter payloads with no prices for an update
+  const filteredPayloads = payloads.filter(payload => payload.messages.length > 0);
+  if (filteredPayloads.length != 0) {
     const gasPrice = await fetchGasPrice();
-    const trxData = buildTrxData(payloads, functionSig);
-    
-    const trx = <TransactionConfig> {
+    const trxData = buildTrxData(filteredPayloads, functionSig);
+
+    const trx = <TransactionConfig>{
       data: trxData,
       to: viewAddress,
       gasPrice: gasPrice,
       gas: gas
     }
-    
+
     return await postWithRetries(trx, senderKey, web3);
   }
 }
 
-// if new price is less that delta percent different form the old price, do not post new price
+// If new price is less that delta percent different form the old price, do not post new price
 function inDeltaRange(delta:number, price: number, prev_price: number) {
   // Always update prices if delta is set to 0 or delta is not within expected range [0..100]%
    if (delta <= 0 || delta > 100) return false;
@@ -127,6 +142,7 @@ async function fetchGasPrice(fetchFn=fetch) : Promise<number> {
 function buildTrxData(payloads : DelFiReporterPayload[], functionSig : string) : string {
   const types = findTypes(functionSig);
 
+  console.log("payloads = ", payloads);
   let messages = payloads.reduce((a: string[], x) => a.concat(x.messages), []);
   let signatures = payloads.reduce((a: string[], x) => a.concat(x.signatures), []);
   let priceKeys = payloads.map(x => Object.keys(x.prices));

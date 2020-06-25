@@ -14,6 +14,7 @@ async function run() {
     .option('timeout', {alias: 't', description: 'how many seconds to wait before retrying with more gas', type: 'number', default: 180})
     .option('gas_limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
     .option('price_delta', {alias: 'd', description: 'the min required difference between new and previous asset price for price update on blockchain', type: 'number', default: 0.1})
+    .option('supported_assets', {alias: 'sa', description: 'A list of supported token names for posting prices', type: 'string', default: 'BTC,ETH,DAI,REP,ZRX,BAT,KNC,LINK,COMP'})
     .help()
     .alias('help', 'h')
     .demandOption(['poster_key', 'sources', 'view_function', 'web3_provider', 'view_address'], 'Provide all the arguments')
@@ -31,7 +32,7 @@ async function run() {
   }
 
   try {
-    await main(argv.sources, argv.poster_key, argv.view_address, argv.view_function, argv.gas_limit, argv.price_delta, web3);
+    await main(argv.sources, argv.poster_key, argv.view_address, argv.view_function, argv.gas_limit, argv.price_delta, argv.supported_assets, web3);
     console.log("main completed")
   } catch (e) {
     console.error(`Poster failed to run`, e);
