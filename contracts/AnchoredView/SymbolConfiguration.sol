@@ -6,6 +6,15 @@ interface CErc20 {
     function underlying() external view returns (address);
 }
 
+contract CToken {
+    string public symbol;
+    uint8 public decimals;
+}
+
+contract Comptroller {
+    CToken[] public allMarkets;
+}
+
 contract SymbolConfiguration {
     /// special cased anchor oracle keys
     address public constant cUsdcAnchorKey = address(1);
@@ -15,42 +24,19 @@ contract SymbolConfiguration {
     /// @notice standard amount for the Dollar
     uint constant oneDollar = 1e6;
 
-    // Address of the oracle key (underlying) for cTokens non special keyed tokens
-    address public immutable cRepAnchorKey;
-    address public immutable cWbtcAnchorKey;
-    address public immutable cBatAnchorKey;
-    address public immutable cZrxAnchorKey;
-
     // Frozen prices for SAI and eth, so no oracle key
     uint public constant saiAnchorPrice = 5285551943761727;
     uint public constant ethAnchorPrice = 1e18;
 
-    /// @notice The CToken contracts addresses
-    struct CTokens {
-        address cEthAddress;
-        address cUsdcAddress;
-        address cDaiAddress;
-        address cRepAddress;
-        address cWbtcAddress;
-        address cBatAddress;
-        address cZrxAddress;
-        address cSaiAddress;
-        address cUsdtAddress;
-    }
-
-    enum PriceSource {ANCHOR, FIXED_USD, REPORTER}
-    enum AnchorSource {ANCHOR, FIXED_USD, FIXED_ETH}
+    enum PriceSource {FIXED_ETH, FIXED_USD, REPORTER}
 
     /// @notice Immutable configuration for a cToken
     struct CTokenMetadata {
-        address cTokenAddress;
-        address anchorOracleKey;
-        string openOracleKey;
+        address uniswapMarket;
         uint baseUnit;
         PriceSource priceSource;
-        AnchorSource anchorSource;
-        uint fixedAnchorPrice;
         uint fixedReporterPrice;
+        uint fixedETHPrice;
     }
 
     // The binary representation for token symbols, used for string comparison
@@ -67,30 +53,72 @@ contract SymbolConfiguration {
     //  Address of the cToken contracts
     address public immutable cEthAddress;
     address public immutable cUsdcAddress;
+    address public immutable cUsdtAddress;
+    address public immutable cSaiAddress;
     address public immutable cDaiAddress;
     address public immutable cRepAddress;
     address public immutable cWbtcAddress;
     address public immutable cBatAddress;
     address public immutable cZrxAddress;
-    address public immutable cSaiAddress;
-    address public immutable cUsdtAddress;
 
-    /// @param tokens_ The CTokens struct that contains addresses for CToken contracts
-    constructor(CTokens memory tokens_) public {
-        cEthAddress = tokens_.cEthAddress;
-        cUsdcAddress = tokens_.cUsdcAddress;
-        cDaiAddress = tokens_.cDaiAddress;
-        cRepAddress = tokens_.cRepAddress;
-        cWbtcAddress = tokens_.cWbtcAddress;
-        cBatAddress = tokens_.cBatAddress;
-        cZrxAddress = tokens_.cZrxAddress;
-        cSaiAddress = tokens_.cSaiAddress;
-        cUsdtAddress = tokens_.cUsdtAddress;
+    // Address of the cToken underlying's ETH Uniswap Market
+    // doesnt include fixed price assets: cSAI, cUSDT, and cUSDC
+    address public immutable cEthUniswapMarket;
+    address public immutable cDaiUniswapMarket;
+    address public immutable cRepUniswapMarket;
+    address public immutable cWbtcUniswapMarket;
+    address public immutable cBatUniswapMarket;
+    address public immutable cZrxUniswapMarket;
 
-        cRepAnchorKey = CErc20(tokens_.cRepAddress).underlying();
-        cWbtcAnchorKey = CErc20(tokens_.cWbtcAddress).underlying();
-        cBatAnchorKey = CErc20(tokens_.cBatAddress).underlying();
-        cZrxAnchorKey = CErc20(tokens_.cZrxAddress).underlying();
+    constructor(Comptroller comptroller) public {
+        CToken[] memory cTokens = comptroller.allMarkets();
+        for(uint i = 0; i < cTokens.length; i ++){
+            CToken cToken = cTokens[i];
+            string memory symbol = cToken.symbol();
+            bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+
+            address cTokenAddr = address(cToken);
+
+            if (symbolHash == symbolEth) {
+                cEthAddress = address(cToken);
+                cEthUniswapMarket = address(2);// placeholder, todo: possibly pass in "anchorETHMarket" as param? how else do we find find the USDC-WETH market?
+
+            } else if (symbolHash == symbolUsdc) {
+                cUsdcAddress = cTokenAddr;
+
+            } else if (symbolHash == symbolUsdt) {
+                cUsdtAddress = cTokenAddr;
+
+            } else if (symbolHash == symbolSai) {
+                cSaiAddress = cTokenAddr;
+
+            } else if (symbolHash == symbolDai) {
+                cDaiAddress = cTokenAddr;
+                cDaiUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
+
+            } else if (symbolHash == symbolRep) {
+                cRepAddress = cTokenAddr;
+                cRepUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
+
+            } else if (symbolHash == symbolWbtc) {
+                cWbtcAddress = cTokenAddr;
+                cWbtcUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
+
+            } else if (symbolHash == symbolBat) {
+                cBatAddress = cBatAddress;
+                cBatUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
+
+            } else if (symbolHash == symbolZrx) {
+                cUsdcAddress = cZrxAddress;
+                cZrxUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
+            }
+
+        }
+    }
+
+    // TODO: figure out. probably ping Uniswap router to ask for the WETH address, and possibly then use UniswapLibs.getPair(token, WETH) or similar
+    function getUniswapMarket(CToken token) public view returns (address) {
+        return address(1);
     }
 
     /**
@@ -111,131 +139,95 @@ contract SymbolConfiguration {
     function getCTokenConfig(address cToken) public view returns(CTokenMetadata memory) {
         if (cToken == cEthAddress) {
             return CTokenMetadata({
-                        openOracleKey: "ETH",
-                        anchorOracleKey: address(0),
-                        baseUnit: 1e18,
-                        cTokenAddress: cEthAddress,
-                        priceSource: PriceSource.REPORTER,
-                        anchorSource: AnchorSource.FIXED_ETH,
-                        fixedReporterPrice: 0,
-                        fixedAnchorPrice: 1e18
-                        });
+                uniswapMarket: cEthUniswapMarket,
+                baseUnit: 1e18,
+                priceSource: PriceSource.REPORTER,
+                fixedReporterPrice: 0,
+                fixedETHPrice: 0
+            });
         }
 
         if (cToken == cUsdcAddress) {
             return CTokenMetadata({
-                        openOracleKey: "USDC",
-                        anchorOracleKey: cUsdcAnchorKey,
-                        baseUnit: 1e6,
-                        cTokenAddress: cUsdcAddress,
-                        priceSource: PriceSource.FIXED_USD,
-                        anchorSource: AnchorSource.FIXED_USD,
-                        fixedReporterPrice: oneDollar,
-                        fixedAnchorPrice: oneDollar
-                        });
-        }
-
-        if (cToken == cDaiAddress) {
-            return CTokenMetadata({
-                        openOracleKey: "DAI",
-                        anchorOracleKey: cDaiAnchorKey,
-                        baseUnit: 1e18,
-                        cTokenAddress: cDaiAddress,
-                        priceSource: PriceSource.REPORTER,
-                        anchorSource: AnchorSource.ANCHOR,
-                        fixedReporterPrice: 0,
-                        fixedAnchorPrice: 0
-                        });
-        }
-
-        if (cToken == cRepAddress) {
-            return CTokenMetadata({
-                        openOracleKey: "REP",
-                        anchorOracleKey: cRepAnchorKey,
-                        baseUnit: 1e18,
-                        cTokenAddress: cRepAddress,
-                        priceSource: PriceSource.REPORTER,
-                        anchorSource: AnchorSource.ANCHOR,
-                        fixedReporterPrice: 0,
-                        fixedAnchorPrice: 0
-                        });
-        }
-
-        if (cToken == cWbtcAddress) {
-            return CTokenMetadata({
-                        openOracleKey: "BTC",
-                        anchorOracleKey: cWbtcAnchorKey,
-                        baseUnit: 1e8,
-                        cTokenAddress: cWbtcAddress,
-                        priceSource: PriceSource.REPORTER,
-                        anchorSource: AnchorSource.ANCHOR,
-                        fixedReporterPrice: 0,
-                        fixedAnchorPrice: 0
-                        });
-        }
-
-        if (cToken == cBatAddress) {
-            return CTokenMetadata({
-                        openOracleKey: "BAT",
-                        anchorOracleKey: cBatAnchorKey,
-                        baseUnit: 1e18,
-                        cTokenAddress: cBatAddress,
-                        priceSource: PriceSource.REPORTER,
-                        anchorSource: AnchorSource.ANCHOR,
-                        fixedReporterPrice: 0,
-                        fixedAnchorPrice: 0
-                        });
-        }
-
-        if (cToken == cZrxAddress){
-            return CTokenMetadata({
-                        openOracleKey: "ZRX",
-                        anchorOracleKey: cZrxAnchorKey,
-                        baseUnit: 1e18,
-                        cTokenAddress: cZrxAddress,
-                        priceSource: PriceSource.REPORTER,
-                        anchorSource: AnchorSource.ANCHOR,
-                        fixedReporterPrice: 0,
-                        fixedAnchorPrice: 0
-                        });
-        }
-
-        if (cToken == cSaiAddress){
-            return CTokenMetadata({
-                        openOracleKey: "SAI",
-                        anchorOracleKey: address(0),
-                        baseUnit: 1e18,
-                        cTokenAddress: cSaiAddress,
-                        priceSource: PriceSource.ANCHOR,
-                        anchorSource: AnchorSource.FIXED_ETH,
-                        fixedAnchorPrice: saiAnchorPrice,
-                        fixedReporterPrice: 0
-                        });
+                uniswapMarket: address(0),
+                baseUnit: 1e6, // TODO: make these dynamic as w uniswapMarket to avoid user errors.
+                priceSource: PriceSource.FIXED_USD,
+                fixedReporterPrice: oneDollar,
+                fixedETHPrice: 0
+            });
         }
 
         if (cToken == cUsdtAddress){
             return CTokenMetadata({
-                        openOracleKey: "USDT",
-                        anchorOracleKey: cUsdtAnchorKey,
-                        baseUnit: 1e6,
-                        cTokenAddress: cUsdtAddress,
-                        priceSource: PriceSource.FIXED_USD,
-                        anchorSource: AnchorSource.FIXED_USD,
-                        fixedReporterPrice: oneDollar,
-                        fixedAnchorPrice: oneDollar
-                        });
+                uniswapMarket: address(0),
+                baseUnit: 1e6,
+                priceSource: PriceSource.FIXED_USD,
+                fixedReporterPrice: oneDollar,
+                fixedETHPrice: 0
+            });
         }
 
-        return CTokenMetadata({
-                    openOracleKey: "UNCONFIGURED",
-                    anchorOracleKey: address(0),
-                    baseUnit: 0,
-                    cTokenAddress: address(0),
-                    priceSource: PriceSource.FIXED_USD,
-                    anchorSource: AnchorSource.FIXED_USD,
-                    fixedReporterPrice: 0,
-                    fixedAnchorPrice: 0
-                    });
+        if (cToken == cSaiAddress){
+            return CTokenMetadata({
+                uniswapMarket: address(0),
+                baseUnit: 1e18,
+                priceSource: PriceSource.FIXED_ETH,
+                fixedReporterPrice: 0,
+                fixedETHPrice: saiAnchorPrice
+            });
+        }
+
+        if (cToken == cDaiAddress) {
+            return CTokenMetadata({
+                uniswapMarket: cDaiUniswapMarket,
+                baseUnit: 1e18,
+                priceSource: PriceSource.REPORTER,
+                fixedReporterPrice: 0,
+                fixedETHPrice: 0
+            });
+        }
+
+        if (cToken == cRepAddress) {
+            return CTokenMetadata({
+                uniswapMarket: cRepUniswapMarket,
+                baseUnit: 1e18,
+                priceSource: PriceSource.REPORTER,
+                fixedReporterPrice: 0,
+                fixedETHPrice: 0
+            });
+        }
+
+        if (cToken == cWbtcAddress) {
+            return CTokenMetadata({
+                uniswapMarket: cWbtcUniswapMarket,
+                baseUnit: 1e18,
+                priceSource: PriceSource.REPORTER,
+                fixedReporterPrice: 0,
+                fixedETHPrice: 0
+            });
+        }
+
+        if (cToken == cBatAddress) {
+            return CTokenMetadata({
+                uniswapMarket: cBatUniswapMarket,
+                baseUnit: 1e18,
+                priceSource: PriceSource.REPORTER,
+                fixedReporterPrice: 0,
+                fixedETHPrice: 0
+            });
+        }
+
+        if (cToken == cZrxAddress){
+            return CTokenMetadata({
+                uniswapMarket: cZrxUniswapMarket,
+                baseUnit: 1e18,
+                priceSource: PriceSource.REPORTER,
+                fixedReporterPrice: 0,
+                fixedETHPrice: 0
+            });
+        }
+
+        require(false, "Token not found");
     }
 
     /**
