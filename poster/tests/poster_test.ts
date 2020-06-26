@@ -1,10 +1,11 @@
-import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads, inDeltaRange} from '../src/poster';
+import { buildTrxData, findTypes, fetchGasPrice, fetchPayloads, inDeltaRange, filterPayloads } from '../src/poster';
+import helpers from '../src/prev_price';
 import Web3 from 'web3';
 
 const endpointResponses = {
   "http://localhost:3000": {
     "messages": ["0xmessage"],
-    "prices":  {
+    "prices": {
       "eth": 260,
       "zrx": 0.58,
     },
@@ -12,7 +13,7 @@ const endpointResponses = {
   },
   "http://localhost:3000/prices.json": {
     "messages": ["0xmessage"],
-    "prices":  {
+    "prices": {
       "eth": 250,
       "zrx": 1.58,
     },
@@ -51,6 +52,7 @@ const mockFetch = (responses) => {
   };
 };
 
+
 describe('loading poster arguments from environment and https', () => {
   test('fetchGasPrice', async () => {
     let gasPrice = await fetchGasPrice(mockFetch(gasResponses));
@@ -64,7 +66,7 @@ describe('loading poster arguments from environment and https', () => {
     expect(payloads).toEqual([
       {
         "messages": ["0xmessage"],
-        "prices":  {
+        "prices": {
           "eth": 260,
           "zrx": 0.58,
         },
@@ -72,7 +74,7 @@ describe('loading poster arguments from environment and https', () => {
       },
       {
         "messages": ["0xmessage"],
-        "prices":  {
+        "prices": {
           "eth": 250,
           "zrx": 1.58,
         },
@@ -83,16 +85,16 @@ describe('loading poster arguments from environment and https', () => {
 
 describe('building a function call', () => {
   test('findTypes', () => {
-    let typeString =  "writePrices(bytes[],bytes[],string[])";
+    let typeString = "writePrices(bytes[],bytes[],string[])";
     expect(findTypes(typeString)).toEqual(["bytes[]", "bytes[]", "string[]"]);
   });
 
   test('buildTrxData', () => {
     let messages = ['0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10'];
     let signatures = ['0x04a78a7b3013f6939da19eac6fd1ad5c5a20c41bcc5d828557442aad6f07598d029ae684620bec13e13d018cba0da5096626e83cfd4d5356d808d7437a0a5076000000000000000000000000000000000000000000000000000000000000001c'];
-    let prices = {"eth": "250", "zrx": "300"};
+    let prices = { "eth": "250", "zrx": "300" };
 
-    let data = buildTrxData([{messages, signatures, prices}], "writePrices(bytes[],bytes[],string[])");
+    let data = buildTrxData([{ messages, signatures, prices }], "writePrices(bytes[],bytes[],string[])");
 
     let assumedAbi = {
       "constant": false,
@@ -138,5 +140,48 @@ describe('checking that numbers are within the specified delta range', () => {
     expect(inDeltaRange(0.01, 1, 1e6)).toEqual(true);
     expect(inDeltaRange(5, 1, 1e6)).toEqual(true);
     expect(inDeltaRange(100, 1, 1e6)).toEqual(true);
+  })
+})
+
+describe.only('filtering payloads', () => {
+  let prevPrices = {};
+  async function mockPreviosPrice(_sourceAddress, asset, _dataAddress, _web3) {
+    return prevPrices[asset];
+  }
+  test('Filtering payloads, BAT price is more than delta % different', async () => {
+    helpers.getSourceAddress = jest.fn();
+    helpers.getDataAddress = jest.fn();
+    helpers.getPreviousPrice = mockPreviosPrice;
+
+    const payloads = [
+      {
+        timestamp: '1593209100',
+        messages: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
+        signatures: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
+        prices: {
+          BTC: '9192.23',
+          ETH: '230.585',
+          XTZ: '2.5029500000000002',
+          DAI: '1.0035515',
+          REP: '16.83',
+          ZRX: '0.3573955',
+          BAT: '0.26466',
+          KNC: '1.16535',
+          LINK: '4.70819'
+        }
+      }
+    ]
+    prevPrices = { 'BTC': 9149090000, 'ETH': 229435000, 'DAI': 1003372, 'REP': 16884999, 'ZRX': 357704, 'BAT': 260992, 'KNC': 1156300, 'LINK': 4704680 }
+
+    const filteredPayloads = await filterPayloads(payloads, '0x0', 'BTC,ETH,DAI,REP,ZRX,BAT,KNC,LINK,COMP', 1, new Web3());
+    expect(filteredPayloads).toEqual([
+      {
+        timestamp: '1593209100',
+        messages: ['0x7'],
+        signatures: ['0x7'],
+        prices: { BAT: '0.26466' }
+      }
+    ]
+    );
   })
 })
