@@ -46,18 +46,10 @@ async function getPreviousPrice(sourceAddress: string, asset: string, dataAddres
     return web3.eth.abi.decodeParameter('address', await web3.eth.call(call)).toString();
   }
 
-<<<<<<< HEAD
   const exportFunctions = {
     getPreviousPrice, 
     getSourceAddress, 
     getDataAddress
   };
   export default exportFunctions;
-=======
-  export {
-   getPreviousPrice, 
-   getSourceAddress, 
-   getDataAddress
-  }
->>>>>>> jflatow/uniswap
   
