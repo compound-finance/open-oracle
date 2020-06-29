@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 import Web3 from 'web3';
 import { TransactionConfig } from 'web3-core';
 import AbiCoder from 'web3-eth-abi';
-import { getDataAddress, getPreviousPrice, getSourceAddress } from './prev_price';
+import helpers from './prev_price';
 import { BigNumber as BN } from 'bignumber.js';
 
 async function main(sources: string,
@@ -36,11 +36,11 @@ async function filterPayloads(payloads: DelFiReporterPayload[],
   assets: string,
   delta: number,
   web3: Web3): Promise<DelFiReporterPayload[]> {
-  const dataAddress = await getDataAddress(viewAddress, web3);
+  const dataAddress = await helpers.getDataAddress(viewAddress, web3);
   const supportedAssets = assets.split(",");
 
   await Promise.all(payloads.map(async payload => {
-    const sourceAddress = await getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
+    const sourceAddress = await helpers.getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
 
     const filteredPrices = {};
     const filteredMessages: string[] = [];
@@ -48,8 +48,12 @@ async function filterPayloads(payloads: DelFiReporterPayload[],
     let index = 0;
     for (const [asset, price] of Object.entries(payload.prices)) {
       // Post only prices for supported assets, skip prices for unregistered assets
-      if (!supportedAssets.includes(asset)) {index++; continue;}
-      const prev_price = await getPreviousPrice(sourceAddress, asset, dataAddress, web3);
+      if (!supportedAssets.includes(asset)) {
+        index++;
+        continue;
+      }
+
+      const prev_price = await helpers.getPreviousPrice(sourceAddress, asset, dataAddress, web3);
       console.log(`For asset ${asset}: prev price = ${prev_price}, new price = ${price}`);
 
       // Update price only if new price is different by more than delta % from the previous price
@@ -150,7 +154,6 @@ async function fetchGasPrice(fetchFn = fetch): Promise<number> {
 function buildTrxData(payloads: DelFiReporterPayload[], functionSig: string): string {
   const types = findTypes(functionSig);
 
-  console.log("payloads = ", payloads);
   let messages = payloads.reduce((a: string[], x) => a.concat(x.messages), []);
   let signatures = payloads.reduce((a: string[], x) => a.concat(x.signatures), []);
   let priceKeys = payloads.map(x => Object.keys(x.prices));
@@ -217,5 +220,6 @@ export {
   fetchGasPrice,
   fetchPayloads,
   main,
-  inDeltaRange
+  inDeltaRange, 
+  filterPayloads
 }
