@@ -15,6 +15,7 @@ async function main(sources: string,
   assets: string,
   web3: Web3) {
   const payloads = await fetchPayloads(sources.split(","));
+  console.log("INSIDE main poster = ", payloads);
   const filteredPayloads = await filterPayloads(payloads, viewAddress, assets, delta, web3);
   if (filteredPayloads.length != 0) {
     const gasPrice = await fetchGasPrice();
