@@ -257,4 +257,3 @@ contract SymbolConfiguration {
         return address(0);
     }
 }
-

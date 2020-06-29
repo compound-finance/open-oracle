@@ -11,9 +11,7 @@ RUN apk update && apk add --no-cache --virtual .gyp \
 WORKDIR /open-oracle-poster
 RUN yarn global add node-gyp npx
 ADD yarn.lock package.json /open-oracle-poster/
-RUN yarn install --frozen-lockfile
-
 ADD . /open-oracle-poster
-RUN npx tsc --skipLibCheck
+RUN yarn install --frozen-lockfile
 
 CMD yarn start

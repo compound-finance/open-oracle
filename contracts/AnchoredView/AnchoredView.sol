@@ -114,7 +114,6 @@ contract AnchoredView is SymbolConfiguration {
 
             uint reporterPrice = priceData.getPrice(reporter, tokenConfig.openOracleKey);
             uint anchorPrice = getAnchorInUsd(tokenConfig, usdcPrice);
-            
             uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
             bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
 

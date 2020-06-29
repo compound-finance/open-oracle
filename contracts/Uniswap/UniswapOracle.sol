@@ -42,7 +42,7 @@ contract UniswapOracle {
 
     uint public immutable period;
 
-    constructor(uint period_, TokenPairs memory pairs) public { 
+    constructor(uint period_, TokenPairs memory pairs) public {
         period = period_;
 
         USDC_ETH_pair = pairs.USDC_ETH_pair;
@@ -52,7 +52,7 @@ contract UniswapOracle {
         WETH_ZRX_pair = pairs.WETH_ZRX_pair;
         WBTC_ETH_pair = pairs.WBTC_ETH_pair;
 
-        // Init all supported token pairs 
+        // Init all supported token pairs
         initTokenPair("ETH", pairs.USDC_ETH_pair);
         initTokenPair("DAI", pairs.DAI_ETH_pair);
         initTokenPair("BAT", pairs.BAT_ETH_pair);
@@ -62,7 +62,7 @@ contract UniswapOracle {
     }
 
     function initTokenPair(string memory symbol, address _pair) internal {
-        IUniswapV2Pair pair = IUniswapV2Pair(_pair); 
+        IUniswapV2Pair pair = IUniswapV2Pair(_pair);
 
         uint112 reserve0;
         uint112 reserve1;

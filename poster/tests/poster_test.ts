@@ -1,5 +1,4 @@
-import { buildTrxData, findTypes, fetchGasPrice, fetchPayloads, inDeltaRange, filterPayloads } from '../src/poster';
-import helpers from '../src/prev_price';
+import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads, inDeltaRange} from '../src/poster';
 import Web3 from 'web3';
 
 const endpointResponses = {
@@ -140,48 +139,5 @@ describe('checking that numbers are within the specified delta range', () => {
     expect(inDeltaRange(0.01, 1, 1e6)).toEqual(true);
     expect(inDeltaRange(5, 1, 1e6)).toEqual(true);
     expect(inDeltaRange(100, 1, 1e6)).toEqual(true);
-  })
-})
-
-describe.only('filtering payloads', () => {
-  let prevPrices = {};
-  async function mockPreviosPrice(_sourceAddress, asset, _dataAddress, _web3) {
-    return prevPrices[asset];
-  }
-  test('Filtering payloads, BAT price is more than delta % different', async () => {
-    helpers.getSourceAddress = jest.fn();
-    helpers.getDataAddress = jest.fn();
-    helpers.getPreviousPrice = mockPreviosPrice;
-
-    const payloads = [
-      {
-        timestamp: '1593209100',
-        messages: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
-        signatures: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
-        prices: {
-          BTC: '9192.23',
-          ETH: '230.585',
-          XTZ: '2.5029500000000002',
-          DAI: '1.0035515',
-          REP: '16.83',
-          ZRX: '0.3573955',
-          BAT: '0.26466',
-          KNC: '1.16535',
-          LINK: '4.70819'
-        }
-      }
-    ]
-    prevPrices = { 'BTC': 9149090000, 'ETH': 229435000, 'DAI': 1003372, 'REP': 16884999, 'ZRX': 357704, 'BAT': 260992, 'KNC': 1156300, 'LINK': 4704680 }
-
-    const filteredPayloads = await filterPayloads(payloads, '0x0', 'BTC,ETH,DAI,REP,ZRX,BAT,KNC,LINK,COMP', 1, new Web3());
-    expect(filteredPayloads).toEqual([
-      {
-        timestamp: '1593209100',
-        messages: ['0x7'],
-        signatures: ['0x7'],
-        prices: { BAT: '0.26466' }
-      }
-    ]
-    );
   })
 })

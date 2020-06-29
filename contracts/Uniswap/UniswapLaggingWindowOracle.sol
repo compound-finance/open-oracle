@@ -23,7 +23,7 @@ contract UniswapLaggingWindowOracle {
 
     event ObservationsUpdated(address indexed pair, uint price0Cumulative, uint price1Cumulative, uint timeElapsed);
 
-    // Get TWAP prices per pair at the current timestamp. 
+    // Get TWAP prices per pair at the current timestamp.
     // Update new and old observations of lagging window if period elapsed.
     function poke(address pair) external returns (uint price0Average, uint price1Average) {
         Observation storage newObservation = oldObservations[pair];
@@ -44,18 +44,18 @@ contract UniswapLaggingWindowOracle {
             newObservation.timestamp = block.timestamp;
             newObservation.price0Cumulative = price0Cumulative;
             newObservation.price1Cumulative = price1Cumulative;
-            
+
             emit ObservationsUpdated(pair, price0Cumulative, price1Cumulative, timeElapsed);
-        } 
+        }
 
         price0Average = computeTWAP(oldObservation.price0Cumulative, price0Cumulative, timeElapsed);
         price1Average = computeTWAP(oldObservation.price1Cumulative, price1Cumulative, timeElapsed);
     }
 
-    // given the cumulative prices of the start and end of a period, and the length of the period, 
-    // compute the average price 
+    // given the cumulative prices of the start and end of a period, and the length of the period,
+    // compute the average price
     function computeTWAP(
-        uint priceCumulativeStart, 
+        uint priceCumulativeStart,
         uint priceCumulativeEnd,
         uint timeElapsed
     ) private pure returns (uint amountOut) {
