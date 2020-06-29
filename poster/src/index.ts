@@ -20,8 +20,6 @@ async function run() {
     .demandOption(['poster_key', 'sources', 'view_function', 'web3_provider', 'view_address'], 'Provide all the arguments')
     .argv;
 
-  console.log("HEEEEEEEEEEEERE");
-
   // posting promise will reject and retry once with higher gas after this timeout
   const web3 = await new Web3(argv.web3_provider);
   web3.eth.transactionPollingTimeout = argv.timeout;
@@ -34,7 +32,6 @@ async function run() {
   }
 
   try {
-    console.log("BEFORE MAIN")
     await main(argv.sources, argv.poster_key, argv.view_address, argv.view_function, argv.gas_limit, argv.price_delta, argv.supported_assets, web3);
     console.log("main completed")
   } catch (e) {
