@@ -183,4 +183,101 @@ describe('filtering payloads', () => {
     ]
     );
   })
+
+  test('Filtering payloads, ETH, BTC and ZRX prices are more than delta % different, ZRX, XTZ are not supported', async () => {
+    prevPrices = { 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 }
+
+    helpers.getSourceAddress = jest.fn();
+    helpers.getDataAddress = jest.fn();
+    helpers.getPreviousPrice = mockPreviosPrice;
+
+    const payloads = [
+      {
+        timestamp: '1593209100',
+        messages: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
+        signatures: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
+        prices: {
+          BTC: '10101',
+          ETH: '1011',
+          XTZ: '10',
+          DAI: '1',
+          REP: '16',
+          ZRX: '1.011',
+          BAT: '1',
+          KNC: '2',
+          LINK: '5'
+        }
+      }
+    ]
+
+    const filteredPayloads = await filterPayloads(payloads, '0x0', 'BTC,ETH,DAI,REP,BAT,KNC,LINK,COMP', 1, new Web3());
+    expect(filteredPayloads).toEqual([
+      {
+        timestamp: '1593209100',
+        messages: [ '0x1', '0x2' ],
+        signatures: [ '0x1', '0x2' ],
+        prices: { BTC: '10101', ETH: '1011' }
+      }
+    ]);
+  })
+
+  test('Filtering payloads, ETH, BTC and ZRX prices are more than delta % different, no assets are supported', async () => {
+    prevPrices = { 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 }
+
+    helpers.getSourceAddress = jest.fn();
+    helpers.getDataAddress = jest.fn();
+    helpers.getPreviousPrice = mockPreviosPrice;
+
+    const payloads = [
+      {
+        timestamp: '1593209100',
+        messages: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
+        signatures: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
+        prices: {
+          BTC: '10101',
+          ETH: '1011',
+          XTZ: '10',
+          DAI: '1',
+          REP: '16',
+          ZRX: '1.011',
+          BAT: '1',
+          KNC: '2',
+          LINK: '5'
+        }
+      }
+    ]
+
+    const filteredPayloads = await filterPayloads(payloads, '0x0', '', 1, new Web3());
+    expect(filteredPayloads).toEqual([]);
+  })
+
+  test('Filtering payloads, delta is 0% percent, all supported prices should be updated', async () => {
+    prevPrices = { 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 }
+
+    helpers.getSourceAddress = jest.fn();
+    helpers.getDataAddress = jest.fn();
+    helpers.getPreviousPrice = mockPreviosPrice;
+
+    const payloads = [
+      {
+        timestamp: '1593209100',
+        messages: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
+        signatures: ['0x1', '0x2', '0x3', '0x4', '0x5', '0x6', '0x7', '0x8', '0x9'],
+        prices: {
+          BTC: '10101',
+          ETH: '1011',
+          XTZ: '10',
+          DAI: '1',
+          REP: '16',
+          ZRX: '1.011',
+          BAT: '1',
+          KNC: '2',
+          LINK: '5'
+        }
+      }
+    ]
+
+    const filteredPayloads = await filterPayloads(payloads, '0x0', 'BTC,ETH,DAI,REP,ZRX,BAT,KNC,LINK,COMP', 0, new Web3());
+    expect(filteredPayloads).toEqual(payloads);
+  })
 })
