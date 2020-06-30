@@ -317,6 +317,41 @@ contract Config {
         revert("lookup index too large");
     }
 
+    function getCTokenIndex(address cToken) public view returns (uint) {
+        if (cToken == cToken00) return 0;
+        if (cToken == cToken01) return 1;
+        if (cToken == cToken02) return 2;
+        if (cToken == cToken03) return 3;
+        if (cToken == cToken04) return 4;
+        if (cToken == cToken05) return 5;
+        if (cToken == cToken06) return 6;
+        if (cToken == cToken07) return 7;
+        if (cToken == cToken08) return 8;
+        if (cToken == cToken09) return 9;
+        if (cToken == cToken10) return 10;
+        if (cToken == cToken11) return 11;
+        if (cToken == cToken12) return 12;
+        if (cToken == cToken13) return 13;
+        if (cToken == cToken14) return 14;
+        if (cToken == cToken15) return 15;
+        if (cToken == cToken16) return 16;
+        if (cToken == cToken17) return 17;
+        if (cToken == cToken18) return 18;
+        if (cToken == cToken19) return 19;
+        if (cToken == cToken20) return 20;
+        if (cToken == cToken21) return 21;
+        if (cToken == cToken22) return 22;
+        if (cToken == cToken23) return 23;
+        if (cToken == cToken24) return 24;
+        if (cToken == cToken25) return 25;
+        if (cToken == cToken26) return 26;
+        if (cToken == cToken27) return 27;
+        if (cToken == cToken28) return 28;
+        if (cToken == cToken29) return 29;
+
+        return uint(-1);
+    }
+
     function getUnderlying(uint i) internal view returns (address) {
         if (i == 0) return underlying00;
         if (i == 1) return underlying01;
@@ -352,6 +387,41 @@ contract Config {
         revert("lookup index too large");
     }
 
+    function getUnderlyingIndex(address underlying) internal view returns (uint) {
+        if (underlying == underlying00) return 0;
+        if (underlying == underlying01) return 1;
+        if (underlying == underlying02) return 2;
+        if (underlying == underlying03) return 3;
+        if (underlying == underlying04) return 4;
+        if (underlying == underlying05) return 5;
+        if (underlying == underlying06) return 6;
+        if (underlying == underlying07) return 7;
+        if (underlying == underlying08) return 8;
+        if (underlying == underlying09) return 9;
+        if (underlying == underlying10) return 10;
+        if (underlying == underlying11) return 11;
+        if (underlying == underlying12) return 12;
+        if (underlying == underlying13) return 13;
+        if (underlying == underlying14) return 14;
+        if (underlying == underlying15) return 15;
+        if (underlying == underlying16) return 16;
+        if (underlying == underlying17) return 17;
+        if (underlying == underlying18) return 18;
+        if (underlying == underlying19) return 19;
+        if (underlying == underlying20) return 20;
+        if (underlying == underlying21) return 21;
+        if (underlying == underlying22) return 22;
+        if (underlying == underlying23) return 23;
+        if (underlying == underlying24) return 24;
+        if (underlying == underlying25) return 25;
+        if (underlying == underlying26) return 26;
+        if (underlying == underlying27) return 27;
+        if (underlying == underlying28) return 28;
+        if (underlying == underlying29) return 29;
+
+        return uint(-1);
+    }
+
     function getSymbolHash(uint i) internal view returns (bytes32) {
         if (i == 0) return symbolHash00;
         if (i == 1) return symbolHash01;
@@ -385,6 +455,41 @@ contract Config {
         if (i == 29) return symbolHash29;
 
         revert("lookup index too large");
+    }
+
+    function getSymbolHashIndex(bytes32 symbol) internal view returns (uint) {
+        if (symbol == symbolHash00) return 0;
+        if (symbol == symbolHash01) return 1;
+        if (symbol == symbolHash02) return 2;
+        if (symbol == symbolHash03) return 3;
+        if (symbol == symbolHash04) return 4;
+        if (symbol == symbolHash05) return 5;
+        if (symbol == symbolHash06) return 6;
+        if (symbol == symbolHash07) return 7;
+        if (symbol == symbolHash08) return 8;
+        if (symbol == symbolHash09) return 9;
+        if (symbol == symbolHash10) return 10;
+        if (symbol == symbolHash11) return 11;
+        if (symbol == symbolHash12) return 12;
+        if (symbol == symbolHash13) return 13;
+        if (symbol == symbolHash14) return 14;
+        if (symbol == symbolHash15) return 15;
+        if (symbol == symbolHash16) return 16;
+        if (symbol == symbolHash17) return 17;
+        if (symbol == symbolHash18) return 18;
+        if (symbol == symbolHash19) return 19;
+        if (symbol == symbolHash20) return 20;
+        if (symbol == symbolHash21) return 21;
+        if (symbol == symbolHash22) return 22;
+        if (symbol == symbolHash23) return 23;
+        if (symbol == symbolHash24) return 24;
+        if (symbol == symbolHash25) return 25;
+        if (symbol == symbolHash26) return 26;
+        if (symbol == symbolHash27) return 27;
+        if (symbol == symbolHash28) return 28;
+        if (symbol == symbolHash29) return 29;
+
+        return uint(-1);
     }
 
     function getBaseUnit(uint i) internal view returns (uint) {
@@ -435,27 +540,24 @@ contract Config {
 
     function getTokenConfigBySymbol(string memory symbol) public view returns (TokenConfig memory) {
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-        for (uint i = 0; i < numTokens; i++) {
-            if (symbolHash == getSymbolHash(i)) {
-                return getTokenConfig(i);
-            }
+        uint index = getSymbolHashIndex(symbolHash);
+        if (index != uint(-1)) {
+            return getTokenConfig(index);
         }
 
         revert("token config not found");
     }
 
     function getTokenConfigByCToken(address cToken) public view returns (TokenConfig memory) {
-        for (uint i = 0; i < numTokens; i++) {
-            if (cToken == getCToken(i)) {
-                return getTokenConfig(i);
-            }
+        uint index = getCTokenIndex(cToken);
+        if (index != uint(-1)) {
+            return getTokenConfig(index);
         }
 
         address underlying = CErc20(cToken).underlying();
-        for (uint i = 0; i < numTokens; i++) {
-            if (underlying == getUnderlying(i)) {
-                return getTokenConfig(i);
-            }
+        index = getUnderlyingIndex(underlying);
+        if (index != uint(-1)) {
+            return getTokenConfig(index);
         }
 
         revert("token config not found");
