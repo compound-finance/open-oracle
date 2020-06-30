@@ -282,162 +282,49 @@ contract Config {
         });
     }
 
-    function getCToken(uint i) internal view returns (address) {
-        if (i == 0) return cToken00;
-        if (i == 1) return cToken01;
-        if (i == 2) return cToken02;
-        if (i == 3) return cToken03;
-        if (i == 4) return cToken04;
-        if (i == 5) return cToken05;
-        if (i == 6) return cToken06;
-        if (i == 7) return cToken07;
-        if (i == 8) return cToken08;
-        if (i == 9) return cToken09;
-        if (i == 10) return cToken10;
-        if (i == 11) return cToken11;
-        if (i == 12) return cToken12;
-        if (i == 13) return cToken13;
-        if (i == 14) return cToken14;
-        if (i == 15) return cToken15;
-        if (i == 16) return cToken16;
-        if (i == 17) return cToken17;
-        if (i == 18) return cToken18;
-        if (i == 19) return cToken19;
-        if (i == 20) return cToken20;
-        if (i == 21) return cToken21;
-        if (i == 22) return cToken22;
-        if (i == 23) return cToken23;
-        if (i == 24) return cToken24;
-        if (i == 25) return cToken25;
-        if (i == 26) return cToken26;
-        if (i == 27) return cToken27;
-        if (i == 28) return cToken28;
-        if (i == 29) return cToken29;
-
-        revert("lookup index too large");
-    }
-
-    function getUnderlying(uint i) internal view returns (address) {
-        if (i == 0) return underlying00;
-        if (i == 1) return underlying01;
-        if (i == 2) return underlying02;
-        if (i == 3) return underlying03;
-        if (i == 4) return underlying04;
-        if (i == 5) return underlying05;
-        if (i == 6) return underlying06;
-        if (i == 7) return underlying07;
-        if (i == 8) return underlying08;
-        if (i == 9) return underlying09;
-        if (i == 10) return underlying10;
-        if (i == 11) return underlying11;
-        if (i == 12) return underlying12;
-        if (i == 13) return underlying13;
-        if (i == 14) return underlying14;
-        if (i == 15) return underlying15;
-        if (i == 16) return underlying16;
-        if (i == 17) return underlying17;
-        if (i == 18) return underlying18;
-        if (i == 19) return underlying19;
-        if (i == 20) return underlying20;
-        if (i == 21) return underlying21;
-        if (i == 22) return underlying22;
-        if (i == 23) return underlying23;
-        if (i == 24) return underlying24;
-        if (i == 25) return underlying25;
-        if (i == 26) return underlying26;
-        if (i == 27) return underlying27;
-        if (i == 28) return underlying28;
-        if (i == 29) return underlying29;
-
-        revert("lookup index too large");
-    }
-
-    function getSymbolHash(uint i) internal view returns (bytes32) {
-        if (i == 0) return symbolHash00;
-        if (i == 1) return symbolHash01;
-        if (i == 2) return symbolHash02;
-        if (i == 3) return symbolHash03;
-        if (i == 4) return symbolHash04;
-        if (i == 5) return symbolHash05;
-        if (i == 6) return symbolHash06;
-        if (i == 7) return symbolHash07;
-        if (i == 8) return symbolHash08;
-        if (i == 9) return symbolHash09;
-        if (i == 10) return symbolHash10;
-        if (i == 11) return symbolHash11;
-        if (i == 12) return symbolHash12;
-        if (i == 13) return symbolHash13;
-        if (i == 14) return symbolHash14;
-        if (i == 15) return symbolHash15;
-        if (i == 16) return symbolHash16;
-        if (i == 17) return symbolHash17;
-        if (i == 18) return symbolHash18;
-        if (i == 19) return symbolHash19;
-        if (i == 20) return symbolHash20;
-        if (i == 21) return symbolHash21;
-        if (i == 22) return symbolHash22;
-        if (i == 23) return symbolHash23;
-        if (i == 24) return symbolHash24;
-        if (i == 25) return symbolHash25;
-        if (i == 26) return symbolHash26;
-        if (i == 27) return symbolHash27;
-        if (i == 28) return symbolHash28;
-        if (i == 29) return symbolHash29;
-
-        revert("lookup index too large");
-    }
-
-    function getBaseUnit(uint i) internal view returns (uint) {
-        if (i == 0) return baseUnit00;
-        if (i == 1) return baseUnit01;
-        if (i == 2) return baseUnit02;
-        if (i == 3) return baseUnit03;
-        if (i == 4) return baseUnit04;
-        if (i == 5) return baseUnit05;
-        if (i == 6) return baseUnit06;
-        if (i == 7) return baseUnit07;
-        if (i == 8) return baseUnit08;
-        if (i == 9) return baseUnit09;
-        if (i == 10) return baseUnit10;
-        if (i == 11) return baseUnit11;
-        if (i == 12) return baseUnit12;
-        if (i == 13) return baseUnit13;
-        if (i == 14) return baseUnit14;
-        if (i == 15) return baseUnit15;
-        if (i == 16) return baseUnit16;
-        if (i == 17) return baseUnit17;
-        if (i == 18) return baseUnit18;
-        if (i == 19) return baseUnit19;
-        if (i == 20) return baseUnit20;
-        if (i == 21) return baseUnit21;
-        if (i == 22) return baseUnit22;
-        if (i == 23) return baseUnit23;
-        if (i == 24) return baseUnit24;
-        if (i == 25) return baseUnit25;
-        if (i == 26) return baseUnit26;
-        if (i == 27) return baseUnit27;
-        if (i == 28) return baseUnit28;
-        if (i == 29) return baseUnit29;
-
-        revert("lookup index too large");
-    }
-
     function getTokenConfig(uint i) public view returns (TokenConfig memory) {
         require(i < numTokens, "token config not found");
 
-        return TokenConfig({
-            cToken: getCToken(i),
-            underlying: getUnderlying(i),
-            symbolHash: getSymbolHash(i),
-            baseUnit: getBaseUnit(i)
-        });
+        if (i == 0) return TokenConfig({cToken: cToken00, underlying: underlying00, symbolHash: symbolHash00, baseUnit: baseUnit00});
+        if (i == 1) return TokenConfig({cToken: cToken01, underlying: underlying01, symbolHash: symbolHash01, baseUnit: baseUnit01});
+        if (i == 2) return TokenConfig({cToken: cToken02, underlying: underlying02, symbolHash: symbolHash02, baseUnit: baseUnit02});
+        if (i == 3) return TokenConfig({cToken: cToken03, underlying: underlying03, symbolHash: symbolHash03, baseUnit: baseUnit03});
+        if (i == 4) return TokenConfig({cToken: cToken04, underlying: underlying04, symbolHash: symbolHash04, baseUnit: baseUnit04});
+        if (i == 5) return TokenConfig({cToken: cToken05, underlying: underlying05, symbolHash: symbolHash05, baseUnit: baseUnit05});
+        if (i == 6) return TokenConfig({cToken: cToken06, underlying: underlying06, symbolHash: symbolHash06, baseUnit: baseUnit06});
+        if (i == 7) return TokenConfig({cToken: cToken07, underlying: underlying07, symbolHash: symbolHash07, baseUnit: baseUnit07});
+        if (i == 8) return TokenConfig({cToken: cToken08, underlying: underlying08, symbolHash: symbolHash08, baseUnit: baseUnit08});
+        if (i == 9) return TokenConfig({cToken: cToken09, underlying: underlying09, symbolHash: symbolHash09, baseUnit: baseUnit09});
+
+        if (i == 10) return TokenConfig({cToken: cToken10, underlying: underlying10, symbolHash: symbolHash10, baseUnit: baseUnit10});
+        if (i == 11) return TokenConfig({cToken: cToken11, underlying: underlying11, symbolHash: symbolHash11, baseUnit: baseUnit11});
+        if (i == 12) return TokenConfig({cToken: cToken12, underlying: underlying12, symbolHash: symbolHash12, baseUnit: baseUnit12});
+        if (i == 13) return TokenConfig({cToken: cToken13, underlying: underlying13, symbolHash: symbolHash13, baseUnit: baseUnit13});
+        if (i == 14) return TokenConfig({cToken: cToken14, underlying: underlying14, symbolHash: symbolHash14, baseUnit: baseUnit14});
+        if (i == 15) return TokenConfig({cToken: cToken15, underlying: underlying15, symbolHash: symbolHash15, baseUnit: baseUnit15});
+        if (i == 16) return TokenConfig({cToken: cToken16, underlying: underlying16, symbolHash: symbolHash16, baseUnit: baseUnit16});
+        if (i == 17) return TokenConfig({cToken: cToken17, underlying: underlying17, symbolHash: symbolHash17, baseUnit: baseUnit17});
+        if (i == 18) return TokenConfig({cToken: cToken18, underlying: underlying18, symbolHash: symbolHash18, baseUnit: baseUnit18});
+        if (i == 19) return TokenConfig({cToken: cToken19, underlying: underlying19, symbolHash: symbolHash19, baseUnit: baseUnit19});
+
+        if (i == 20) return TokenConfig({cToken: cToken20, underlying: underlying20, symbolHash: symbolHash20, baseUnit: baseUnit20});
+        if (i == 21) return TokenConfig({cToken: cToken21, underlying: underlying21, symbolHash: symbolHash21, baseUnit: baseUnit21});
+        if (i == 22) return TokenConfig({cToken: cToken22, underlying: underlying22, symbolHash: symbolHash22, baseUnit: baseUnit22});
+        if (i == 23) return TokenConfig({cToken: cToken23, underlying: underlying23, symbolHash: symbolHash23, baseUnit: baseUnit23});
+        if (i == 24) return TokenConfig({cToken: cToken24, underlying: underlying24, symbolHash: symbolHash24, baseUnit: baseUnit24});
+        if (i == 25) return TokenConfig({cToken: cToken25, underlying: underlying25, symbolHash: symbolHash25, baseUnit: baseUnit25});
+        if (i == 26) return TokenConfig({cToken: cToken26, underlying: underlying26, symbolHash: symbolHash26, baseUnit: baseUnit26});
+        if (i == 27) return TokenConfig({cToken: cToken27, underlying: underlying27, symbolHash: symbolHash27, baseUnit: baseUnit27});
+        if (i == 28) return TokenConfig({cToken: cToken28, underlying: underlying28, symbolHash: symbolHash28, baseUnit: baseUnit28});
+        if (i == 29) return TokenConfig({cToken: cToken29, underlying: underlying29, symbolHash: symbolHash29, baseUnit: baseUnit29});
     }
 
     function getTokenConfigBySymbol(string memory symbol) public view returns (TokenConfig memory) {
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
         for (uint i = 0; i < numTokens; i++) {
-            if (symbolHash == getSymbolHash(i)) {
-                return getTokenConfig(i);
+            TokenConfig memory config = getTokenConfig(i);
+            if (symbolHash == config.symbolHash) {
+                return config;
             }
         }
 
@@ -446,18 +333,24 @@ contract Config {
 
     function getTokenConfigByCToken(address cToken) public view returns (TokenConfig memory) {
         for (uint i = 0; i < numTokens; i++) {
-            if (cToken == getCToken(i)) {
-                return getTokenConfig(i);
+            TokenConfig memory config = getTokenConfig(i);
+            if (cToken == config.cToken) {
+                return config;
             }
         }
 
         address underlying = CErc20(cToken).underlying();
         for (uint i = 0; i < numTokens; i++) {
-            if (underlying == getUnderlying(i)) {
-                return getTokenConfig(i);
+            TokenConfig memory config = getTokenConfig(i);
+            if (underlying == config.underlying) {
+                return config;
             }
         }
 
         revert("token config not found");
+    }
+
+    function doNothingWithSymbol(string memory symbol) public view returns (string memory) {
+        return symbol;
     }
 }
