@@ -110,6 +110,7 @@ describe("UniswapOracle", () => {
       const price1 = await getPrice("ETH");
       expect(price1.price0Average).numEquals(0);
       expect(price1.price1Average).numEquals(0);
+      
       await sleep(2000);
       await update("ETH");
       await sleep(2000);
