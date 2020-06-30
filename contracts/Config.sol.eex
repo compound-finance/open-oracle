@@ -1,0 +1,134 @@
+pragma solidity ^0.6.6;
+pragma experimental ABIEncoderV2;
+
+interface CErc20 {
+    function underlying() external view returns (address);
+}
+
+contract Config {
+    struct TokenConfig {
+        address cToken;
+        address underlying;
+        bytes32 symbolHash;
+        uint256 baseUnit;
+    }
+
+    uint public immutable numTokens;
+
+
+    <%= for i <- 0..@count do %>
+    address internal immutable <%= var(:ctoken, i) %>;
+    address internal immutable <%= var(:underlying, i) %>;
+    bytes32 internal immutable <%= var(:symbol_hash, i) %>;
+    uint internal immutable <%= var(:base_unit, i) %>;
+    <% end %>
+    // XXX etc, 1 for each field
+
+    constructor(TokenConfig[] memory configs) public {
+        require(configs.length <= <%= @count %>, "too many configs");
+        numTokens = configs.length;
+
+        // <%= for i <- 0..@count do %>
+        <%= var(:ctoken, i) %> = get(configs, 0).cToken;
+        <%= var(:underlying, i) %> = get(configs, 0).underlying;
+        <%= var(:symbol_hash, i) %> = get(configs, 0).symbolHash;
+        <%= var(:base_unit, i) %> = get(configs, 0).baseUnit;
+        <% end %>
+    }
+
+    function get(TokenConfig[] memory configs, uint i) internal pure returns (TokenConfig memory) {
+        if (i < configs.length)
+            return configs[i];
+        return TokenConfig({
+            cToken: address(0),
+            underlying: address(0),
+            symbolHash: bytes32(0),
+            baseUnit: uint256(0)
+        });
+    }
+
+    function getCToken(uint i) internal view returns (address) {
+        // <%= for i <- 0..@count do %>
+        if (i == <%= i %>) return <%= var(:ctoken, i) %>;<% end %>
+
+        revert("lookup index too large");
+    }
+
+    function getCTokenIndex(address cToken) public view returns (uint) {
+        // <%= for i <- 0..@count do %>
+        if (cToken == <%= var(:ctoken, i) %>) return <%= i %>;<% end %>
+
+        return uint(-1);
+    }
+
+    function getUnderlying(uint i) internal view returns (address) {
+        // <%= for i <- 0..@count do %>
+        if (i == <%= i %>) return <%= var(:underlying, i) %>;<% end %>
+
+        revert("lookup index too large");
+    }
+
+    function getUnderlyingIndex(address underlying) internal view returns (uint) {
+        // <%= for i <- 0..@count do %>
+        if (underlying == <%= var(:underlying, i) %>) return <%= i %>;<% end %>
+
+        return uint(-1);
+    }
+
+    function getSymbolHash(uint i) internal view returns (bytes32) {
+        // <%= for i <- 0..@count do %>
+        if (i == <%= i %>) return <%= var(:symbol_hash, i) %>;<% end %>
+
+        revert("lookup index too large");
+    }
+
+    function getSymbolHashIndex(bytes32 symbol) internal view returns (uint) {
+        // <%= for i <- 0..@count do %>
+        if (symbol == <%= var(:symbol_hash, i) %>) return <%= i %>;<% end %>
+
+        return uint(-1);
+    }
+
+    function getBaseUnit(uint i) internal view returns (uint) {
+        // <%= for i <- 0..@count do %>
+        if (i == <%= i %>) return <%= var(:base_unit, i) %>;<% end %>
+
+        revert("lookup index too large");
+    }
+
+    function getTokenConfig(uint i) public view returns (TokenConfig memory) {
+        require(i < numTokens, "token config not found");
+
+        return TokenConfig({
+            cToken: getCToken(i),
+            underlying: getUnderlying(i),
+            symbolHash: getSymbolHash(i),
+            baseUnit: getBaseUnit(i)
+        });
+    }
+
+    function getTokenConfigBySymbol(string memory symbol) public view returns (TokenConfig memory) {
+        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+        uint index = getSymbolHashIndex(symbolHash);
+        if (index != uint(-1)) {
+            return getTokenConfig(index);
+        }
+
+        revert("token config not found");
+    }
+
+    function getTokenConfigByCToken(address cToken) public view returns (TokenConfig memory) {
+        uint index = getCTokenIndex(cToken);
+        if (index != uint(-1)) {
+            return getTokenConfig(index);
+        }
+
+        address underlying = CErc20(cToken).underlying();
+        index = getUnderlyingIndex(underlying);
+        if (index != uint(-1)) {
+            return getTokenConfig(index);
+        }
+
+        revert("token config not found");
+    }
+}

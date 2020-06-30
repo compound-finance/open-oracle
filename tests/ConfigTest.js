@@ -44,12 +44,12 @@ describe('Config', () => {
     const cfg9 = await call(contract, 'getTokenConfig', [9]);
     const tx9 = await send(contract, 'getTokenConfig', [9]);
     expect(cfg9.underlying).toEqual(address(9));
-    expect(tx9.gasUsed).toEqual(23147);
+    expect(tx9.gasUsed).toEqual(22999);
 
     const cfgZ = await call(contract, 'getTokenConfigBySymbol', ['z']);
     const txZ = await send(contract, 'getTokenConfigBySymbol', ['z']);
     expect(cfgZ.underlying).toEqual(address(25));
-    expect(txZ.gasUsed).toEqual(26656);
+    expect(txZ.gasUsed).toEqual(26119);
 
     const cfgCT26 = await call(contract, 'getTokenConfigByCToken', [address(26)]);
     const txCT26 = await send(contract, 'getTokenConfigByCToken', [address(26)]);

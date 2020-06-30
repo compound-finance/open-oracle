@@ -13,262 +13,294 @@ contract Config {
         uint256 baseUnit;
     }
 
-    uint public constant maxTokens = 30;
     uint public immutable numTokens;
 
+
     address internal immutable cToken00;
-    address internal immutable cToken01;
-    address internal immutable cToken02;
-    address internal immutable cToken03;
-    address internal immutable cToken04;
-    address internal immutable cToken05;
-    address internal immutable cToken06;
-    address internal immutable cToken07;
-    address internal immutable cToken08;
-    address internal immutable cToken09;
-    address internal immutable cToken10;
-    address internal immutable cToken11;
-    address internal immutable cToken12;
-    address internal immutable cToken13;
-    address internal immutable cToken14;
-    address internal immutable cToken15;
-    address internal immutable cToken16;
-    address internal immutable cToken17;
-    address internal immutable cToken18;
-    address internal immutable cToken19;
-    address internal immutable cToken20;
-    address internal immutable cToken21;
-    address internal immutable cToken22;
-    address internal immutable cToken23;
-    address internal immutable cToken24;
-    address internal immutable cToken25;
-    address internal immutable cToken26;
-    address internal immutable cToken27;
-    address internal immutable cToken28;
-    address internal immutable cToken29;
-
     address internal immutable underlying00;
-    address internal immutable underlying01;
-    address internal immutable underlying02;
-    address internal immutable underlying03;
-    address internal immutable underlying04;
-    address internal immutable underlying05;
-    address internal immutable underlying06;
-    address internal immutable underlying07;
-    address internal immutable underlying08;
-    address internal immutable underlying09;
-    address internal immutable underlying10;
-    address internal immutable underlying11;
-    address internal immutable underlying12;
-    address internal immutable underlying13;
-    address internal immutable underlying14;
-    address internal immutable underlying15;
-    address internal immutable underlying16;
-    address internal immutable underlying17;
-    address internal immutable underlying18;
-    address internal immutable underlying19;
-    address internal immutable underlying20;
-    address internal immutable underlying21;
-    address internal immutable underlying22;
-    address internal immutable underlying23;
-    address internal immutable underlying24;
-    address internal immutable underlying25;
-    address internal immutable underlying26;
-    address internal immutable underlying27;
-    address internal immutable underlying28;
-    address internal immutable underlying29;
-
     bytes32 internal immutable symbolHash00;
-    bytes32 internal immutable symbolHash01;
-    bytes32 internal immutable symbolHash02;
-    bytes32 internal immutable symbolHash03;
-    bytes32 internal immutable symbolHash04;
-    bytes32 internal immutable symbolHash05;
-    bytes32 internal immutable symbolHash06;
-    bytes32 internal immutable symbolHash07;
-    bytes32 internal immutable symbolHash08;
-    bytes32 internal immutable symbolHash09;
-    bytes32 internal immutable symbolHash10;
-    bytes32 internal immutable symbolHash11;
-    bytes32 internal immutable symbolHash12;
-    bytes32 internal immutable symbolHash13;
-    bytes32 internal immutable symbolHash14;
-    bytes32 internal immutable symbolHash15;
-    bytes32 internal immutable symbolHash16;
-    bytes32 internal immutable symbolHash17;
-    bytes32 internal immutable symbolHash18;
-    bytes32 internal immutable symbolHash19;
-    bytes32 internal immutable symbolHash20;
-    bytes32 internal immutable symbolHash21;
-    bytes32 internal immutable symbolHash22;
-    bytes32 internal immutable symbolHash23;
-    bytes32 internal immutable symbolHash24;
-    bytes32 internal immutable symbolHash25;
-    bytes32 internal immutable symbolHash26;
-    bytes32 internal immutable symbolHash27;
-    bytes32 internal immutable symbolHash28;
-    bytes32 internal immutable symbolHash29;
-
     uint internal immutable baseUnit00;
+    address internal immutable cToken01;
+    address internal immutable underlying01;
+    bytes32 internal immutable symbolHash01;
     uint internal immutable baseUnit01;
+    address internal immutable cToken02;
+    address internal immutable underlying02;
+    bytes32 internal immutable symbolHash02;
     uint internal immutable baseUnit02;
+    address internal immutable cToken03;
+    address internal immutable underlying03;
+    bytes32 internal immutable symbolHash03;
     uint internal immutable baseUnit03;
+    address internal immutable cToken04;
+    address internal immutable underlying04;
+    bytes32 internal immutable symbolHash04;
     uint internal immutable baseUnit04;
+    address internal immutable cToken05;
+    address internal immutable underlying05;
+    bytes32 internal immutable symbolHash05;
     uint internal immutable baseUnit05;
+    address internal immutable cToken06;
+    address internal immutable underlying06;
+    bytes32 internal immutable symbolHash06;
     uint internal immutable baseUnit06;
+    address internal immutable cToken07;
+    address internal immutable underlying07;
+    bytes32 internal immutable symbolHash07;
     uint internal immutable baseUnit07;
+    address internal immutable cToken08;
+    address internal immutable underlying08;
+    bytes32 internal immutable symbolHash08;
     uint internal immutable baseUnit08;
+    address internal immutable cToken09;
+    address internal immutable underlying09;
+    bytes32 internal immutable symbolHash09;
     uint internal immutable baseUnit09;
+    address internal immutable cToken10;
+    address internal immutable underlying10;
+    bytes32 internal immutable symbolHash10;
     uint internal immutable baseUnit10;
+    address internal immutable cToken11;
+    address internal immutable underlying11;
+    bytes32 internal immutable symbolHash11;
     uint internal immutable baseUnit11;
+    address internal immutable cToken12;
+    address internal immutable underlying12;
+    bytes32 internal immutable symbolHash12;
     uint internal immutable baseUnit12;
+    address internal immutable cToken13;
+    address internal immutable underlying13;
+    bytes32 internal immutable symbolHash13;
     uint internal immutable baseUnit13;
+    address internal immutable cToken14;
+    address internal immutable underlying14;
+    bytes32 internal immutable symbolHash14;
     uint internal immutable baseUnit14;
+    address internal immutable cToken15;
+    address internal immutable underlying15;
+    bytes32 internal immutable symbolHash15;
     uint internal immutable baseUnit15;
+    address internal immutable cToken16;
+    address internal immutable underlying16;
+    bytes32 internal immutable symbolHash16;
     uint internal immutable baseUnit16;
+    address internal immutable cToken17;
+    address internal immutable underlying17;
+    bytes32 internal immutable symbolHash17;
     uint internal immutable baseUnit17;
+    address internal immutable cToken18;
+    address internal immutable underlying18;
+    bytes32 internal immutable symbolHash18;
     uint internal immutable baseUnit18;
+    address internal immutable cToken19;
+    address internal immutable underlying19;
+    bytes32 internal immutable symbolHash19;
     uint internal immutable baseUnit19;
+    address internal immutable cToken20;
+    address internal immutable underlying20;
+    bytes32 internal immutable symbolHash20;
     uint internal immutable baseUnit20;
+    address internal immutable cToken21;
+    address internal immutable underlying21;
+    bytes32 internal immutable symbolHash21;
     uint internal immutable baseUnit21;
+    address internal immutable cToken22;
+    address internal immutable underlying22;
+    bytes32 internal immutable symbolHash22;
     uint internal immutable baseUnit22;
+    address internal immutable cToken23;
+    address internal immutable underlying23;
+    bytes32 internal immutable symbolHash23;
     uint internal immutable baseUnit23;
+    address internal immutable cToken24;
+    address internal immutable underlying24;
+    bytes32 internal immutable symbolHash24;
     uint internal immutable baseUnit24;
+    address internal immutable cToken25;
+    address internal immutable underlying25;
+    bytes32 internal immutable symbolHash25;
     uint internal immutable baseUnit25;
+    address internal immutable cToken26;
+    address internal immutable underlying26;
+    bytes32 internal immutable symbolHash26;
     uint internal immutable baseUnit26;
+    address internal immutable cToken27;
+    address internal immutable underlying27;
+    bytes32 internal immutable symbolHash27;
     uint internal immutable baseUnit27;
+    address internal immutable cToken28;
+    address internal immutable underlying28;
+    bytes32 internal immutable symbolHash28;
     uint internal immutable baseUnit28;
+    address internal immutable cToken29;
+    address internal immutable underlying29;
+    bytes32 internal immutable symbolHash29;
     uint internal immutable baseUnit29;
-
+    address internal immutable cToken30;
+    address internal immutable underlying30;
+    bytes32 internal immutable symbolHash30;
+    uint internal immutable baseUnit30;
     // XXX etc, 1 for each field
 
     constructor(TokenConfig[] memory configs) public {
-        require(configs.length <= maxTokens, "too many configs");
+        require(configs.length <= 30, "too many configs");
         numTokens = configs.length;
 
+        // 
         cToken00 = get(configs, 0).cToken;
-        cToken01 = get(configs, 1).cToken;
-        cToken02 = get(configs, 2).cToken;
-        cToken03 = get(configs, 3).cToken;
-        cToken04 = get(configs, 4).cToken;
-        cToken05 = get(configs, 5).cToken;
-        cToken06 = get(configs, 6).cToken;
-        cToken07 = get(configs, 7).cToken;
-        cToken08 = get(configs, 8).cToken;
-        cToken09 = get(configs, 9).cToken;
-        cToken10 = get(configs, 10).cToken;
-        cToken11 = get(configs, 11).cToken;
-        cToken12 = get(configs, 12).cToken;
-        cToken13 = get(configs, 13).cToken;
-        cToken14 = get(configs, 14).cToken;
-        cToken15 = get(configs, 15).cToken;
-        cToken16 = get(configs, 16).cToken;
-        cToken17 = get(configs, 17).cToken;
-        cToken18 = get(configs, 18).cToken;
-        cToken19 = get(configs, 19).cToken;
-        cToken20 = get(configs, 20).cToken;
-        cToken21 = get(configs, 21).cToken;
-        cToken22 = get(configs, 22).cToken;
-        cToken23 = get(configs, 23).cToken;
-        cToken24 = get(configs, 24).cToken;
-        cToken25 = get(configs, 25).cToken;
-        cToken26 = get(configs, 26).cToken;
-        cToken27 = get(configs, 27).cToken;
-        cToken28 = get(configs, 28).cToken;
-        cToken29 = get(configs, 29).cToken;
-
         underlying00 = get(configs, 0).underlying;
-        underlying01 = get(configs, 1).underlying;
-        underlying02 = get(configs, 2).underlying;
-        underlying03 = get(configs, 3).underlying;
-        underlying04 = get(configs, 4).underlying;
-        underlying05 = get(configs, 5).underlying;
-        underlying06 = get(configs, 6).underlying;
-        underlying07 = get(configs, 7).underlying;
-        underlying08 = get(configs, 8).underlying;
-        underlying09 = get(configs, 9).underlying;
-        underlying10 = get(configs, 10).underlying;
-        underlying11 = get(configs, 11).underlying;
-        underlying12 = get(configs, 12).underlying;
-        underlying13 = get(configs, 13).underlying;
-        underlying14 = get(configs, 14).underlying;
-        underlying15 = get(configs, 15).underlying;
-        underlying16 = get(configs, 16).underlying;
-        underlying17 = get(configs, 17).underlying;
-        underlying18 = get(configs, 18).underlying;
-        underlying19 = get(configs, 19).underlying;
-        underlying20 = get(configs, 20).underlying;
-        underlying21 = get(configs, 21).underlying;
-        underlying22 = get(configs, 22).underlying;
-        underlying23 = get(configs, 23).underlying;
-        underlying24 = get(configs, 24).underlying;
-        underlying25 = get(configs, 25).underlying;
-        underlying26 = get(configs, 26).underlying;
-        underlying27 = get(configs, 27).underlying;
-        underlying28 = get(configs, 28).underlying;
-        underlying29 = get(configs, 29).underlying;
-
         symbolHash00 = get(configs, 0).symbolHash;
-        symbolHash01 = get(configs, 1).symbolHash;
-        symbolHash02 = get(configs, 2).symbolHash;
-        symbolHash03 = get(configs, 3).symbolHash;
-        symbolHash04 = get(configs, 4).symbolHash;
-        symbolHash05 = get(configs, 5).symbolHash;
-        symbolHash06 = get(configs, 6).symbolHash;
-        symbolHash07 = get(configs, 7).symbolHash;
-        symbolHash08 = get(configs, 8).symbolHash;
-        symbolHash09 = get(configs, 9).symbolHash;
-        symbolHash10 = get(configs, 10).symbolHash;
-        symbolHash11 = get(configs, 11).symbolHash;
-        symbolHash12 = get(configs, 12).symbolHash;
-        symbolHash13 = get(configs, 13).symbolHash;
-        symbolHash14 = get(configs, 14).symbolHash;
-        symbolHash15 = get(configs, 15).symbolHash;
-        symbolHash16 = get(configs, 16).symbolHash;
-        symbolHash17 = get(configs, 17).symbolHash;
-        symbolHash18 = get(configs, 18).symbolHash;
-        symbolHash19 = get(configs, 19).symbolHash;
-        symbolHash20 = get(configs, 20).symbolHash;
-        symbolHash21 = get(configs, 21).symbolHash;
-        symbolHash22 = get(configs, 22).symbolHash;
-        symbolHash23 = get(configs, 23).symbolHash;
-        symbolHash24 = get(configs, 24).symbolHash;
-        symbolHash25 = get(configs, 25).symbolHash;
-        symbolHash26 = get(configs, 26).symbolHash;
-        symbolHash27 = get(configs, 27).symbolHash;
-        symbolHash28 = get(configs, 28).symbolHash;
-        symbolHash29 = get(configs, 29).symbolHash;
-
         baseUnit00 = get(configs, 0).baseUnit;
-        baseUnit01 = get(configs, 1).baseUnit;
-        baseUnit02 = get(configs, 2).baseUnit;
-        baseUnit03 = get(configs, 3).baseUnit;
-        baseUnit04 = get(configs, 4).baseUnit;
-        baseUnit05 = get(configs, 5).baseUnit;
-        baseUnit06 = get(configs, 6).baseUnit;
-        baseUnit07 = get(configs, 7).baseUnit;
-        baseUnit08 = get(configs, 8).baseUnit;
-        baseUnit09 = get(configs, 9).baseUnit;
-        baseUnit10 = get(configs, 10).baseUnit;
-        baseUnit11 = get(configs, 11).baseUnit;
-        baseUnit12 = get(configs, 12).baseUnit;
-        baseUnit13 = get(configs, 13).baseUnit;
-        baseUnit14 = get(configs, 14).baseUnit;
-        baseUnit15 = get(configs, 15).baseUnit;
-        baseUnit16 = get(configs, 16).baseUnit;
-        baseUnit17 = get(configs, 17).baseUnit;
-        baseUnit18 = get(configs, 18).baseUnit;
-        baseUnit19 = get(configs, 19).baseUnit;
-        baseUnit20 = get(configs, 20).baseUnit;
-        baseUnit21 = get(configs, 21).baseUnit;
-        baseUnit22 = get(configs, 22).baseUnit;
-        baseUnit23 = get(configs, 23).baseUnit;
-        baseUnit24 = get(configs, 24).baseUnit;
-        baseUnit25 = get(configs, 25).baseUnit;
-        baseUnit26 = get(configs, 26).baseUnit;
-        baseUnit27 = get(configs, 27).baseUnit;
-        baseUnit28 = get(configs, 28).baseUnit;
-        baseUnit29 = get(configs, 29).baseUnit;
+
+        cToken01 = get(configs, 0).cToken;
+        underlying01 = get(configs, 0).underlying;
+        symbolHash01 = get(configs, 0).symbolHash;
+        baseUnit01 = get(configs, 0).baseUnit;
+
+        cToken02 = get(configs, 0).cToken;
+        underlying02 = get(configs, 0).underlying;
+        symbolHash02 = get(configs, 0).symbolHash;
+        baseUnit02 = get(configs, 0).baseUnit;
+
+        cToken03 = get(configs, 0).cToken;
+        underlying03 = get(configs, 0).underlying;
+        symbolHash03 = get(configs, 0).symbolHash;
+        baseUnit03 = get(configs, 0).baseUnit;
+
+        cToken04 = get(configs, 0).cToken;
+        underlying04 = get(configs, 0).underlying;
+        symbolHash04 = get(configs, 0).symbolHash;
+        baseUnit04 = get(configs, 0).baseUnit;
+
+        cToken05 = get(configs, 0).cToken;
+        underlying05 = get(configs, 0).underlying;
+        symbolHash05 = get(configs, 0).symbolHash;
+        baseUnit05 = get(configs, 0).baseUnit;
+
+        cToken06 = get(configs, 0).cToken;
+        underlying06 = get(configs, 0).underlying;
+        symbolHash06 = get(configs, 0).symbolHash;
+        baseUnit06 = get(configs, 0).baseUnit;
+
+        cToken07 = get(configs, 0).cToken;
+        underlying07 = get(configs, 0).underlying;
+        symbolHash07 = get(configs, 0).symbolHash;
+        baseUnit07 = get(configs, 0).baseUnit;
+
+        cToken08 = get(configs, 0).cToken;
+        underlying08 = get(configs, 0).underlying;
+        symbolHash08 = get(configs, 0).symbolHash;
+        baseUnit08 = get(configs, 0).baseUnit;
+
+        cToken09 = get(configs, 0).cToken;
+        underlying09 = get(configs, 0).underlying;
+        symbolHash09 = get(configs, 0).symbolHash;
+        baseUnit09 = get(configs, 0).baseUnit;
+
+        cToken10 = get(configs, 0).cToken;
+        underlying10 = get(configs, 0).underlying;
+        symbolHash10 = get(configs, 0).symbolHash;
+        baseUnit10 = get(configs, 0).baseUnit;
+
+        cToken11 = get(configs, 0).cToken;
+        underlying11 = get(configs, 0).underlying;
+        symbolHash11 = get(configs, 0).symbolHash;
+        baseUnit11 = get(configs, 0).baseUnit;
+
+        cToken12 = get(configs, 0).cToken;
+        underlying12 = get(configs, 0).underlying;
+        symbolHash12 = get(configs, 0).symbolHash;
+        baseUnit12 = get(configs, 0).baseUnit;
+
+        cToken13 = get(configs, 0).cToken;
+        underlying13 = get(configs, 0).underlying;
+        symbolHash13 = get(configs, 0).symbolHash;
+        baseUnit13 = get(configs, 0).baseUnit;
+
+        cToken14 = get(configs, 0).cToken;
+        underlying14 = get(configs, 0).underlying;
+        symbolHash14 = get(configs, 0).symbolHash;
+        baseUnit14 = get(configs, 0).baseUnit;
+
+        cToken15 = get(configs, 0).cToken;
+        underlying15 = get(configs, 0).underlying;
+        symbolHash15 = get(configs, 0).symbolHash;
+        baseUnit15 = get(configs, 0).baseUnit;
+
+        cToken16 = get(configs, 0).cToken;
+        underlying16 = get(configs, 0).underlying;
+        symbolHash16 = get(configs, 0).symbolHash;
+        baseUnit16 = get(configs, 0).baseUnit;
+
+        cToken17 = get(configs, 0).cToken;
+        underlying17 = get(configs, 0).underlying;
+        symbolHash17 = get(configs, 0).symbolHash;
+        baseUnit17 = get(configs, 0).baseUnit;
+
+        cToken18 = get(configs, 0).cToken;
+        underlying18 = get(configs, 0).underlying;
+        symbolHash18 = get(configs, 0).symbolHash;
+        baseUnit18 = get(configs, 0).baseUnit;
+
+        cToken19 = get(configs, 0).cToken;
+        underlying19 = get(configs, 0).underlying;
+        symbolHash19 = get(configs, 0).symbolHash;
+        baseUnit19 = get(configs, 0).baseUnit;
+
+        cToken20 = get(configs, 0).cToken;
+        underlying20 = get(configs, 0).underlying;
+        symbolHash20 = get(configs, 0).symbolHash;
+        baseUnit20 = get(configs, 0).baseUnit;
+
+        cToken21 = get(configs, 0).cToken;
+        underlying21 = get(configs, 0).underlying;
+        symbolHash21 = get(configs, 0).symbolHash;
+        baseUnit21 = get(configs, 0).baseUnit;
+
+        cToken22 = get(configs, 0).cToken;
+        underlying22 = get(configs, 0).underlying;
+        symbolHash22 = get(configs, 0).symbolHash;
+        baseUnit22 = get(configs, 0).baseUnit;
+
+        cToken23 = get(configs, 0).cToken;
+        underlying23 = get(configs, 0).underlying;
+        symbolHash23 = get(configs, 0).symbolHash;
+        baseUnit23 = get(configs, 0).baseUnit;
+
+        cToken24 = get(configs, 0).cToken;
+        underlying24 = get(configs, 0).underlying;
+        symbolHash24 = get(configs, 0).symbolHash;
+        baseUnit24 = get(configs, 0).baseUnit;
+
+        cToken25 = get(configs, 0).cToken;
+        underlying25 = get(configs, 0).underlying;
+        symbolHash25 = get(configs, 0).symbolHash;
+        baseUnit25 = get(configs, 0).baseUnit;
+
+        cToken26 = get(configs, 0).cToken;
+        underlying26 = get(configs, 0).underlying;
+        symbolHash26 = get(configs, 0).symbolHash;
+        baseUnit26 = get(configs, 0).baseUnit;
+
+        cToken27 = get(configs, 0).cToken;
+        underlying27 = get(configs, 0).underlying;
+        symbolHash27 = get(configs, 0).symbolHash;
+        baseUnit27 = get(configs, 0).baseUnit;
+
+        cToken28 = get(configs, 0).cToken;
+        underlying28 = get(configs, 0).underlying;
+        symbolHash28 = get(configs, 0).symbolHash;
+        baseUnit28 = get(configs, 0).baseUnit;
+
+        cToken29 = get(configs, 0).cToken;
+        underlying29 = get(configs, 0).underlying;
+        symbolHash29 = get(configs, 0).symbolHash;
+        baseUnit29 = get(configs, 0).baseUnit;
+
+        cToken30 = get(configs, 0).cToken;
+        underlying30 = get(configs, 0).underlying;
+        symbolHash30 = get(configs, 0).symbolHash;
+        baseUnit30 = get(configs, 0).baseUnit;
     }
 
     function get(TokenConfig[] memory configs, uint i) internal pure returns (TokenConfig memory) {
@@ -283,6 +315,7 @@ contract Config {
     }
 
     function getCToken(uint i) internal view returns (address) {
+        // 
         if (i == 0) return cToken00;
         if (i == 1) return cToken01;
         if (i == 2) return cToken02;
@@ -313,11 +346,13 @@ contract Config {
         if (i == 27) return cToken27;
         if (i == 28) return cToken28;
         if (i == 29) return cToken29;
+        if (i == 30) return cToken30;
 
         revert("lookup index too large");
     }
 
     function getCTokenIndex(address cToken) public view returns (uint) {
+        // 
         if (cToken == cToken00) return 0;
         if (cToken == cToken01) return 1;
         if (cToken == cToken02) return 2;
@@ -348,11 +383,13 @@ contract Config {
         if (cToken == cToken27) return 27;
         if (cToken == cToken28) return 28;
         if (cToken == cToken29) return 29;
+        if (cToken == cToken30) return 30;
 
         return uint(-1);
     }
 
     function getUnderlying(uint i) internal view returns (address) {
+        // 
         if (i == 0) return underlying00;
         if (i == 1) return underlying01;
         if (i == 2) return underlying02;
@@ -383,11 +420,13 @@ contract Config {
         if (i == 27) return underlying27;
         if (i == 28) return underlying28;
         if (i == 29) return underlying29;
+        if (i == 30) return underlying30;
 
         revert("lookup index too large");
     }
 
     function getUnderlyingIndex(address underlying) internal view returns (uint) {
+        // 
         if (underlying == underlying00) return 0;
         if (underlying == underlying01) return 1;
         if (underlying == underlying02) return 2;
@@ -418,11 +457,13 @@ contract Config {
         if (underlying == underlying27) return 27;
         if (underlying == underlying28) return 28;
         if (underlying == underlying29) return 29;
+        if (underlying == underlying30) return 30;
 
         return uint(-1);
     }
 
     function getSymbolHash(uint i) internal view returns (bytes32) {
+        // 
         if (i == 0) return symbolHash00;
         if (i == 1) return symbolHash01;
         if (i == 2) return symbolHash02;
@@ -453,11 +494,13 @@ contract Config {
         if (i == 27) return symbolHash27;
         if (i == 28) return symbolHash28;
         if (i == 29) return symbolHash29;
+        if (i == 30) return symbolHash30;
 
         revert("lookup index too large");
     }
 
     function getSymbolHashIndex(bytes32 symbol) internal view returns (uint) {
+        // 
         if (symbol == symbolHash00) return 0;
         if (symbol == symbolHash01) return 1;
         if (symbol == symbolHash02) return 2;
@@ -488,11 +531,13 @@ contract Config {
         if (symbol == symbolHash27) return 27;
         if (symbol == symbolHash28) return 28;
         if (symbol == symbolHash29) return 29;
+        if (symbol == symbolHash30) return 30;
 
         return uint(-1);
     }
 
     function getBaseUnit(uint i) internal view returns (uint) {
+        // 
         if (i == 0) return baseUnit00;
         if (i == 1) return baseUnit01;
         if (i == 2) return baseUnit02;
@@ -523,6 +568,7 @@ contract Config {
         if (i == 27) return baseUnit27;
         if (i == 28) return baseUnit28;
         if (i == 29) return baseUnit29;
+        if (i == 30) return baseUnit30;
 
         revert("lookup index too large");
     }
