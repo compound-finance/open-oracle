@@ -13,8 +13,8 @@ function keccak256(str) {
 describe('Config', () => {
   it('basically works', async () => {
     const contract = await deploy('Config', [[
-      {cToken: address(1), underlying: address(0), symbolHash: keccak256('ETH'), baseUnit: integer(1e18)},
-      {cToken: address(2), underlying: address(3), symbolHash: keccak256('BTC'), baseUnit: integer(1e18)}
+      {cToken: address(1), underlying: address(0), symbolHash: keccak256('ETH'), baseUnit: integer(1e18), priceSource: 0, fixedPrice: 0},
+      {cToken: address(2), underlying: address(3), symbolHash: keccak256('BTC'), baseUnit: integer(1e18), priceSource: 1, fixedPrice: 1}
     ]]);
 
     const cfg0 = await call(contract, 'getTokenConfig', [0]);
@@ -37,7 +37,7 @@ describe('Config', () => {
   it('checks gas', async () => {
     const configs = Array(26).fill(0).map((_, i) => {
       const symbol = String.fromCharCode('a'.charCodeAt(0) + i);
-      return {cToken: address(i + 1), underlying: address(i), symbolHash: keccak256(symbol), baseUnit: integer(1e6)}
+      return {cToken: address(i + 1), underlying: address(i), symbolHash: keccak256(symbol), baseUnit: integer(1e6), priceSource: 0, fixedPrice: 1}
     });
     const contract = await deploy('Config', [configs]);
 
@@ -47,21 +47,21 @@ describe('Config', () => {
     const cfg9 = await call(contract, 'getTokenConfig', [9]);
     const tx9 = await send(contract, 'getTokenConfig', [9]);
     expect(cfg9.underlying).toEqual(address(9));
-    expect(tx9.gasUsed).toEqual(22206);
+    expect(tx9.gasUsed).toEqual(22395);
 
     const cfg25 = await call(contract, 'getTokenConfig', [25]);
     const tx25 = await send(contract, 'getTokenConfig', [25]);
     expect(cfg25.underlying).toEqual(address(25));
-    expect(tx25.gasUsed).toEqual(22622);
+    expect(tx25.gasUsed).toEqual(22811);
 
     const cfgZ = await call(contract, 'getTokenConfigBySymbol', ['z']);
     const txZ = await send(contract, 'getTokenConfigBySymbol', ['z']);
     expect(cfgZ.underlying).toEqual(address(25));
-    expect(txZ.gasUsed).toEqual(24506);
+    expect(txZ.gasUsed).toEqual(24737);
 
     const cfgCT26 = await call(contract, 'getTokenConfigByCToken', [address(26)]);
     const txCT26 = await send(contract, 'getTokenConfigByCToken', [address(26)]);
     expect(cfgCT26.underlying).toEqual(address(25));
-    expect(txCT26.gasUsed).toEqual(24638);
+    expect(txCT26.gasUsed).toEqual(24869);
   });
 });

@@ -6,11 +6,14 @@ interface CErc20 {
 }
 
 contract Config {
+    enum PriceSource {FIXED_ETH, FIXED_USD, REPORTER}
     struct TokenConfig {
         address cToken;
         address underlying;
         bytes32 symbolHash;
         uint256 baseUnit;
+        PriceSource priceSource;
+        uint256 fixedPrice;
     }
 
     uint public constant maxTokens = 30;
@@ -109,38 +112,98 @@ contract Config {
     bytes32 internal immutable symbolHash28;
     bytes32 internal immutable symbolHash29;
 
-    uint internal immutable baseUnit00;
-    uint internal immutable baseUnit01;
-    uint internal immutable baseUnit02;
-    uint internal immutable baseUnit03;
-    uint internal immutable baseUnit04;
-    uint internal immutable baseUnit05;
-    uint internal immutable baseUnit06;
-    uint internal immutable baseUnit07;
-    uint internal immutable baseUnit08;
-    uint internal immutable baseUnit09;
-    uint internal immutable baseUnit10;
-    uint internal immutable baseUnit11;
-    uint internal immutable baseUnit12;
-    uint internal immutable baseUnit13;
-    uint internal immutable baseUnit14;
-    uint internal immutable baseUnit15;
-    uint internal immutable baseUnit16;
-    uint internal immutable baseUnit17;
-    uint internal immutable baseUnit18;
-    uint internal immutable baseUnit19;
-    uint internal immutable baseUnit20;
-    uint internal immutable baseUnit21;
-    uint internal immutable baseUnit22;
-    uint internal immutable baseUnit23;
-    uint internal immutable baseUnit24;
-    uint internal immutable baseUnit25;
-    uint internal immutable baseUnit26;
-    uint internal immutable baseUnit27;
-    uint internal immutable baseUnit28;
-    uint internal immutable baseUnit29;
+    uint256 internal immutable baseUnit00;
+    uint256 internal immutable baseUnit01;
+    uint256 internal immutable baseUnit02;
+    uint256 internal immutable baseUnit03;
+    uint256 internal immutable baseUnit04;
+    uint256 internal immutable baseUnit05;
+    uint256 internal immutable baseUnit06;
+    uint256 internal immutable baseUnit07;
+    uint256 internal immutable baseUnit08;
+    uint256 internal immutable baseUnit09;
+    uint256 internal immutable baseUnit10;
+    uint256 internal immutable baseUnit11;
+    uint256 internal immutable baseUnit12;
+    uint256 internal immutable baseUnit13;
+    uint256 internal immutable baseUnit14;
+    uint256 internal immutable baseUnit15;
+    uint256 internal immutable baseUnit16;
+    uint256 internal immutable baseUnit17;
+    uint256 internal immutable baseUnit18;
+    uint256 internal immutable baseUnit19;
+    uint256 internal immutable baseUnit20;
+    uint256 internal immutable baseUnit21;
+    uint256 internal immutable baseUnit22;
+    uint256 internal immutable baseUnit23;
+    uint256 internal immutable baseUnit24;
+    uint256 internal immutable baseUnit25;
+    uint256 internal immutable baseUnit26;
+    uint256 internal immutable baseUnit27;
+    uint256 internal immutable baseUnit28;
+    uint256 internal immutable baseUnit29;
 
-    // XXX etc, 1 for each field
+    PriceSource internal immutable priceSource00;
+    PriceSource internal immutable priceSource01;
+    PriceSource internal immutable priceSource02;
+    PriceSource internal immutable priceSource03;
+    PriceSource internal immutable priceSource04;
+    PriceSource internal immutable priceSource05;
+    PriceSource internal immutable priceSource06;
+    PriceSource internal immutable priceSource07;
+    PriceSource internal immutable priceSource08;
+    PriceSource internal immutable priceSource09;
+    PriceSource internal immutable priceSource10;
+    PriceSource internal immutable priceSource11;
+    PriceSource internal immutable priceSource12;
+    PriceSource internal immutable priceSource13;
+    PriceSource internal immutable priceSource14;
+    PriceSource internal immutable priceSource15;
+    PriceSource internal immutable priceSource16;
+    PriceSource internal immutable priceSource17;
+    PriceSource internal immutable priceSource18;
+    PriceSource internal immutable priceSource19;
+    PriceSource internal immutable priceSource20;
+    PriceSource internal immutable priceSource21;
+    PriceSource internal immutable priceSource22;
+    PriceSource internal immutable priceSource23;
+    PriceSource internal immutable priceSource24;
+    PriceSource internal immutable priceSource25;
+    PriceSource internal immutable priceSource26;
+    PriceSource internal immutable priceSource27;
+    PriceSource internal immutable priceSource28;
+    PriceSource internal immutable priceSource29;
+
+    uint256 internal immutable fixedPrice00;
+    uint256 internal immutable fixedPrice01;
+    uint256 internal immutable fixedPrice02;
+    uint256 internal immutable fixedPrice03;
+    uint256 internal immutable fixedPrice04;
+    uint256 internal immutable fixedPrice05;
+    uint256 internal immutable fixedPrice06;
+    uint256 internal immutable fixedPrice07;
+    uint256 internal immutable fixedPrice08;
+    uint256 internal immutable fixedPrice09;
+    uint256 internal immutable fixedPrice10;
+    uint256 internal immutable fixedPrice11;
+    uint256 internal immutable fixedPrice12;
+    uint256 internal immutable fixedPrice13;
+    uint256 internal immutable fixedPrice14;
+    uint256 internal immutable fixedPrice15;
+    uint256 internal immutable fixedPrice16;
+    uint256 internal immutable fixedPrice17;
+    uint256 internal immutable fixedPrice18;
+    uint256 internal immutable fixedPrice19;
+    uint256 internal immutable fixedPrice20;
+    uint256 internal immutable fixedPrice21;
+    uint256 internal immutable fixedPrice22;
+    uint256 internal immutable fixedPrice23;
+    uint256 internal immutable fixedPrice24;
+    uint256 internal immutable fixedPrice25;
+    uint256 internal immutable fixedPrice26;
+    uint256 internal immutable fixedPrice27;
+    uint256 internal immutable fixedPrice28;
+    uint256 internal immutable fixedPrice29;
 
     constructor(TokenConfig[] memory configs) public {
         require(configs.length <= maxTokens, "too many configs");
@@ -269,6 +332,68 @@ contract Config {
         baseUnit27 = get(configs, 27).baseUnit;
         baseUnit28 = get(configs, 28).baseUnit;
         baseUnit29 = get(configs, 29).baseUnit;
+
+        priceSource00 = get(configs, 0).priceSource;
+        priceSource01 = get(configs, 1).priceSource;
+        priceSource02 = get(configs, 2).priceSource;
+        priceSource03 = get(configs, 3).priceSource;
+        priceSource04 = get(configs, 4).priceSource;
+        priceSource05 = get(configs, 5).priceSource;
+        priceSource06 = get(configs, 6).priceSource;
+        priceSource07 = get(configs, 7).priceSource;
+        priceSource08 = get(configs, 8).priceSource;
+        priceSource09 = get(configs, 9).priceSource;
+        priceSource10 = get(configs, 10).priceSource;
+        priceSource11 = get(configs, 11).priceSource;
+        priceSource12 = get(configs, 12).priceSource;
+        priceSource13 = get(configs, 13).priceSource;
+        priceSource14 = get(configs, 14).priceSource;
+        priceSource15 = get(configs, 15).priceSource;
+        priceSource16 = get(configs, 16).priceSource;
+        priceSource17 = get(configs, 17).priceSource;
+        priceSource18 = get(configs, 18).priceSource;
+        priceSource19 = get(configs, 19).priceSource;
+        priceSource20 = get(configs, 20).priceSource;
+        priceSource21 = get(configs, 21).priceSource;
+        priceSource22 = get(configs, 22).priceSource;
+        priceSource23 = get(configs, 23).priceSource;
+        priceSource24 = get(configs, 24).priceSource;
+        priceSource25 = get(configs, 25).priceSource;
+        priceSource26 = get(configs, 26).priceSource;
+        priceSource27 = get(configs, 27).priceSource;
+        priceSource28 = get(configs, 28).priceSource;
+        priceSource29 = get(configs, 29).priceSource;
+
+        fixedPrice00 = get(configs, 0).fixedPrice;
+        fixedPrice01 = get(configs, 1).fixedPrice;
+        fixedPrice02 = get(configs, 2).fixedPrice;
+        fixedPrice03 = get(configs, 3).fixedPrice;
+        fixedPrice04 = get(configs, 4).fixedPrice;
+        fixedPrice05 = get(configs, 5).fixedPrice;
+        fixedPrice06 = get(configs, 6).fixedPrice;
+        fixedPrice07 = get(configs, 7).fixedPrice;
+        fixedPrice08 = get(configs, 8).fixedPrice;
+        fixedPrice09 = get(configs, 9).fixedPrice;
+        fixedPrice10 = get(configs, 10).fixedPrice;
+        fixedPrice11 = get(configs, 11).fixedPrice;
+        fixedPrice12 = get(configs, 12).fixedPrice;
+        fixedPrice13 = get(configs, 13).fixedPrice;
+        fixedPrice14 = get(configs, 14).fixedPrice;
+        fixedPrice15 = get(configs, 15).fixedPrice;
+        fixedPrice16 = get(configs, 16).fixedPrice;
+        fixedPrice17 = get(configs, 17).fixedPrice;
+        fixedPrice18 = get(configs, 18).fixedPrice;
+        fixedPrice19 = get(configs, 19).fixedPrice;
+        fixedPrice20 = get(configs, 20).fixedPrice;
+        fixedPrice21 = get(configs, 21).fixedPrice;
+        fixedPrice22 = get(configs, 22).fixedPrice;
+        fixedPrice23 = get(configs, 23).fixedPrice;
+        fixedPrice24 = get(configs, 24).fixedPrice;
+        fixedPrice25 = get(configs, 25).fixedPrice;
+        fixedPrice26 = get(configs, 26).fixedPrice;
+        fixedPrice27 = get(configs, 27).fixedPrice;
+        fixedPrice28 = get(configs, 28).fixedPrice;
+        fixedPrice29 = get(configs, 29).fixedPrice;
     }
 
     function get(TokenConfig[] memory configs, uint i) internal pure returns (TokenConfig memory) {
@@ -278,7 +403,9 @@ contract Config {
             cToken: address(0),
             underlying: address(0),
             symbolHash: bytes32(0),
-            baseUnit: uint256(0)
+            baseUnit: uint256(0),
+            priceSource: PriceSource(0),
+            fixedPrice: uint256(0)
         });
     }
 
@@ -390,38 +517,38 @@ contract Config {
     function getTokenConfig(uint i) public view returns (TokenConfig memory) {
         require(i < numTokens, "token config not found");
 
-        if (i == 0) return TokenConfig({cToken: cToken00, underlying: underlying00, symbolHash: symbolHash00, baseUnit: baseUnit00});
-        if (i == 1) return TokenConfig({cToken: cToken01, underlying: underlying01, symbolHash: symbolHash01, baseUnit: baseUnit01});
-        if (i == 2) return TokenConfig({cToken: cToken02, underlying: underlying02, symbolHash: symbolHash02, baseUnit: baseUnit02});
-        if (i == 3) return TokenConfig({cToken: cToken03, underlying: underlying03, symbolHash: symbolHash03, baseUnit: baseUnit03});
-        if (i == 4) return TokenConfig({cToken: cToken04, underlying: underlying04, symbolHash: symbolHash04, baseUnit: baseUnit04});
-        if (i == 5) return TokenConfig({cToken: cToken05, underlying: underlying05, symbolHash: symbolHash05, baseUnit: baseUnit05});
-        if (i == 6) return TokenConfig({cToken: cToken06, underlying: underlying06, symbolHash: symbolHash06, baseUnit: baseUnit06});
-        if (i == 7) return TokenConfig({cToken: cToken07, underlying: underlying07, symbolHash: symbolHash07, baseUnit: baseUnit07});
-        if (i == 8) return TokenConfig({cToken: cToken08, underlying: underlying08, symbolHash: symbolHash08, baseUnit: baseUnit08});
-        if (i == 9) return TokenConfig({cToken: cToken09, underlying: underlying09, symbolHash: symbolHash09, baseUnit: baseUnit09});
+        if (i == 0) return TokenConfig({cToken: cToken00, underlying: underlying00, symbolHash: symbolHash00, baseUnit: baseUnit00, priceSource: priceSource00, fixedPrice: fixedPrice00});
+        if (i == 1) return TokenConfig({cToken: cToken01, underlying: underlying01, symbolHash: symbolHash01, baseUnit: baseUnit01, priceSource: priceSource01, fixedPrice: fixedPrice01});
+        if (i == 2) return TokenConfig({cToken: cToken02, underlying: underlying02, symbolHash: symbolHash02, baseUnit: baseUnit02, priceSource: priceSource02, fixedPrice: fixedPrice02});
+        if (i == 3) return TokenConfig({cToken: cToken03, underlying: underlying03, symbolHash: symbolHash03, baseUnit: baseUnit03, priceSource: priceSource03, fixedPrice: fixedPrice03});
+        if (i == 4) return TokenConfig({cToken: cToken04, underlying: underlying04, symbolHash: symbolHash04, baseUnit: baseUnit04, priceSource: priceSource04, fixedPrice: fixedPrice04});
+        if (i == 5) return TokenConfig({cToken: cToken05, underlying: underlying05, symbolHash: symbolHash05, baseUnit: baseUnit05, priceSource: priceSource05, fixedPrice: fixedPrice05});
+        if (i == 6) return TokenConfig({cToken: cToken06, underlying: underlying06, symbolHash: symbolHash06, baseUnit: baseUnit06, priceSource: priceSource06, fixedPrice: fixedPrice06});
+        if (i == 7) return TokenConfig({cToken: cToken07, underlying: underlying07, symbolHash: symbolHash07, baseUnit: baseUnit07, priceSource: priceSource07, fixedPrice: fixedPrice07});
+        if (i == 8) return TokenConfig({cToken: cToken08, underlying: underlying08, symbolHash: symbolHash08, baseUnit: baseUnit08, priceSource: priceSource08, fixedPrice: fixedPrice08});
+        if (i == 9) return TokenConfig({cToken: cToken09, underlying: underlying09, symbolHash: symbolHash09, baseUnit: baseUnit09, priceSource: priceSource09, fixedPrice: fixedPrice09});
 
-        if (i == 10) return TokenConfig({cToken: cToken10, underlying: underlying10, symbolHash: symbolHash10, baseUnit: baseUnit10});
-        if (i == 11) return TokenConfig({cToken: cToken11, underlying: underlying11, symbolHash: symbolHash11, baseUnit: baseUnit11});
-        if (i == 12) return TokenConfig({cToken: cToken12, underlying: underlying12, symbolHash: symbolHash12, baseUnit: baseUnit12});
-        if (i == 13) return TokenConfig({cToken: cToken13, underlying: underlying13, symbolHash: symbolHash13, baseUnit: baseUnit13});
-        if (i == 14) return TokenConfig({cToken: cToken14, underlying: underlying14, symbolHash: symbolHash14, baseUnit: baseUnit14});
-        if (i == 15) return TokenConfig({cToken: cToken15, underlying: underlying15, symbolHash: symbolHash15, baseUnit: baseUnit15});
-        if (i == 16) return TokenConfig({cToken: cToken16, underlying: underlying16, symbolHash: symbolHash16, baseUnit: baseUnit16});
-        if (i == 17) return TokenConfig({cToken: cToken17, underlying: underlying17, symbolHash: symbolHash17, baseUnit: baseUnit17});
-        if (i == 18) return TokenConfig({cToken: cToken18, underlying: underlying18, symbolHash: symbolHash18, baseUnit: baseUnit18});
-        if (i == 19) return TokenConfig({cToken: cToken19, underlying: underlying19, symbolHash: symbolHash19, baseUnit: baseUnit19});
+        if (i == 10) return TokenConfig({cToken: cToken10, underlying: underlying10, symbolHash: symbolHash10, baseUnit: baseUnit10, priceSource: priceSource10, fixedPrice: fixedPrice10});
+        if (i == 11) return TokenConfig({cToken: cToken11, underlying: underlying11, symbolHash: symbolHash11, baseUnit: baseUnit11, priceSource: priceSource11, fixedPrice: fixedPrice11});
+        if (i == 12) return TokenConfig({cToken: cToken12, underlying: underlying12, symbolHash: symbolHash12, baseUnit: baseUnit12, priceSource: priceSource12, fixedPrice: fixedPrice12});
+        if (i == 13) return TokenConfig({cToken: cToken13, underlying: underlying13, symbolHash: symbolHash13, baseUnit: baseUnit13, priceSource: priceSource13, fixedPrice: fixedPrice13});
+        if (i == 14) return TokenConfig({cToken: cToken14, underlying: underlying14, symbolHash: symbolHash14, baseUnit: baseUnit14, priceSource: priceSource14, fixedPrice: fixedPrice14});
+        if (i == 15) return TokenConfig({cToken: cToken15, underlying: underlying15, symbolHash: symbolHash15, baseUnit: baseUnit15, priceSource: priceSource15, fixedPrice: fixedPrice15});
+        if (i == 16) return TokenConfig({cToken: cToken16, underlying: underlying16, symbolHash: symbolHash16, baseUnit: baseUnit16, priceSource: priceSource16, fixedPrice: fixedPrice16});
+        if (i == 17) return TokenConfig({cToken: cToken17, underlying: underlying17, symbolHash: symbolHash17, baseUnit: baseUnit17, priceSource: priceSource17, fixedPrice: fixedPrice17});
+        if (i == 18) return TokenConfig({cToken: cToken18, underlying: underlying18, symbolHash: symbolHash18, baseUnit: baseUnit18, priceSource: priceSource18, fixedPrice: fixedPrice18});
+        if (i == 19) return TokenConfig({cToken: cToken19, underlying: underlying19, symbolHash: symbolHash19, baseUnit: baseUnit19, priceSource: priceSource19, fixedPrice: fixedPrice19});
 
-        if (i == 20) return TokenConfig({cToken: cToken20, underlying: underlying20, symbolHash: symbolHash20, baseUnit: baseUnit20});
-        if (i == 21) return TokenConfig({cToken: cToken21, underlying: underlying21, symbolHash: symbolHash21, baseUnit: baseUnit21});
-        if (i == 22) return TokenConfig({cToken: cToken22, underlying: underlying22, symbolHash: symbolHash22, baseUnit: baseUnit22});
-        if (i == 23) return TokenConfig({cToken: cToken23, underlying: underlying23, symbolHash: symbolHash23, baseUnit: baseUnit23});
-        if (i == 24) return TokenConfig({cToken: cToken24, underlying: underlying24, symbolHash: symbolHash24, baseUnit: baseUnit24});
-        if (i == 25) return TokenConfig({cToken: cToken25, underlying: underlying25, symbolHash: symbolHash25, baseUnit: baseUnit25});
-        if (i == 26) return TokenConfig({cToken: cToken26, underlying: underlying26, symbolHash: symbolHash26, baseUnit: baseUnit26});
-        if (i == 27) return TokenConfig({cToken: cToken27, underlying: underlying27, symbolHash: symbolHash27, baseUnit: baseUnit27});
-        if (i == 28) return TokenConfig({cToken: cToken28, underlying: underlying28, symbolHash: symbolHash28, baseUnit: baseUnit28});
-        if (i == 29) return TokenConfig({cToken: cToken29, underlying: underlying29, symbolHash: symbolHash29, baseUnit: baseUnit29});
+        if (i == 20) return TokenConfig({cToken: cToken20, underlying: underlying20, symbolHash: symbolHash20, baseUnit: baseUnit20, priceSource: priceSource20, fixedPrice: fixedPrice20});
+        if (i == 21) return TokenConfig({cToken: cToken21, underlying: underlying21, symbolHash: symbolHash21, baseUnit: baseUnit21, priceSource: priceSource21, fixedPrice: fixedPrice21});
+        if (i == 22) return TokenConfig({cToken: cToken22, underlying: underlying22, symbolHash: symbolHash22, baseUnit: baseUnit22, priceSource: priceSource22, fixedPrice: fixedPrice22});
+        if (i == 23) return TokenConfig({cToken: cToken23, underlying: underlying23, symbolHash: symbolHash23, baseUnit: baseUnit23, priceSource: priceSource23, fixedPrice: fixedPrice23});
+        if (i == 24) return TokenConfig({cToken: cToken24, underlying: underlying24, symbolHash: symbolHash24, baseUnit: baseUnit24, priceSource: priceSource24, fixedPrice: fixedPrice24});
+        if (i == 25) return TokenConfig({cToken: cToken25, underlying: underlying25, symbolHash: symbolHash25, baseUnit: baseUnit25, priceSource: priceSource25, fixedPrice: fixedPrice25});
+        if (i == 26) return TokenConfig({cToken: cToken26, underlying: underlying26, symbolHash: symbolHash26, baseUnit: baseUnit26, priceSource: priceSource26, fixedPrice: fixedPrice26});
+        if (i == 27) return TokenConfig({cToken: cToken27, underlying: underlying27, symbolHash: symbolHash27, baseUnit: baseUnit27, priceSource: priceSource27, fixedPrice: fixedPrice27});
+        if (i == 28) return TokenConfig({cToken: cToken28, underlying: underlying28, symbolHash: symbolHash28, baseUnit: baseUnit28, priceSource: priceSource28, fixedPrice: fixedPrice28});
+        if (i == 29) return TokenConfig({cToken: cToken29, underlying: underlying29, symbolHash: symbolHash29, baseUnit: baseUnit29, priceSource: priceSource29, fixedPrice: fixedPrice29});
     }
 
     function getTokenConfigBySymbol(string memory symbol) public view returns (TokenConfig memory) {
