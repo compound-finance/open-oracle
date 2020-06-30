@@ -78,7 +78,9 @@ contract AnchoredView is SymbolConfiguration {
                 address reporter_,
                 AnchorOracle anchor_,
                 uint anchorToleranceMantissa_,
-                CToken[] memory tokens_) SymbolConfiguration(tokens_) public {
+                address[] memory underlyings,
+                CToken[] memory cTokens
+                ) SymbolConfiguration(underlyings, cTokens) public {
         reporter = reporter_;
         anchor = anchor_;
         priceData = data_;

@@ -1,10 +1,6 @@
 pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
-contract Comptroller {
-    CToken[] public allMarkets;
-}
-
 contract CToken {
     string public symbol;
 }
@@ -88,78 +84,59 @@ contract SymbolConfiguration {
         return keccak256(abi.encodePacked(src));
     }
 
-    constructor(Comptroller comptroller, address[] memory underlyings) public {
-        CToken[] memory cTokens = comptroller.allMarkets();
-        for(uint i = 0; i < cTokens.length; i ++) {
-            CToken cToken = cTokens[i];
-            string memory symb = cTokens[i].symbol();
-            if (stringHash(symb) == stringHash("cETH")) {
-                cEthAddress = address(cToken);
-            } else if (stringHash(symb) == stringHash("cUSDC")) {
-                cUsdcAddress = address(cToken);
-            } else if (stringHash(symb) == stringHash("cUSDT")) {
-                cUsdtAddress = address(cToken);
-            } else if (stringHash(symb) == stringHash("cSAI")) {
-                cSaiAddress = address(cToken);
-            } else if (stringHash(symb) == stringHash("cDAI")) {
-                cDaiAddress = address(cToken);
-            } else if (stringHash(symb) == stringHash("cREP")) {
-                cRepAddress = address(cToken);
-            } else if (stringHash(symb) == stringHash("cWBTC")) {
-                cWbtcAddress = address(cToken);
-            } else if (stringHash(symb) == stringHash("cBAT")) {
-                cBatAddress = address(cToken);
-            } else if (stringHash(symb) == stringHash("cZRX")) {
-                cZrxAddress = address(cToken);
-            }
-        }
-
+    constructor(address[] memory underlyings, CToken[] memory cTokens) public {
         for(uint i = 0; i < underlyings.length; i ++){
+            address cToken = address(cTokens[i]);
+            Erc20 underlying = underlyings[i];
+
             if (underlyings[i] == ethAddress) {
                 ethUniswapMarket = getUniswapMarket(ethAddress);
+                cEthAddress = cToken;
                 continue;
             }
 
-            Erc20 underlying = underlyings[i];
             uint baseUnit = underlying.baseUnit();
             string memory symbol = underlying.symbol();
             bytes32 symbolHash = stringHash(symbol);
 
             if (symbolHash == symbolUsdc) {
                 usdcBaseUnit = baseUnit;
-
+                cUsdcAddress = cToken;
             } else if (symbolHash == symbolUsdt) {
                 usdtBaseUnit = baseUnit;
-
+                cUsdtAddress = cToken;
             } else if (symbolHash == symbolSai) {
                 saiBaseUnit = baseUnit;
-
+                cSaiAddress = cToken;
             } else {
                 address market = getUniswapMarket(underlying);
 
                 if (symbolHash == symbolDai) {
                     daiBaseUnit = baseUnit;
                     daiUniswapMarket = market;
+                    cDaiAddress = cToken;
 
                 } else if (symbolHash == symbolRep) {
                     repBaseUnit = baseUnit;
                     repUniswapMarket = market;
+                    cRepAddress = cToken;
 
                 } else if (symbolHash == symbolWbtc) {
                     wbtcBaseUnit = baseUnit;
                     wbtcUniswapMarket = market;
+                    cWbtcAddress = cToken;
 
                 } else if (symbolHash == symbolBat) {
                     batBaseUnit = baseUnit;
                     batUniswapMarket = market;
+                    cBatAddress = cToken;
 
                 } else if (symbolHash == symbolZrx) {
                     zrxBaseUnit = baseUnit;
                     zrxUniswapMarket = market;
-                } else {
-
-                    // TODO: fallback case
+                    cZrxAddress = cToken;
                 }
+                revert("invalid underlying given");
             }
         }
     }
@@ -275,7 +252,7 @@ contract SymbolConfiguration {
             });
         }
 
-        require(false, "Token not found");
+        revert("Token not found");
     }
 
     /**
