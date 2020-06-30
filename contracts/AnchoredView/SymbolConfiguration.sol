@@ -1,18 +1,20 @@
 pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
-
-interface CErc20 {
-    function underlying() external view returns (address);
+contract Comptroller {
+    CToken[] public allMarkets;
 }
 
 contract CToken {
     string public symbol;
-    uint8 public decimals;
 }
 
-contract Comptroller {
-    CToken[] public allMarkets;
+contract Erc20 {
+    function baseUnit() external view returns (uint);
+}
+
+contract CErc20 {
+    function underlying() external view returns (address);
 }
 
 contract SymbolConfiguration {
@@ -50,6 +52,9 @@ contract SymbolConfiguration {
     bytes32 constant symbolSai = keccak256(abi.encodePacked("SAI"));
     bytes32 constant symbolUsdt = keccak256(abi.encodePacked("USDT"));
 
+    //  Address of the underlying tokens
+    address public immutable ethAddress = 0xe;
+
     //  Address of the cToken contracts
     address public immutable cEthAddress;
     address public immutable cUsdcAddress;
@@ -63,59 +68,102 @@ contract SymbolConfiguration {
 
     // Address of the cToken underlying's ETH Uniswap Market
     // doesnt include fixed price assets: cSAI, cUSDT, and cUSDC
-    address public immutable cEthUniswapMarket;
-    address public immutable cDaiUniswapMarket;
-    address public immutable cRepUniswapMarket;
-    address public immutable cWbtcUniswapMarket;
-    address public immutable cBatUniswapMarket;
-    address public immutable cZrxUniswapMarket;
+    address public immutable ethUniswapMarket;
+    address public immutable daiUniswapMarket;
+    address public immutable repUniswapMarket;
+    address public immutable wbtcUniswapMarket;
+    address public immutable batUniswapMarket;
+    address public immutable zrxUniswapMarket;
 
-    constructor(Comptroller comptroller) public {
-        CToken[] memory cTokens = comptroller.allMarkets();
-        for(uint i = 0; i < cTokens.length; i ++){
-            CToken cToken = cTokens[i];
-            string memory symbol = cToken.symbol();
-            bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+    address public immutable usdcBaseUnit;
+    address public immutable usdtBaseUnit;
+    address public immutable saiBaseUnit;
+    address public immutable daiBaseUnit;
+    address public immutable repBaseUnit;
+    address public immutable wbtcBaseUnit;
+    address public immutable batBaseUnit;
+    address public immutable zrxBaseUnit;
 
-            address cTokenAddr = address(cToken);
-
-            if (symbolHash == symbolEth) {
-                cEthAddress = address(cToken);
-                cEthUniswapMarket = address(2);// placeholder, todo: possibly pass in "anchorETHMarket" as param? how else do we find find the USDC-WETH market?
-
-            } else if (symbolHash == symbolUsdc) {
-                cUsdcAddress = cTokenAddr;
-
-            } else if (symbolHash == symbolUsdt) {
-                cUsdtAddress = cTokenAddr;
-
-            } else if (symbolHash == symbolSai) {
-                cSaiAddress = cTokenAddr;
-
-            } else if (symbolHash == symbolDai) {
-                cDaiAddress = cTokenAddr;
-                cDaiUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
-
-            } else if (symbolHash == symbolRep) {
-                cRepAddress = cTokenAddr;
-                cRepUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
-
-            } else if (symbolHash == symbolWbtc) {
-                cWbtcAddress = cTokenAddr;
-                cWbtcUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
-
-            } else if (symbolHash == symbolBat) {
-                cBatAddress = cBatAddress;
-                cBatUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
-
-            } else if (symbolHash == symbolZrx) {
-                cUsdcAddress = cZrxAddress;
-                cZrxUniswapMarket = getUniswapMarket(CErc20(cToken).underlying());
-            }
-
-        }
+    function stringHash(string memory src) public view returns (bytes32) {
+        return keccak256(abi.encodePacked(src));
     }
 
+    constructor(Comptroller comptroller, address[] memory underlyings) public {
+        CToken[] memory cTokens = comptroller.allMarkets();
+        for(uint i = 0; i < cTokens.length; i ++) {
+            CToken cToken = cTokens[i];
+            string memory symb = cTokens[i].symbol();
+            if (stringHash(symb) == stringHash("cETH")) {
+                cEthAddress = address(cToken);
+            } else if (stringHash(symb) == stringHash("cUSDC")) {
+                cUsdcAddress = address(cToken);
+            } else if (stringHash(symb) == stringHash("cUSDT")) {
+                cUsdtAddress = address(cToken);
+            } else if (stringHash(symb) == stringHash("cSAI")) {
+                cSaiAddress = address(cToken);
+            } else if (stringHash(symb) == stringHash("cDAI")) {
+                cDaiAddress = address(cToken);
+            } else if (stringHash(symb) == stringHash("cREP")) {
+                cRepAddress = address(cToken);
+            } else if (stringHash(symb) == stringHash("cWBTC")) {
+                cWbtcAddress = address(cToken);
+            } else if (stringHash(symb) == stringHash("cBAT")) {
+                cBatAddress = address(cToken);
+            } else if (stringHash(symb) == stringHash("cZRX")) {
+                cZrxAddress = address(cToken);
+            }
+        }
+
+        for(uint i = 0; i < underlyings.length; i ++){
+            if (underlyings[i] == ethAddress) {
+                ethUniswapMarket = getUniswapMarket(ethAddress);
+                continue;
+            }
+
+            Erc20 underlying = underlyings[i];
+            uint baseUnit = underlying.baseUnit();
+            string memory symbol = underlying.symbol();
+            bytes32 symbolHash = stringHash(symbol);
+
+            if (symbolHash == symbolUsdc) {
+                usdcBaseUnit = baseUnit;
+
+            } else if (symbolHash == symbolUsdt) {
+                usdtBaseUnit = baseUnit;
+
+            } else if (symbolHash == symbolSai) {
+                saiBaseUnit = baseUnit;
+
+            } else {
+                address market = getUniswapMarket(underlying);
+
+                if (symbolHash == symbolDai) {
+                    daiBaseUnit = baseUnit;
+                    daiUniswapMarket = market;
+
+                } else if (symbolHash == symbolRep) {
+                    repBaseUnit = baseUnit;
+                    repUniswapMarket = market;
+
+                } else if (symbolHash == symbolWbtc) {
+                    wbtcBaseUnit = baseUnit;
+                    wbtcUniswapMarket = market;
+
+                } else if (symbolHash == symbolBat) {
+                    batBaseUnit = baseUnit;
+                    batUniswapMarket = market;
+
+                } else if (symbolHash == symbolZrx) {
+                    zrxBaseUnit = baseUnit;
+                    zrxUniswapMarket = market;
+                } else {
+
+                    // TODO: fallback case
+                }
+            }
+        }
+    }
+    // todo: possibly pass in "anchorETHMarket" as param? how else do we find find the USDC-WETH market?
     // TODO: figure out. probably ping Uniswap router to ask for the WETH address, and possibly then use UniswapLibs.getPair(token, WETH) or similar
     function getUniswapMarket(CToken token) public view returns (address) {
         return address(1);
@@ -139,7 +187,7 @@ contract SymbolConfiguration {
     function getCTokenConfig(address cToken) public view returns(CTokenMetadata memory) {
         if (cToken == cEthAddress) {
             return CTokenMetadata({
-                uniswapMarket: cEthUniswapMarket,
+                uniswapMarket: ethUniswapMarket,
                 baseUnit: 1e18,
                 priceSource: PriceSource.REPORTER,
                 fixedReporterPrice: 0,
@@ -150,7 +198,7 @@ contract SymbolConfiguration {
         if (cToken == cUsdcAddress) {
             return CTokenMetadata({
                 uniswapMarket: address(0),
-                baseUnit: 1e6, // TODO: make these dynamic as w uniswapMarket to avoid user errors.
+                baseUnit: usdcBaseUnit,
                 priceSource: PriceSource.FIXED_USD,
                 fixedReporterPrice: oneDollar,
                 fixedETHPrice: 0
@@ -160,7 +208,7 @@ contract SymbolConfiguration {
         if (cToken == cUsdtAddress){
             return CTokenMetadata({
                 uniswapMarket: address(0),
-                baseUnit: 1e6,
+                baseUnit: usdtBaseUnit,
                 priceSource: PriceSource.FIXED_USD,
                 fixedReporterPrice: oneDollar,
                 fixedETHPrice: 0
@@ -170,7 +218,7 @@ contract SymbolConfiguration {
         if (cToken == cSaiAddress){
             return CTokenMetadata({
                 uniswapMarket: address(0),
-                baseUnit: 1e18,
+                baseUnit: saiBaseUnit,
                 priceSource: PriceSource.FIXED_ETH,
                 fixedReporterPrice: 0,
                 fixedETHPrice: saiAnchorPrice
@@ -179,8 +227,8 @@ contract SymbolConfiguration {
 
         if (cToken == cDaiAddress) {
             return CTokenMetadata({
-                uniswapMarket: cDaiUniswapMarket,
-                baseUnit: 1e18,
+                uniswapMarket: daiUniswapMarket,
+                baseUnit: daiBaseUnit,
                 priceSource: PriceSource.REPORTER,
                 fixedReporterPrice: 0,
                 fixedETHPrice: 0
@@ -189,8 +237,8 @@ contract SymbolConfiguration {
 
         if (cToken == cRepAddress) {
             return CTokenMetadata({
-                uniswapMarket: cRepUniswapMarket,
-                baseUnit: 1e18,
+                uniswapMarket: repUniswapMarket,
+                baseUnit: repBaseUnit,
                 priceSource: PriceSource.REPORTER,
                 fixedReporterPrice: 0,
                 fixedETHPrice: 0
@@ -199,8 +247,8 @@ contract SymbolConfiguration {
 
         if (cToken == cWbtcAddress) {
             return CTokenMetadata({
-                uniswapMarket: cWbtcUniswapMarket,
-                baseUnit: 1e18,
+                uniswapMarket: wbtcUniswapMarket,
+                baseUnit: wbtcBaseUnit,
                 priceSource: PriceSource.REPORTER,
                 fixedReporterPrice: 0,
                 fixedETHPrice: 0
@@ -209,8 +257,8 @@ contract SymbolConfiguration {
 
         if (cToken == cBatAddress) {
             return CTokenMetadata({
-                uniswapMarket: cBatUniswapMarket,
-                baseUnit: 1e18,
+                uniswapMarket: batUniswapMarket,
+                baseUnit: batBaseUnit,
                 priceSource: PriceSource.REPORTER,
                 fixedReporterPrice: 0,
                 fixedETHPrice: 0
@@ -219,8 +267,8 @@ contract SymbolConfiguration {
 
         if (cToken == cZrxAddress){
             return CTokenMetadata({
-                uniswapMarket: cZrxUniswapMarket,
-                baseUnit: 1e18,
+                uniswapMarket: zrxUniswapMarket,
+                baseUnit: zrxBaseUnit,
                 priceSource: PriceSource.REPORTER,
                 fixedReporterPrice: 0,
                 fixedETHPrice: 0
