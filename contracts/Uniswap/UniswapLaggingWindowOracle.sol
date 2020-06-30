@@ -1,8 +1,7 @@
-pragma solidity =0.6.6;
+pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 import "./UniswapLib.sol";
-
 
 contract UniswapLaggingWindowOracle {
     using FixedPoint for *;
