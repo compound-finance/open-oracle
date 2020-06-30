@@ -57,11 +57,11 @@ describe('Config', () => {
     const cfgZ = await call(contract, 'getTokenConfigBySymbol', ['z']);
     const txZ = await send(contract, 'getTokenConfigBySymbol', ['z']);
     expect(cfgZ.underlying).toEqual(address(25));
-    expect(txZ.gasUsed).toEqual(46164);
+    expect(txZ.gasUsed).toEqual(24506);
 
     const cfgCT26 = await call(contract, 'getTokenConfigByCToken', [address(26)]);
     const txCT26 = await send(contract, 'getTokenConfigByCToken', [address(26)]);
     expect(cfgCT26.underlying).toEqual(address(25));
-    expect(txCT26.gasUsed).toEqual(46283);
+    expect(txCT26.gasUsed).toEqual(24638);
   });
 });
