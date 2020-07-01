@@ -9,7 +9,7 @@ contract UniswapLaggingWindowOracle is AnchoredView {
 
     struct Observation {
         uint timestamp;
-        uint price;
+        uint acc;
     }
 
     // Period for comparing new and old observations
@@ -34,11 +34,11 @@ contract UniswapLaggingWindowOracle is AnchoredView {
     }
 
     function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPrice) internal override returns (uint) {
-        (uint nowPrice, uint oldPrice, uint oldTimestamp) = pokeWindowValues(tokenConfig);
+        (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(tokenConfig);
         uint timeElapsed = block.timestamp - oldTimestamp;
         //TODO - check if we even need this FixedPoint math
         // Figure our MATH  
-        FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowPrice - oldPrice) / timeElapsed));
+        FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
 
         // Super ugly here 
         return priceAverage.mul(1e18 * ethPrice).decode144() / 1e18;
@@ -56,14 +56,14 @@ contract UniswapLaggingWindowOracle is AnchoredView {
         // Update new and old observations if elapsed time is bigger or equal to PERIOD
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= PERIOD) {
-            emit UniswapWindowUpdate(config.uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.price, newObservation.price);
+            emit UniswapWindowUpdate(config.uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.acc, newObservation.acc);
             oldObservation.timestamp = newObservation.timestamp;
-            oldObservation.price = newObservation.price;
+            oldObservation.acc = newObservation.acc;
 
             newObservation.timestamp = block.timestamp;
-            newObservation.price = currentCumulativePrice;
+            newObservation.acc = currentCumulativePrice;
         }
-        return (currentCumulativePrice, oldObservation.price, oldObservation.timestamp);
+        return (currentCumulativePrice, oldObservation.acc, oldObservation.timestamp);
     }
 
     function getCurrentCumulativePrice(CTokenMetadata memory config) internal returns (uint) {
