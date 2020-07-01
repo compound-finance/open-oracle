@@ -58,17 +58,6 @@ library FixedPoint {
     function decode144(uq144x112 memory self) internal pure returns (uint144) {
         return uint144(self._x >> RESOLUTION);
     }
-
-    // take the reciprocal of a UQ112x112
-    function reciprocal(uq112x112 memory self) internal pure returns (uq112x112 memory) {
-        require(self._x != 0, 'FixedPoint: ZERO_RECIPROCAL');
-        return uq112x112(uint224(Q224 / self._x));
-    }
-
-    // square root of a UQ112x112
-    function sqrt(uq112x112 memory self) internal pure returns (uq112x112 memory) {
-        return uq112x112(uint224(Babylonian.sqrt(uint256(self._x)) << 56));
-    }
 }
 
 // computes square roots using the babylonian method

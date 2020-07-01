@@ -33,10 +33,6 @@ contract UniswapLaggingWindowOracle is AnchoredView {
 
     }
 
-    function getAnchorLastTimestamp(CTokenMetadata memory tokenConfig) internal view override returns (uint) {
-        return newObservations[tokenConfig.uniswapMarket].timestamp;
-    }
-
     function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPrice) internal override returns (uint) {
         (uint nowPrice, uint oldPrice, uint oldTimestamp) = pokeWindowValues(tokenConfig);
         uint timeElapsed = block.timestamp - oldTimestamp;
