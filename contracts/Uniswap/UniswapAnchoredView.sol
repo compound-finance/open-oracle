@@ -66,9 +66,11 @@ contract UniswapLaggingWindowOracle is AnchoredView {
         return (currentCumulativePrice, oldObservation.acc, oldObservation.timestamp);
     }
 
-    function getCurrentCumulativePrice(CTokenMetadata memory config) internal returns (uint) {
+    function getCurrentCumulativePrice(CTokenMetadata memory config) internal view returns (uint) {
         (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(config.uniswapMarket);
-        if (config.isReversedMarket) {
+        // TODO add isReversedMarket
+        if (true) {
+        // if (config.isReversedMarket) {
             return price0Cumulative * 1e18 / config.baseUnit;
         } else {
             return price1Cumulative * config.baseUnit / 1e18;
