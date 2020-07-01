@@ -70,9 +70,9 @@ contract UniswapAnchoredView is AnchoredView {
         // TODO add isReversedMarket
         if (true) {
         // if (config.isReversedMarket) {
-            return mul(price0Cumulative, 1e18) / config.baseUnit;
+            return mul(price0Cumulative, 1e18 / config.baseUnit);
         } else {
-            return mul(price1Cumulative, config.baseUnit) / 1e18;
+            return mul(price1Cumulative, config.baseUnit / 1e18);
         }
     }
 }
