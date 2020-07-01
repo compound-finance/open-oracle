@@ -21,6 +21,7 @@ contract UniswapLaggingWindowOracle is AnchoredView {
     mapping(address => Observation) public newObservations;
 
     event ObservationsUpdated(address indexed pair, uint price, uint timeElapsed);
+    event UniswapWindowUpdate(address indexed uniswapMarket, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
 
     constructor(
         OpenOraclePriceData data_,
@@ -36,20 +37,20 @@ contract UniswapLaggingWindowOracle is AnchoredView {
         return newObservations[tokenConfig.uniswapMarket].timestamp;
     }
 
-    function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPerUsdc) internal override returns (uint) {
-        (Observation memory newObservation, Observation memory oldObservation) = pokeWindowValues(tokenConfig);
-        uint timeElapsed = newObservation.timestamp - oldObservation.timestamp;
-        FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(
-            uint224((newObservation.price - oldObservation.price) / timeElapsed)
-        );
+    function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPrice) internal override returns (uint) {
+        (uint nowPrice, uint oldPrice, uint oldTimestamp) = pokeWindowValues(tokenConfig);
+        uint timeElapsed = block.timestamp - oldTimestamp;
+        //TODO - check if we even need this FixedPoint math
+        // Figure our MATH  
+        FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowPrice - oldPrice) / timeElapsed));
 
-        // XXX over lapping number libs, eek
-        return mul(priceAverage.mul(1e18).decode144(), ethPerUsdc) / 1e18;
+        // Super ugly here 
+        return priceAverage.mul(1e18 * ethPrice).decode144() / 1e18;
     }
 
-    // Get TWAP prices per pair at the current timestamp.
+    // Get current cumulative price.
     // Update new and old observations of lagging window if period elapsed.
-    function pokeWindowValues(TokenConfig memory config) public returns (uint, uint, uint) {
+    function pokeWindowValues(CTokenMetadata memory config) public returns (uint, uint, uint) {
         address uniswapMarket = config.uniswapMarket;
         uint currentCumulativePrice = getCurrentCumulativePrice(config);
 
@@ -59,7 +60,7 @@ contract UniswapLaggingWindowOracle is AnchoredView {
         // Update new and old observations if elapsed time is bigger or equal to PERIOD
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= PERIOD) {
-            emit UniswapWindowUpdate(config.asset, oldObservation.timestamp, newObservation.timestamp, oldObservation.price, newObservation.price);
+            emit UniswapWindowUpdate(config.uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.price, newObservation.price);
             oldObservation.timestamp = newObservation.timestamp;
             oldObservation.price = newObservation.price;
 
@@ -69,12 +70,12 @@ contract UniswapLaggingWindowOracle is AnchoredView {
         return (currentCumulativePrice, oldObservation.price, oldObservation.timestamp);
     }
 
-    function getCurrentCumulativePrice(CTokenMetadata memory tokenConfig) internal returns (uint) {
-        (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(tokenConfig.uniswapMarket);
-        // TODO: write
-        // if (config.isReversedMarket) {
-        // } else {
-        // }
-        return 1;
+    function getCurrentCumulativePrice(CTokenMetadata memory config) internal returns (uint) {
+        (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(config.uniswapMarket);
+        if (config.isReversedMarket) {
+            return price0Cumulative * 1e18 / config.baseUnit;
+        } else {
+            return price1Cumulative * config.baseUnit / 1e18;
+        }
     }
 }
