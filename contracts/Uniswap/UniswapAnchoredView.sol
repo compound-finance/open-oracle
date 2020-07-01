@@ -36,12 +36,11 @@ contract UniswapLaggingWindowOracle is AnchoredView {
     function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPrice) internal override returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(tokenConfig);
         uint timeElapsed = block.timestamp - oldTimestamp;
-        //TODO - check if we even need this FixedPoint math
-        // Figure our MATH  
+        // TODO Figure our MATH  
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
 
         // Super ugly here 
-        return priceAverage.mul(1e18 * ethPrice).decode144() / 1e18;
+        return mul(priceAverage.mul(1e18).decode144(), ethPrice) / 1e18;
     }
 
     // Get current cumulative price.
@@ -71,9 +70,9 @@ contract UniswapLaggingWindowOracle is AnchoredView {
         // TODO add isReversedMarket
         if (true) {
         // if (config.isReversedMarket) {
-            return price0Cumulative * 1e18 / config.baseUnit;
+            return mul(price0Cumulative, 1e18) / config.baseUnit;
         } else {
-            return price1Cumulative * config.baseUnit / 1e18;
+            return mul(price1Cumulative, config.baseUnit) / 1e18;
         }
     }
 }
