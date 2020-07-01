@@ -46,9 +46,6 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
     /// @notice The event emitted when reporter invalidates itself
     event ReporterInvalidated(address reporter);
 
-    /// @notice The event emitted when the anchor is cut for staleness
-    event AnchorCut();
-
     /**
      * @param data_ Address of the Oracle Data contract
      * @param reporter_ The reporter address whose price will be used if it matches the anchor
@@ -150,18 +147,6 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
         emit ReporterInvalidated(reporter);
     }
 
-    /// @notice invalidate the anchor, and fall back to using reporter without anchor
-
-    /// @dev determine if anchor is stale by checking when usdc was last updated
-    /// @dev all anchor prices are converted through usdc price, so if it is stale they are all stale
-    function cutAnchor() external {
-        if (block.number - getAnchorLastTimestamp(getCTokenConfig("ETH")) > staleBlocks) {
-            anchorBreaker = true;
-            emit AnchorCut();
-        }
-    }
-
-
     // @notice overflow proof multiplication
     function mul(uint a, uint b) internal pure returns (uint) {
         if (a == 0) return 0;
@@ -173,6 +158,4 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
     }
 
     function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPerUsdc) internal virtual returns (uint);
-    function getAnchorLastTimestamp(CTokenMetadata memory tokenConfig) internal view virtual returns (uint);
-
 }
