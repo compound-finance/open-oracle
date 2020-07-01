@@ -88,60 +88,38 @@ contract SymbolConfiguration {
 
     constructor(address[] memory underlyings, CToken[] memory cTokens) public {
         require(underlyings.length >= cTokens.length, "Need at least as many underlying tokens as cTokens");
-        for(uint i = 0; i < underlyings.length; i ++){
-            address cToken = address(cTokens[i]);
-            Erc20 underlying = Erc20(underlyings[i]);
 
-            if (underlyings[i] == ethAddress) {
-                ethUniswapMarket = getUniswapMarket(ethAddress);
-                cEthAddress = cToken;
-                continue;
-            }
+        ethUniswapMarket = address(0);
+        cEthAddress = address(0);
 
-            uint baseUnit = underlying.baseUnit();
-            string memory symbol = underlying.symbol();
-            bytes32 symbolHash = stringHash(symbol);
+        usdcBaseUnit = 0;
+        cUsdcAddress = address(0);
 
-            if (symbolHash == symbolUsdc) {
-                usdcBaseUnit = baseUnit;
-                cUsdcAddress = cToken;
-            } else if (symbolHash == symbolUsdt) {
-                usdtBaseUnit = baseUnit;
-                cUsdtAddress = cToken;
-            } else if (symbolHash == symbolSai) {
-                saiBaseUnit = baseUnit;
-                cSaiAddress = cToken;
-            } else {
-                address market = getUniswapMarket(address(underlying));
+        usdtBaseUnit = 0;
+        cUsdtAddress = address(0);
 
-                if (symbolHash == symbolDai) {
-                    daiBaseUnit = baseUnit;
-                    daiUniswapMarket = market;
-                    cDaiAddress = cToken;
+        saiBaseUnit = 0;
+        cSaiAddress = address(0);
 
-                } else if (symbolHash == symbolRep) {
-                    repBaseUnit = baseUnit;
-                    repUniswapMarket = market;
-                    cRepAddress = cToken;
+        daiBaseUnit =  0;
+        daiUniswapMarket = address(0);
+        cDaiAddress = address(0);
 
-                } else if (symbolHash == symbolWbtc) {
-                    wbtcBaseUnit = baseUnit;
-                    wbtcUniswapMarket = market;
-                    cWbtcAddress = cToken;
+        repBaseUnit = 0;
+        repUniswapMarket = address(0);
+        cRepAddress = address(0);
 
-                } else if (symbolHash == symbolBat) {
-                    batBaseUnit = baseUnit;
-                    batUniswapMarket = market;
-                    cBatAddress = cToken;
+        wbtcBaseUnit = 0;
+        wbtcUniswapMarket = address(0);
+        cWbtcAddress = address(0);
 
-                } else if (symbolHash == symbolZrx) {
-                    zrxBaseUnit = baseUnit;
-                    zrxUniswapMarket = market;
-                    cZrxAddress = cToken;
-                }
-                revert("invalid underlying given");
-            }
-        }
+        batBaseUnit = 0;
+        batUniswapMarket = address(0);
+        cBatAddress = address(0);
+
+        zrxBaseUnit = 0;
+        zrxUniswapMarket = address(0);
+        cZrxAddress = address(0);
     }
     // todo: possibly pass in "anchorETHMarket" as param? how else do we find find the USDC-WETH market?
     // TODO: figure out. probably ping Uniswap router to ask for the WETH address, and possibly then use UniswapLibs.getPair(token, WETH) or similar

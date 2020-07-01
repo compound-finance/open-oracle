@@ -113,12 +113,12 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
      * @dev If price was posted by reporter, return it. Otherwise, return anchor price converted through reporter ETH price.
      */
 
-     function prices(string memory symbol) public view returns (uint) {
+     function prices(string memory symbol) public returns (uint) {
         CTokenMetadata memory tokenConfig = getCTokenConfig(symbol);
         return pricesInternal(tokenConfig);
      }
 
-    function pricesInternal(CTokenMetadata memory tokenConfig) internal view returns (uint) {
+    function pricesInternal(CTokenMetadata memory tokenConfig) internal returns (uint) {
         if (tokenConfig.priceSource == PriceSource.FIXED_USD) return tokenConfig.fixedReporterPrice;
         if (tokenConfig.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = _prices["ETH"];
@@ -135,7 +135,7 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
      * @param cToken The cToken address for price retrieval
      * @return The price for the given cToken address
      */
-    function getUnderlyingPrice(address cToken) public view returns (uint) {
+    function getUnderlyingPrice(address cToken) public returns (uint) {
         CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
         return pricesInternal(tokenConfig);
     }
@@ -172,7 +172,7 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
         return c;
     }
 
-    function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPerUsdc) internal view virtual returns (uint);
+    function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPerUsdc) internal virtual returns (uint);
     function getAnchorLastTimestamp(CTokenMetadata memory tokenConfig) internal view virtual returns (uint);
 
 }
