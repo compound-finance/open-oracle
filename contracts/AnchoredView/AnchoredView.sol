@@ -3,22 +3,7 @@ pragma experimental ABIEncoderV2;
 
 import "./SymbolConfiguration.sol";
 import "../OpenOraclePriceData.sol";
-
-interface AnchorOracle {
-    function numBlocksPerPeriod() external view returns (uint); // approximately 1 hour: 60 seconds/minute * 60 minutes/hour * 1 block/15 seconds
-
-    function assetPrices(address asset) external view returns (uint);
-
-    struct Anchor {
-        // floor(block.number / numBlocksPerPeriod) + 1
-        uint period;
-
-        // Price in ETH, scaled by 10**18
-        uint priceMantissa;
-    }
-    function anchors(address asset) external view returns (Anchor memory);
-}
-
+import "../OpenOracleData.sol";
 
 /**
  * @notice Price feed conforming to Price Oracle Proxy interface.
@@ -26,7 +11,7 @@ interface AnchorOracle {
  * @dev The reporter must report at a minimum the USD/ETH price, so that anchor ETH/TOKEN prices can be converted to USD/TOKEN
  * @author Compound Labs, Inc.
  */
-contract AnchoredView is SymbolConfiguration {
+abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
     /// @notice The mapping of anchored reporter prices by symbol
     mapping(string => uint) public _prices;
 
@@ -39,9 +24,6 @@ contract AnchoredView is SymbolConfiguration {
     /// @notice the Open Oracle Reporter price reporter
     address public immutable reporter;
 
-    /// @notice The anchor oracle ( Compound Oracle V1 )
-    AnchorOracle public immutable anchor;
-
     /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
@@ -53,7 +35,7 @@ contract AnchoredView is SymbolConfiguration {
 
     /// @notice Average blocks per day, for checking anchor staleness
     /// @dev 1 day / 15
-    uint constant blocksInADay = 5760;
+    uint constant staleBlocks = 5760;
 
     /// @notice The event emitted when the median price is updated
     event PriceUpdated(string symbol, uint price);
@@ -65,24 +47,20 @@ contract AnchoredView is SymbolConfiguration {
     event ReporterInvalidated(address reporter);
 
     /// @notice The event emitted when the anchor is cut for staleness
-    event AnchorCut(address anchor);
+    event AnchorCut();
 
     /**
      * @param data_ Address of the Oracle Data contract
      * @param reporter_ The reporter address whose price will be used if it matches the anchor
-     * @param anchor_ The PriceOracleProxy that will be used to verify reporter price, or serve prices not given by the reporter
      * @param anchorToleranceMantissa_ The tolerance allowed between the anchor and median. A tolerance of 10e16 means a new median that is 10% off from the anchor will still be saved
-     * @param tokens_ The CTokens struct that contains addresses for CToken contracts
      */
     constructor(OpenOraclePriceData data_,
                 address reporter_,
-                AnchorOracle anchor_,
                 uint anchorToleranceMantissa_,
                 address[] memory underlyings,
                 CToken[] memory cTokens
                 ) SymbolConfiguration(underlyings, cTokens) public {
         reporter = reporter_;
-        anchor = anchor_;
         priceData = data_;
 
         require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
@@ -105,29 +83,28 @@ contract AnchoredView is SymbolConfiguration {
             priceData.put(messages[i], signatures[i]);
         }
 
-        // load usdc for using in loop to convert anchor prices to dollars
-        uint usdcPrice = readAnchor(cUsdcAddress);
+        uint ethPrice = getAnchorPrice(getCTokenConfig("ETH"), 1e6);
 
         // Try to update the view storage
         for (uint i = 0; i < symbols.length; i++) {
             CTokenMetadata memory tokenConfig = getCTokenConfig(symbols[i]);
-            // symbol is not supported in the view, but allow writing to data
-            if (tokenConfig.cTokenAddress == address(0)) continue;
+            string memory symbol = symbols[i];
+            if (source(messages[i], signatures[i]) != reporter) continue;
 
-            uint reporterPrice = priceData.getPrice(reporter, tokenConfig.openOracleKey);
-            uint anchorPrice = getAnchorInUsd(tokenConfig, usdcPrice);
+            uint reporterPrice = priceData.getPrice(reporter, symbol);
+            uint anchorPrice = getAnchorPrice(tokenConfig, ethPrice);
 
             uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
             bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
 
             if (withinAnchor || anchorBreaker) {
                 // only update and emit event if value changes
-                if (_prices[tokenConfig.openOracleKey] != reporterPrice) {
-                    _prices[tokenConfig.openOracleKey] = reporterPrice;
-                    emit PriceUpdated(tokenConfig.openOracleKey, reporterPrice);
+                if (_prices[symbol] != reporterPrice) {
+                    _prices[symbol] = reporterPrice;
+                    emit PriceUpdated(symbol, reporterPrice);
                 }
             } else {
-                emit PriceGuarded(tokenConfig.openOracleKey, reporterPrice, anchorPrice);
+                emit PriceGuarded(symbol, reporterPrice, anchorPrice);
             }
         }
     }
@@ -135,37 +112,21 @@ contract AnchoredView is SymbolConfiguration {
      * @notice Returns price denominated in USD, with 6 decimals
      * @dev If price was posted by reporter, return it. Otherwise, return anchor price converted through reporter ETH price.
      */
-    function prices(string calldata symbol) external view returns (uint) {
-        CTokenMetadata memory tokenConfig = getCTokenConfig(symbol);
 
-        if (tokenConfig.priceSource == PriceSource.REPORTER) return _prices[symbol];
+     function prices(string memory symbol) public view returns (uint) {
+        CTokenMetadata memory tokenConfig = getCTokenConfig(symbol);
+        return pricesInternal(tokenConfig);
+     }
+
+    function pricesInternal(CTokenMetadata memory tokenConfig) internal view returns (uint) {
         if (tokenConfig.priceSource == PriceSource.FIXED_USD) return tokenConfig.fixedReporterPrice;
-        if (tokenConfig.priceSource == PriceSource.ANCHOR) {
+        if (tokenConfig.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = _prices["ETH"];
             require(usdPerEth > 0, "eth price not set, cannot convert eth to dollars");
-
-            uint ethPerToken = readAnchor(tokenConfig);
-            return mul(usdPerEth, ethPerToken) / tokenConfig.baseUnit;
+            return mul(usdPerEth, tokenConfig.fixedEthPrice) / tokenConfig.baseUnit;
         }
-    }
-
-    /**
-     * @dev fetch price in eth from proxy and convert to usd price using anchor usdc price.
-     * @dev Anchor price has 36 - underlying decimals, so scale back up to 36 decimals before dividing by by usdc price  (30 decimals), yielding 6 decimal usd price
-     */
-    function getAnchorInUsd(address cToken, uint ethPerUsdc) public view returns (uint) {
-        CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
-        return getAnchorInUsd(tokenConfig, ethPerUsdc);
-    }
-
-    function getAnchorInUsd(CTokenMetadata memory tokenConfig, uint ethPerUsdc) internal view returns (uint) {
-        if (tokenConfig.anchorSource == AnchorSource.FIXED_USD) {
-            return tokenConfig.fixedAnchorPrice;
-        }
-
-        uint ethPerToken = readAnchor(tokenConfig);
-
-        return mul(ethPerToken, tokenConfig.baseUnit) / ethPerUsdc;
+        if (reporterBreaker == true) return getAnchorPrice(tokenConfig, 1e6);
+        if (tokenConfig.priceSource == PriceSource.REPORTER) return _prices[tokenConfig.symbol];
     }
 
     /**
@@ -176,44 +137,7 @@ contract AnchoredView is SymbolConfiguration {
      */
     function getUnderlyingPrice(address cToken) public view returns (uint) {
         CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
-        if (reporterBreaker == true) {
-            return readAnchor(tokenConfig);
-        }
-
-        if (tokenConfig.priceSource == PriceSource.FIXED_USD) {
-            uint usdPerToken = tokenConfig.fixedReporterPrice;
-            return mul(usdPerToken, 1e30) / tokenConfig.baseUnit;
-        }
-
-        if (tokenConfig.priceSource == PriceSource.REPORTER) {
-            uint usdPerToken = _prices[tokenConfig.openOracleKey];
-            return mul(usdPerToken, 1e30) / tokenConfig.baseUnit;
-        }
-
-        if (tokenConfig.priceSource == PriceSource.ANCHOR) {
-            // convert anchor price to usd, via reporter eth price
-            uint usdPerEth = _prices["ETH"];
-            require(usdPerEth != 0, "no reporter price for usd/eth exists, cannot convert anchor price to usd terms");
-
-            // factoring out extra 6 decimals from reporter eth price brings us back to decimals given by anchor
-            uint ethPerToken = readAnchor(tokenConfig);
-            return mul(usdPerEth, ethPerToken) / 1e6;
-        }
-    }
-
-    /**
-     * @notice Get the underlying price of a listed cToken asset
-     * @param cToken The cToken to get the underlying price of
-     * @return The underlying asset price mantissa (scaled by 1e18)
-     */
-    function readAnchor(address cToken) public view returns (uint) {
-        return readAnchor(getCTokenConfig(cToken));
-    }
-
-    function readAnchor(CTokenMetadata memory tokenConfig) internal view returns (uint) {
-        if (tokenConfig.anchorSource == AnchorSource.FIXED_ETH) return tokenConfig.fixedAnchorPrice;
-
-        return anchor.assetPrices(tokenConfig.anchorOracleKey);
+        return pricesInternal(tokenConfig);
     }
 
     /// @notice invalidate the reporter, and fall back to using anchor directly in all cases
@@ -231,15 +155,9 @@ contract AnchoredView is SymbolConfiguration {
     /// @dev determine if anchor is stale by checking when usdc was last updated
     /// @dev all anchor prices are converted through usdc price, so if it is stale they are all stale
     function cutAnchor() external {
-        AnchorOracle.Anchor memory latestUsdcAnchor = anchor.anchors(cUsdcAnchorKey);
-
-        uint usdcAnchorBlockNumber = mul(latestUsdcAnchor.period, anchor.numBlocksPerPeriod());
-        uint blocksSinceUpdate = block.number - usdcAnchorBlockNumber;
-
-        // one day in 15 second blocks without an update
-        if (blocksSinceUpdate > blocksInADay) {
+        if (block.number - getAnchorLastTimestamp(getCTokenConfig("ETH")) > staleBlocks) {
             anchorBreaker = true;
-            emit AnchorCut(address(anchor));
+            emit AnchorCut();
         }
     }
 
@@ -253,4 +171,8 @@ contract AnchoredView is SymbolConfiguration {
 
         return c;
     }
+
+    function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPerUsdc) internal view virtual returns (uint);
+    function getAnchorLastTimestamp(CTokenMetadata memory tokenConfig) internal view virtual returns (uint);
+
 }
