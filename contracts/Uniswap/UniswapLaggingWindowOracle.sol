@@ -49,9 +49,9 @@ contract UniswapLaggingWindowOracle is AnchoredView {
 
     // Get TWAP prices per pair at the current timestamp.
     // Update new and old observations of lagging window if period elapsed.
-    function pokeWindowValues(CTokenMetadata memory tokenConfig) public returns (Observation memory, Observation memory) {
-        address uniswapMarket = tokenConfig.uniswapMarket;
-        uint currentCumulativePrice = getCurrentCumulativePrice(tokenConfig);
+    function pokeWindowValues(TokenConfig memory config) public returns (uint, uint, uint) {
+        address uniswapMarket = config.uniswapMarket;
+        uint currentCumulativePrice = getCurrentCumulativePrice(config);
 
         Observation storage newObservation = newObservations[uniswapMarket];
         Observation storage oldObservation = oldObservations[uniswapMarket];
@@ -59,16 +59,14 @@ contract UniswapLaggingWindowOracle is AnchoredView {
         // Update new and old observations if elapsed time is bigger or equal to PERIOD
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= PERIOD) {
-
+            emit UniswapWindowUpdate(config.asset, oldObservation.timestamp, newObservation.timestamp, oldObservation.price, newObservation.price);
             oldObservation.timestamp = newObservation.timestamp;
             oldObservation.price = newObservation.price;
 
             newObservation.timestamp = block.timestamp;
             newObservation.price = currentCumulativePrice;
-
-            emit ObservationsUpdated(uniswapMarket, currentCumulativePrice, timeElapsed);
         }
-        return (newObservation, oldObservation);
+        return (currentCumulativePrice, oldObservation.price, oldObservation.timestamp);
     }
 
     function getCurrentCumulativePrice(CTokenMetadata memory tokenConfig) internal returns (uint) {
