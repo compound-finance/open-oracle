@@ -12,8 +12,8 @@ import "../OpenOracleData.sol";
  * @author Compound Labs, Inc.
  */
 abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
-    /// @notice The mapping of anchored reporter prices by symbol
-    mapping(string => uint) public _prices;
+    /// @notice The mapping of anchored reporter prices by symbolHash
+    mapping(bytes32 => uint) internal prices;
 
     /// @notice Circuit breaker for using anchor price oracle directly, ignoring reporter
     bool public reporterBreaker;
@@ -54,9 +54,7 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
     constructor(OpenOraclePriceData data_,
                 address reporter_,
                 uint anchorToleranceMantissa_,
-                address[] memory underlyings,
-                CToken[] memory cTokens
-                ) SymbolConfiguration(underlyings, cTokens) public {
+                TokenConfig[] memory configs) SymbolConfiguration(configs) public {
         reporter = reporter_;
         priceData = data_;
 
@@ -80,24 +78,25 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
             priceData.put(messages[i], signatures[i]);
         }
 
-        uint ethPrice = getAnchorPrice(getCTokenConfig("ETH"), 1e6);
+        uint ethPrice = getAnchorPrice(getTokenConfigBySymbol("ETH"), 1e6);
 
         // Try to update the view storage
         for (uint i = 0; i < symbols.length; i++) {
-            CTokenMetadata memory tokenConfig = getCTokenConfig(symbols[i]);
+            TokenConfig memory config = getTokenConfigBySymbol(symbols[i]);
             string memory symbol = symbols[i];
+            bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
             if (source(messages[i], signatures[i]) != reporter) continue;
 
             uint reporterPrice = priceData.getPrice(reporter, symbol);
-            uint anchorPrice = getAnchorPrice(tokenConfig, ethPrice);
+            uint anchorPrice = getAnchorPrice(config, ethPrice);
 
             uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
             bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
 
             if (withinAnchor || anchorBreaker) {
                 // only update and emit event if value changes
-                if (_prices[symbol] != reporterPrice) {
-                    _prices[symbol] = reporterPrice;
+                if (prices[symbolHash] != reporterPrice) {
+                    prices[symbolHash] = reporterPrice;
                     emit PriceUpdated(symbol, reporterPrice);
                 }
             } else {
@@ -109,21 +108,20 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
      * @notice Returns price denominated in USD, with 6 decimals
      * @dev If price was posted by reporter, return it. Otherwise, return anchor price converted through reporter ETH price.
      */
-
-     function prices(string memory symbol) public returns (uint) {
-        CTokenMetadata memory tokenConfig = getCTokenConfig(symbol);
-        return pricesInternal(tokenConfig);
+     function price(string memory symbol) public returns (uint) {
+        TokenConfig memory config = getTokenConfigBySymbol(symbol);
+        return priceInternal(config);
      }
 
-    function pricesInternal(CTokenMetadata memory tokenConfig) internal returns (uint) {
-        if (tokenConfig.priceSource == PriceSource.FIXED_USD) return tokenConfig.fixedReporterPrice;
-        if (tokenConfig.priceSource == PriceSource.FIXED_ETH) {
-            uint usdPerEth = _prices["ETH"];
+    function priceInternal(TokenConfig memory config) internal returns (uint) {
+        if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
+        if (config.priceSource == PriceSource.FIXED_ETH) {
+            uint usdPerEth = prices[keccak256(abi.encodePacked("ETH"))]; // XXX: ethHash and rotateHash constants?
             require(usdPerEth > 0, "eth price not set, cannot convert eth to dollars");
-            return mul(usdPerEth, tokenConfig.fixedEthPrice) / tokenConfig.baseUnit;
+            return mul(usdPerEth, config.fixedPrice) / config.baseUnit;
         }
-        if (reporterBreaker == true) return getAnchorPrice(tokenConfig, 1e6);
-        if (tokenConfig.priceSource == PriceSource.REPORTER) return _prices[tokenConfig.symbol];
+        if (reporterBreaker == true) return getAnchorPrice(config, 1e6);
+        if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash];
     }
 
     /**
@@ -133,8 +131,8 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
      * @return The price for the given cToken address
      */
     function getUnderlyingPrice(address cToken) public returns (uint) {
-        CTokenMetadata memory tokenConfig = getCTokenConfig(cToken);
-        return pricesInternal(tokenConfig);
+        TokenConfig memory config = getTokenConfigByCToken(cToken);
+        return priceInternal(config);
     }
 
     /// @notice invalidate the reporter, and fall back to using anchor directly in all cases
@@ -157,5 +155,5 @@ abstract contract AnchoredView is SymbolConfiguration, OpenOracleData {
         return c;
     }
 
-    function getAnchorPrice(CTokenMetadata memory tokenConfig, uint ethPerUsdc) internal virtual returns (uint);
+    function getAnchorPrice(TokenConfig memory config, uint ethPerUsdc) internal virtual returns (uint);
 }
