@@ -1,10 +1,10 @@
-pragma solidity =0.6.6;
+pragma solidity ^0.6.6;
 pragma experimental ABIEncoderV2;
 
 import "./UniswapLib.sol";
 import "../AnchoredView/AnchoredView.sol";
 
-contract UniswapLaggingWindowOracle is AnchoredView {
+contract UniswapAnchoredView is AnchoredView {
     using FixedPoint for *;
 
     struct Observation {
