@@ -20,7 +20,6 @@ contract UniswapLaggingWindowOracle is AnchoredView {
     // mapping from pair address to an new observation
     mapping(address => Observation) public newObservations;
 
-    event ObservationsUpdated(address indexed pair, uint price, uint timeElapsed);
     event UniswapWindowUpdate(address indexed uniswapMarket, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
 
     constructor(OpenOraclePriceData data_,
@@ -28,14 +27,12 @@ contract UniswapLaggingWindowOracle is AnchoredView {
                 uint anchorToleranceMantissa_,
                 TokenConfig[] memory configs) AnchoredView(data_, reporter_, anchorToleranceMantissa_, configs) public {}
 
-    function fetchAnchorPrice(TokenConfig memory tokenConfig, uint ethPrice) internal override returns (uint) {
-        (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(tokenConfig);
+    function fetchAnchorPrice(TokenConfig memory config, uint ethPrice) internal override returns (uint) {
+        (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
         uint timeElapsed = block.timestamp - oldTimestamp;
-        //TODO - check if we even need this FixedPoint math
+
         // Figure our MATH
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-
-        // Super ugly here
         return mul(priceAverage.mul(1e18).decode144(), ethPrice) / 1e18;
     }
 
