@@ -207,7 +207,7 @@ contract UniswapAnchoredView is UniswapConfig {
         // Update new and old observations if elapsed time is bigger or equal to anchor period
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= anchorPeriod) {
-            emit UniswapWindowUpdate(config.uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.acc, newObservation.acc);
+            emit UniswapWindowUpdate(uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.acc, newObservation.acc);
             oldObservation.timestamp = newObservation.timestamp;
             oldObservation.acc = newObservation.acc;
 
