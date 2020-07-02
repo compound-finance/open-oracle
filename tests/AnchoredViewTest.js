@@ -453,7 +453,7 @@ describe('AnchoredView', () => {
 
       await expect(
         send(delfi, 'invalidate', [encoded, signed.signature])
-      ).rejects.toRevert("revert invalid message must be 'rotate'");
+      ).rejects.toRevert("revert invalidation message must be 'rotate'");
     });
 
     it("reverts if given wrong signature", async () => {

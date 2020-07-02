@@ -680,7 +680,10 @@ contract UniswapConfig {
     }
 
     function getTokenConfigBySymbol(string memory symbol) public view returns (TokenConfig memory) {
-        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+        return getTokenConfigBySymbolHash(keccak256(abi.encodePacked(symbol)));
+    }
+
+    function getTokenConfigBySymbolHash(bytes32 symbolHash) public view returns (TokenConfig memory) {
         uint index = getSymbolHashIndex(symbolHash);
         if (index != uint(-1)) {
             return getTokenConfig(index);
@@ -695,8 +698,11 @@ contract UniswapConfig {
             return getTokenConfig(index);
         }
 
-        address underlying = CErc20(cToken).underlying();
-        index = getUnderlyingIndex(underlying);
+        return getTokenConfigByUnderlying(CErc20(cToken).underlying());
+    }
+
+    function getTokenConfigByUnderlying(address underlying) public view returns (TokenConfig memory) {
+        uint index = getUnderlyingIndex(underlying);
         if (index != uint(-1)) {
             return getTokenConfig(index);
         }

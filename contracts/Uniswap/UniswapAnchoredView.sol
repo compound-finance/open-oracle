@@ -25,7 +25,7 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint public immutable lowerBoundAnchorRatio;
 
-    /// @notice The minimum amount of time required for the old Uniswap price accumulator to be replaced
+    /// @notice The minimum amount of time required for the old uniswap price accumulator to be replaced
     uint public immutable anchorPeriod;
 
     /// @notice Official prices by symbol hash
@@ -54,8 +54,14 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The event emitted when anchor price is updated
     event AnchorPriceUpdate(uint anchorPrice, uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp);
 
+    bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
+    bytes32 constant rotateHash = keccak256(abi.encodePacked("rotate"));
+
     /**
-     * @notice XXX
+     * @notice Construct a uniswap anchored view for a set of token configurations
+     * @param reporter_ The reporter whose prices are to be used
+     * @param anchorToleranceMantissa_ The percentage tolerance that the reporter may deviate from the uniswap anchor
+     * @param anchorPeriod_ The minimum amount of time required for the old uniswap price accumulator to be replaced
      */
     constructor(OpenOraclePriceData priceData_,
                 address reporter_,
@@ -66,7 +72,7 @@ contract UniswapAnchoredView is UniswapConfig {
         reporter = reporter_;
         anchorPeriod = anchorPeriod_;
 
-        require(anchorToleranceMantissa_ < 100e16, "Anchor Tolerance is too high");
+        require(anchorToleranceMantissa_ < 100e16, "anchor tolerance is too high");
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
 
@@ -95,7 +101,7 @@ contract UniswapAnchoredView is UniswapConfig {
         if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash];
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
-            uint usdPerEth = prices[keccak256(abi.encodePacked("ETH"))]; // XXX: ethHash and rotateHash constants?
+            uint usdPerEth = prices[ethHash];
             require(usdPerEth > 0, "eth price not set, cannot convert eth to dollars");
             return mul(usdPerEth, config.fixedPrice) / config.baseUnit;
         }
@@ -127,7 +133,7 @@ contract UniswapAnchoredView is UniswapConfig {
             priceData.put(messages[i], signatures[i]);
         }
 
-        uint ethPrice = fetchAnchorPrice(getTokenConfigBySymbol("ETH"), 1e6);
+        uint ethPrice = fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), 1e6);
 
         // Try to update the view storage
         for (uint i = 0; i < symbols.length; i++) {
@@ -158,34 +164,34 @@ contract UniswapAnchoredView is UniswapConfig {
     }
 
     /**
-     * @dev Fetches the token/eth price accumulator for a config, with same decimals as the token.
+     * @dev Fetches the current token/eth price accumulator from uniswap.
      */
     function currentCumulativePrice(TokenConfig memory config) internal view returns (uint) {
-        (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(config.uniswapMarket);
+        (uint cumulativePrice0, uint cumulativePrice1,) = UniswapV2OracleLibrary.currentCumulativePrices(config.uniswapMarket);
         if (config.isUniswapReversed) {
-            return price1Cumulative;
+            return cumulativePrice1;
         } else {
-            return price0Cumulative;
+            return cumulativePrice0;
         }
     }
 
     /**
-     * @dev Fetches the current anchor price.
+     * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
      */
     function fetchAnchorPrice(TokenConfig memory config, uint ethPrice) internal returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
         uint timeElapsed = block.timestamp - oldTimestamp;
 
-        // Calculate Uniswap TWAP value
+        // Calculate uniswap time-weighted average price
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
         uint anchorPriceUnscaled = mul(priceAverage.mul(1e18).decode144(), ethPrice) / 1e18;
         uint anchorPrice;
 
         // Adjust anchor price to val * 1e6 decimals format
         if (config.isUniswapReversed) {
-            anchorPrice = mul(anchorPriceUnscaled, 1e18 / config.baseUnit);
+            anchorPrice = mul(anchorPriceUnscaled, 1e18) / config.baseUnit;
         } else {
-            anchorPrice = mul(anchorPriceUnscaled, config.baseUnit / 1e18);
+            anchorPrice = mul(anchorPriceUnscaled, config.baseUnit) / 1e18;
         }
 
         emit AnchorPriceUpdate(anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
@@ -226,7 +232,7 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function invalidateReporter(bytes memory message, bytes memory signature) external {
         (string memory decoded_message, ) = abi.decode(message, (string, address));
-        require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalid message must be 'rotate'");
+        require(keccak256(abi.encodePacked(decoded_message)) == rotateHash, "invalid message must be 'rotate'");
         require(source(message, signature) == reporter, "invalidation message must come from the reporter");
         reporterInvalidated = true;
         emit ReporterInvalidated(reporter);
