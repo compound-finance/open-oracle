@@ -39,10 +39,7 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The new observation for each uniswap market
     mapping(address => Observation) public newObservations;
 
-    /// @notice The event emitted when an observation is updated
-    event ObservationsUpdated(address indexed pair, uint price, uint timeElapsed);
-
-    /// @notice The event emitted when the median price is updated
+    /// @notice The event emitted when the stored price is updated
     event PriceUpdated(string symbol, uint price);
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
