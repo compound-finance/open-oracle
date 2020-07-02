@@ -51,6 +51,9 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The event emitted when the uniswap window changes
     event UniswapWindowUpdate(address indexed uniswapMarket, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
 
+    /// @notice The event emitted when anchor price is updated
+    event AnchorPriceUpdate(uint anchorPrice, uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp);
+
     /**
      * @notice XXX
      */
@@ -160,24 +163,34 @@ contract UniswapAnchoredView is UniswapConfig {
     function currentCumulativePrice(TokenConfig memory config) internal view returns (uint) {
         (uint price0Cumulative, uint price1Cumulative,) = UniswapV2OracleLibrary.currentCumulativePrices(config.uniswapMarket);
         if (config.isUniswapReversed) {
-            return mul(price0Cumulative, 1e18 / config.baseUnit);
+            return price1Cumulative;
         } else {
-            return mul(price1Cumulative, config.baseUnit / 1e18);
+            return price0Cumulative;
         }
     }
 
     /**
-     * @dev Fetches the current anchor price, updating uniswap accumulators as necessary.
+     * @dev Fetches the current anchor price.
      */
     function fetchAnchorPrice(TokenConfig memory config, uint ethPrice) internal returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
         uint timeElapsed = block.timestamp - oldTimestamp;
 
-        // XXX event
-
-        // XXX Figure out MATH here
+        // Calculate Uniswap TWAP value
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-        return mul(priceAverage.mul(1e18).decode144(), ethPrice) / 1e18;
+        uint anchorPriceUnscaled = mul(priceAverage.mul(1e18).decode144(), ethPrice) / 1e18;
+        uint anchorPrice;
+
+        // Adjust anchor price to val * 1e6 decimals format
+        if (config.isUniswapReversed) {
+            anchorPrice = mul(anchorPriceUnscaled, 1e18 / config.baseUnit);
+        } else {
+            anchorPrice = mul(anchorPriceUnscaled, config.baseUnit / 1e18);
+        }
+
+        emit AnchorPriceUpdate(anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
+
+        return anchorPrice;
     }
 
     /**
