@@ -176,13 +176,13 @@ contract UniswapAnchoredView is UniswapConfig {
     }
 
     /**
-     * @dev Fetches the current anchor price.
+     * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
      */
     function fetchAnchorPrice(TokenConfig memory config, uint ethPrice) internal returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
         uint timeElapsed = block.timestamp - oldTimestamp;
 
-        // Calculate Uniswap TWAP value
+        // Calculate uniswap time-weighted average price
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
         // Prevent Uniswap lib from cutting off decimals after fixed point
         uint anchorPriceUnscaledMantissa = mul(priceAverage.mul(1e18).decode144(), ethPrice);
