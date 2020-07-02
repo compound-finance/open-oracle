@@ -1,4 +1,4 @@
-pragma solidity ^0.6.6;
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 import "./OpenOraclePriceData.sol";
@@ -46,7 +46,7 @@ contract DelFiPrice is OpenOracleView {
      * @param messages The messages to post to the oracle
      * @param signatures The signatures for the corresponding messages
      */
-    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
+    function postPrices(bytes[] memory messages, bytes[] memory signatures, string[] memory symbols) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
 
         // Save the prices

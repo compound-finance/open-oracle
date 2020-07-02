@@ -116,7 +116,7 @@ contract UniswapAnchoredView is UniswapConfig {
      * @param signatures The signatures for the corresponding messages
      * @param symbols The symbols to compare to anchor for authoritative reading
      */
-    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
+    function postPrices(bytes[] memory messages, bytes[] memory signatures, string[] memory symbols) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
 
         // Save the prices

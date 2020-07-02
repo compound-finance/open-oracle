@@ -57,7 +57,7 @@ contract OpenOraclePriceData is OpenOracleData {
      * @param key The selector for the value to return
      * @return The claimed Unix timestamp for the data and the price value (defaults to (0, 0))
      */
-    function get(address source, string calldata key) external view returns (uint64, uint64) {
+    function get(address source, string memory key) external view returns (uint64, uint64) {
         Datum storage datum = data[source][key];
         return (datum.timestamp, datum.value);
     }
@@ -68,7 +68,7 @@ contract OpenOraclePriceData is OpenOracleData {
      * @param key The selector for the value to return
      * @return The price value (defaults to 0)
      */
-    function getPrice(address source, string calldata key) external view returns (uint64) {
+    function getPrice(address source, string memory key) external view returns (uint64) {
         return data[source][key].value;
     }
 }

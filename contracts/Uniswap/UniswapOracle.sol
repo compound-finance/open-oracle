@@ -1,4 +1,4 @@
-pragma solidity ^0.6.6;
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 import "./UniswapLib.sol";
@@ -76,7 +76,7 @@ contract UniswapOracle {
         pairPrices[symbol].blockTimestampLast = blockTimestampLast;
     }
 
-    function update(string calldata symbol) external {
+    function update(string memory symbol) external {
         (uint price0Cumulative, uint price1Cumulative, uint32 blockTimestamp) =
             UniswapV2OracleLibrary.currentCumulativePrices(pairPrices[symbol].pair);
         uint32 timeElapsed = blockTimestamp - pairPrices[symbol].blockTimestampLast;
@@ -95,7 +95,7 @@ contract UniswapOracle {
     }
 
     // note this will always return 0 before update has been called successfully for the first time.
-    function getPrice(string calldata symbol) external view returns (uint price0Average, uint price1Average) {
+    function getPrice(string memory symbol) external view returns (uint price0Average, uint price1Average) {
         return (pairPrices[symbol].price0Average.mul(1e18).decode144(), pairPrices[symbol].price1Average.mul(1e18).decode144());
     }
 
