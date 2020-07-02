@@ -15,13 +15,13 @@ contract DelFiPrice is OpenOracleView {
     /// @notice The event emitted when new prices are posted but the median price is not updated due to the anchor
     event PriceGuarded(string symbol, uint64 median, uint64 anchor);
 
-    /// @notice The reporter address whose prices checked against the median for safety
+    /// @dev The reporter address whose prices checked against the median for safety
     address anchor;
 
-    /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    /// @dev The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 upperBoundAnchorRatio;
 
-    /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    /// @dev The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
     uint256 lowerBoundAnchorRatio;
 
     /// @notice The mapping of medianized prices per symbol

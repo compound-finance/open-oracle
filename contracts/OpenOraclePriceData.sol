@@ -20,7 +20,7 @@ contract OpenOraclePriceData is OpenOracleData {
     }
 
     /**
-     * @notice The most recent authenticated data from all sources
+     * @dev The most recent authenticated data from all sources
      * @dev This is private because dynamic mapping keys preclude auto-generated getters.
      */
     mapping(address => mapping(string => Datum)) private data;
