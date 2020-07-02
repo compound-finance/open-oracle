@@ -95,7 +95,7 @@ contract AnchoredView is SymbolConfiguration {
      * @param signatures The signatures for the corresponding messages
      * @param symbols The symbols to compare to anchor for authoritative reading
      */
-    function postPrices(bytes[] memory messages, bytes[] memory signatures, string[] memory symbols) external {
+    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
 
         // Save the prices
@@ -132,7 +132,7 @@ contract AnchoredView is SymbolConfiguration {
      * @notice Returns price denominated in USD, with 6 decimals
      * @dev If price was posted by reporter, return it. Otherwise, return anchor price converted through reporter ETH price.
      */
-    function prices(string memory symbol) external view returns (uint) {
+    function prices(string calldata symbol) external view returns (uint) {
         CTokenMetadata memory tokenConfig = getCTokenConfig(symbol);
 
         if (tokenConfig.priceSource == PriceSource.REPORTER) return _prices[symbol];
