@@ -31,7 +31,7 @@ contract UniswapLaggingWindowOracle is AnchoredView {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
         uint timeElapsed = block.timestamp - oldTimestamp;
 
-        // Figure our MATH
+        // Figure out MATH here
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
         return mul(priceAverage.mul(1e18).decode144(), ethPrice) / 1e18;
     }
