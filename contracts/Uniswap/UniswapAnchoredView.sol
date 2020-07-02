@@ -1,4 +1,4 @@
-pragma solidity ^0.6.6;
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 import "../OpenOraclePriceData.sol";
@@ -39,10 +39,7 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The new observation for each uniswap market
     mapping(address => Observation) public newObservations;
 
-    /// @notice The event emitted when an observation is updated
-    event ObservationsUpdated(address indexed pair, uint price, uint timeElapsed);
-
-    /// @notice The event emitted when the median price is updated
+    /// @notice The event emitted when the stored price is updated
     event PriceUpdated(string symbol, uint price);
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
@@ -72,7 +69,12 @@ contract UniswapAnchoredView is UniswapConfig {
 
         for (uint i = 0; i < configs.length; i++) {
             TokenConfig memory config = configs[i];
-            // XXX initialize uniswap accumulators
+            address uniswapMarket = config.uniswapMarket;
+            uint cumulativePrice = currentCumulativePrice(config);
+            oldObservations[uniswapMarket].timestamp = block.timestamp;
+            newObservations[uniswapMarket].timestamp = block.timestamp;
+            oldObservations[uniswapMarket].acc = cumulativePrice;
+            newObservations[uniswapMarket].acc = cumulativePrice;
         }
     }
 
