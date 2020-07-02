@@ -41,7 +41,7 @@ contract OpenOraclePriceData is OpenOracleData {
 
         // Only update if newer than stored, according to source
         Datum storage prior = data[source][key];
-        if (timestamp > prior.timestamp && timestamp < block.timestamp + 60 minutes) {
+        if (timestamp > prior.timestamp && timestamp < block.timestamp + 60 minutes && source != address(0)) {
             data[source][key] = Datum(timestamp, value);
             emit Write(source, key, timestamp, value);
         } else {

@@ -28,7 +28,7 @@ contract UniswapLaggingWindowOracle is AnchoredView {
                 uint anchorToleranceMantissa_,
                 TokenConfig[] memory configs) AnchoredView(data_, reporter_, anchorToleranceMantissa_, configs) public {}
 
-    function getAnchorPrice(TokenConfig memory tokenConfig, uint ethPrice) internal override returns (uint) {
+    function fetchAnchorPrice(TokenConfig memory tokenConfig, uint ethPrice) internal override returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(tokenConfig);
         uint timeElapsed = block.timestamp - oldTimestamp;
         //TODO - check if we even need this FixedPoint math

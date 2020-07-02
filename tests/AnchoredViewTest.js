@@ -295,7 +295,7 @@ describe('AnchoredView', () => {
       ["BAT", 931592500000000, 0.160271e6],
       ["REP", 56128970000000000, 9.656427e6],
       ["ZRX", 985525000000000, 0.169549e6],
-      ["BTC", "399920015996800660000000000000", 6880.223955e6] // 8 decimals underlying -> 10 extra decimals on proxy 
+      ["BTC", "399920015996800660000000000000", 6880.223955e6] // 8 decimals underlying -> 10 extra decimals on proxy
     ].forEach(([openOracleKey, proxyPrice, expectedOpenOraclePrice]) => {
       it(`converts  ${openOracleKey} price through proxy usdc, with 6 decimals`, async () => {
         // TODO: fix sai price test after SAI Global Settlement
@@ -410,7 +410,7 @@ describe('AnchoredView', () => {
         ["BAT", 931592500000000],
         ["REP", 56128970000000000],
         ["ZRX", 985525000000000],
-        ["BTC", "399920015996800660000000000000"] // 8 decimals underlying -> 10 extra decimals on proxy 
+        ["BTC", "399920015996800660000000000000"] // 8 decimals underlying -> 10 extra decimals on proxy
       ].forEach(([openOracleKey, proxyPrice]) => {
         it(`returns anchor price if reporterBreaker is set for ${openOracleKey}`, async () => {
           let tokenAddress = await call(delfi, 'getCTokenAddress', [openOracleKey]);
@@ -478,38 +478,5 @@ describe('AnchoredView', () => {
 
       expect(await call(delfi, 'reporterBreaker', [])).toEqual(true);
     });
-  });
-
-  describe("cutAnchor", () => {
-    beforeEach(async () => {
-      ({
-        delfi,
-        anchorOracle,
-        tokens
-      } = await setup());
-    });
-
-
-    it("cuts anchor if anchor is stale", async () => {
-      await sendRPC(web3, 'evm_mineBlockNumber', 17757);
-      let blocksPerPeriod =  await call(anchorOracle, 'numBlocksPerPeriod', []);
-      await send(anchorOracle, 'setAnchorPeriod', [tokens.usdc, 12000 /  blocksPerPeriod]);
-
-      var cut = await send(delfi, 'cutAnchor', []);
-      expect(await call(delfi, 'anchorBreaker')).toEqual(false);
-
-      // one more block has passed, so now cuttable
-      // now on block 17761 aka 5761 blocks past last anchor
-      cut = await send(delfi, 'cutAnchor', []);
-      expect(await call(delfi, 'anchorBreaker')).toEqual(true);
-      expect(cut.events.AnchorCut.returnValues.anchor).toEqual(anchorOracle._address);
-    });
-
-    it("no op if anchor is up to date", async () => {
-      await sendRPC(web3, 'evm_mineBlockNumber', [0]);
-      let cut = await send(delfi, 'cutAnchor', []);
-      expect(await call(delfi, 'anchorBreaker')).toEqual(false);
-    });
-
   });
 });
