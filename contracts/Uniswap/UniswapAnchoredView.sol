@@ -1,4 +1,4 @@
-pragma solidity ^0.6.6;
+pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
 import "../OpenOraclePriceData.sol";
@@ -211,7 +211,7 @@ contract UniswapAnchoredView is UniswapConfig {
      * @param message The data that was presumably signed
      * @param signature The fingerprint of the data + private key
      */
-    function invalidateReporter(bytes calldata message, bytes calldata signature) external {
+    function invalidateReporter(bytes memory message, bytes memory signature) external {
         (string memory decoded_message, ) = abi.decode(message, (string, address));
         require(keccak256(abi.encodePacked(decoded_message)) == keccak256(abi.encodePacked("rotate")), "invalid message must be 'rotate'");
         require(source(message, signature) == reporter, "invalidation message must come from the reporter");
