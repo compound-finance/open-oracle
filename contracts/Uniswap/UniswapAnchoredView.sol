@@ -143,7 +143,12 @@ contract UniswapAnchoredView is UniswapConfig {
             if (source(messages[i], signatures[i]) != reporter) continue;
 
             uint reporterPrice = priceData.getPrice(reporter, symbol);
-            uint anchorPrice = fetchAnchorPrice(config, ethPrice);
+            uint anchorPrice;
+            if (symbolHash == ethHash) {
+                anchorPrice = ethPrice;
+            } else {
+                anchorPrice = fetchAnchorPrice(config, ethPrice);
+            }
 
             uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
             bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
