@@ -1,6 +1,7 @@
 
 // @notice UniswapAnchoredView `postPrices` test
 // Based on data from Coinbase oracle https://api.pro.coinbase.com/oracle and Uniswap token pairs at July 2nd 2020.
+const { sendRPC } = require('./Helpers');
 
 function address(n) {
     return `0x${n.toString(16).padStart(40, "0")}`;
@@ -15,11 +16,6 @@ function address(n) {
 
   function numToHex(num) {
     return web3.utils.numberToHex(num);
-  }
-
-  // TODO find a better way to do time travel
-  function sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   async function setupTokenPairs() {
@@ -147,7 +143,7 @@ function address(n) {
       ];
 
       const uniswapAnchoredView = await deploy("UniswapAnchoredView", [priceData._address, reporter, anchorMantissa, anchorPeriod, tokenConfigs]);
-      await sleep(650);
+      await sendRPC(web3, 'evm_increaseTime', [30 * 60]);
 
       const messages = [
         "0x0000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000005efebe9800000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000021e69e1300000000000000000000000000000000000000000000000000000000000000006707269636573000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034254430000000000000000000000000000000000000000000000000000000000",
