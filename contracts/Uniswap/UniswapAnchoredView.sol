@@ -79,11 +79,16 @@ contract UniswapAnchoredView is UniswapConfig {
         for (uint i = 0; i < configs.length; i++) {
             TokenConfig memory config = configs[i];
             address uniswapMarket = config.uniswapMarket;
-            uint cumulativePrice = currentCumulativePrice(config);
-            oldObservations[uniswapMarket].timestamp = block.timestamp;
-            newObservations[uniswapMarket].timestamp = block.timestamp;
-            oldObservations[uniswapMarket].acc = cumulativePrice;
-            newObservations[uniswapMarket].acc = cumulativePrice;
+            if (config.priceSource == PriceSource.REPORTER) {
+                require(uniswapMarket != address(0), "reported prices must have an anchor");
+                uint cumulativePrice = currentCumulativePrice(config);
+                oldObservations[uniswapMarket].timestamp = block.timestamp;
+                newObservations[uniswapMarket].timestamp = block.timestamp;
+                oldObservations[uniswapMarket].acc = cumulativePrice;
+                newObservations[uniswapMarket].acc = cumulativePrice;
+            } else {
+                require(uniswapMarket == address(0), "only reported prices utilize an anchor");
+            }
         }
     }
 
@@ -102,7 +107,7 @@ contract UniswapAnchoredView is UniswapConfig {
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash];
-            require(usdPerEth > 0, "eth price not set, cannot convert eth to dollars");
+            require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
             return mul(usdPerEth, config.fixedPrice) / config.baseUnit;
         }
     }
@@ -133,7 +138,7 @@ contract UniswapAnchoredView is UniswapConfig {
             priceData.put(messages[i], signatures[i]);
         }
 
-        uint ethPrice = fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), 1e6);
+        uint ethPrice = fetchEthPrice();
 
         // Try to update the view storage
         for (uint i = 0; i < symbols.length; i++) {
@@ -181,15 +186,23 @@ contract UniswapAnchoredView is UniswapConfig {
     }
 
     /**
+     * @dev Fetches the current eth/usd price from unsiwap, with 6 decimals of precision.
+     *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
+     */
+    function fetchEthPrice() internal returns (uint) {
+        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), 1e18);
+    }
+
+    /**
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
      */
-    function fetchAnchorPrice(TokenConfig memory config, uint ethPrice) internal returns (uint) {
+    function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
         uint timeElapsed = block.timestamp - oldTimestamp;
 
         // Calculate uniswap time-weighted average price
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-        uint anchorPriceUnscaled = mul(priceAverage.decode112with18(), ethPrice);
+        uint anchorPriceUnscaled = mul(priceAverage.decode112with18(), conversionFactor);
         uint anchorPrice;
 
         // Adjust anchor price to val * 1e6 decimals format

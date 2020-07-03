@@ -131,7 +131,7 @@ function address(n) {
 
       const pairs = await setupTokenPairs();
       const tokenConfigs = [
-        {cToken: address(1), underlying: address(1), symbolHash: keccak256("ETH"), baseUnit: uint(1e6), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.USDC_ETH, isUniswapReversed: true},
+        {cToken: address(1), underlying: address(1), symbolHash: keccak256("ETH"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.USDC_ETH, isUniswapReversed: true},
         {cToken: address(2), underlying: address(2), symbolHash: keccak256("DAI"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.DAI_ETH, isUniswapReversed: false},
         {cToken: address(3), underlying: address(3), symbolHash: keccak256("REP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.REP_ETH, isUniswapReversed: false},
         {cToken: address(4), underlying: address(4), symbolHash: keccak256("BAT"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BAT_ETH, isUniswapReversed: false},
