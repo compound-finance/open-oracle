@@ -21,13 +21,13 @@ async function setup(opts)  {
 
   const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
   const cToken = {ETH: address(1), DAI: address(2), REP: address(3), USDT: address(4), SAI: address(5), WBTC: address(6)};
-  const dummyAddress = address(0)
+  const dummyAddress = address(0);
   const tokenConfigs = [
     {cToken: cToken.ETH, underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: true},
     {cToken: cToken.DAI, underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
     {cToken: cToken.REP, underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
-    {cToken: cToken.USDT, underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e6), priceSource: priceSource.FIXED_USD, fixedPrice: uint(1e6), uniswapMarket: dummyPair._address, isUniswapReversed: false},
-    {cToken: cToken.SAI, underlying: dummyAddress, symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_ETH, fixedPrice: uint(FIXED_ETH_AMOUNT), uniswapMarket: dummyPair._address, isUniswapReversed: false},
+    {cToken: cToken.USDT, underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e6), priceSource: priceSource.FIXED_USD, fixedPrice: uint(1e6), uniswapMarket: address(0), isUniswapReversed: false},
+    {cToken: cToken.SAI, underlying: dummyAddress, symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_ETH, fixedPrice: uint(FIXED_ETH_AMOUNT), uniswapMarket: address(0), isUniswapReversed: false},
     {cToken: cToken.WBTC, underlying: dummyAddress, symbolHash: keccak256('WBTC'), baseUnit: uint(1e8), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
   ];
 
