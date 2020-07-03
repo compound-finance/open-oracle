@@ -200,6 +200,11 @@ contract UniswapAnchoredView is UniswapConfig {
         return anchorPrice;
     }
 
+    function fetchAnchorPriceBySymbol(string memory symbol, uint ethPrice) external returns (uint) {
+        TokenConfig memory config = getTokenConfigBySymbol(symbol);
+        return fetchAnchorPrice(config, ethPrice);
+    }
+
     /**
      * @dev Get time-weighted average prices for a token at the current timestamp.
      *  Update new and old observations of lagging window if period elapsed.
