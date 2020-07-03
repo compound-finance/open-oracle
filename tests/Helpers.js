@@ -2,6 +2,13 @@ const Web3 = require('web3');
 
 const web3 = new Web3(); // no provider, since we won't make any calls
 
+function uint(n) {
+  return web3.utils.toBN(n).toString();
+}
+
+function keccak256(str) {
+  return web3.utils.keccak256(str);
+}
 
 function address(n) {
 	return `0x${n.toString(16).padStart(40, '0')}`;
@@ -58,5 +65,7 @@ module.exports = {
 	time,
 	numToBigNum,
 	numToHex,
-	uint256
+	uint256,
+  uint,
+  keccak256
 };

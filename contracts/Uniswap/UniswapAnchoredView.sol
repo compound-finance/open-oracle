@@ -196,7 +196,7 @@ contract UniswapAnchoredView is UniswapConfig {
     /**
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
      */
-    function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal returns (uint) {
+    function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
         uint timeElapsed = block.timestamp - oldTimestamp;
 
