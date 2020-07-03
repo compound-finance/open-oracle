@@ -120,7 +120,7 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function getUnderlyingPrice(address cToken) public view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
-        return priceInternal(config);
+        return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
     /**
@@ -196,7 +196,7 @@ contract UniswapAnchoredView is UniswapConfig {
     /**
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
      */
-    function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal returns (uint) {
+    function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
         uint timeElapsed = block.timestamp - oldTimestamp;
 
