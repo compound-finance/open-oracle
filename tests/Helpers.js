@@ -59,13 +59,13 @@ function sendRPC(web3, method, params) {
 }
 
 module.exports = {
-  sendRPC,
+  	sendRPC,
 	address,
 	bytes,
 	time,
 	numToBigNum,
 	numToHex,
 	uint256,
-  uint,
-  keccak256
+	uint,
+	keccak256
 };
