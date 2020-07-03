@@ -184,14 +184,14 @@ contract UniswapAnchoredView is UniswapConfig {
 
         // Calculate uniswap time-weighted average price
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-        uint anchorPriceUnscaled = mul(priceAverage.mul(1e18).decode144(), ethPrice) / 1e18;
+        uint anchorPriceUnscaled = mul(priceAverage.decode112with18(), ethPrice);
         uint anchorPrice;
 
         // Adjust anchor price to val * 1e6 decimals format
         if (config.isUniswapReversed) {
-            anchorPrice = mul(anchorPriceUnscaled, 1e18) / config.baseUnit;
+            anchorPrice = anchorPriceUnscaled / config.baseUnit;
         } else {
-            anchorPrice = mul(anchorPriceUnscaled, config.baseUnit) / 1e18;
+            anchorPrice = mul(anchorPriceUnscaled, config.baseUnit) / 1e36;
         }
 
         emit AnchorPriceUpdate(anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);

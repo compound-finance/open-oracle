@@ -8,32 +8,21 @@ library FixedPoint {
         uint224 _x;
     }
 
-    // range: [0, 2**144 - 1]
-    // resolution: 1 / 2**112
-    struct uq144x112 {
-        uint _x;
-    }
-
-    uint8 private constant RESOLUTION = 112;
-
-    // multiply a UQ112x112 by a uint, returning a UQ144x112
-    // reverts on overflow
-    function mul(uq112x112 memory self, uint y) internal pure returns (uq144x112 memory) {
-        uint z;
-        require(y == 0 || (z = uint(self._x) * y) / y == uint(self._x), "FixedPoint: MULTIPLICATION_OVERFLOW");
-        return uq144x112(z);
-    }
-
-    // returns a UQ112x112 which represents the ratio of the numerator to the denominator
+    // returns a uq112x112 which represents the ratio of the numerator to the denominator
     // equivalent to encode(numerator).div(denominator)
     function fraction(uint112 numerator, uint112 denominator) internal pure returns (uq112x112 memory) {
         require(denominator > 0, "FixedPoint: DIV_BY_ZERO");
-        return uq112x112((uint224(numerator) << RESOLUTION) / denominator);
+        return uq112x112((uint224(numerator) << 112) / denominator);
     }
 
-    // decode a UQ144x112 into a uint144 by truncating after the radix point
-    function decode144(uq144x112 memory self) internal pure returns (uint144) {
-        return uint144(self._x >> RESOLUTION);
+    // decode a uq112x112 into a uint with 18 decimals of precision
+    function decode112with18(uq112x112 memory self) internal pure returns (uint) {
+        // we have 256 - 224 = 32 bits to spare
+        // get close to:
+        //  (x * 1e18) >> 112
+        // without risk of overflowing, e.g.:
+        //  (x * (1 << 30)) / 2 ** (112 - lg(1e18 / (1 << 30)))
+        return (uint(self._x) * (1 << 30)) / 5575186299632643299344384;
     }
 }
 

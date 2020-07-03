@@ -96,7 +96,7 @@ contract UniswapOracle {
 
     // note this will always return 0 before update has been called successfully for the first time.
     function getPrice(string calldata symbol) external view returns (uint price0Average, uint price1Average) {
-        return (pairPrices[symbol].price0Average.mul(1e18).decode144(), pairPrices[symbol].price1Average.mul(1e18).decode144());
+        return (pairPrices[symbol].price0Average.decode112with18(), pairPrices[symbol].price1Average.decode112with18());
     }
 
 }
