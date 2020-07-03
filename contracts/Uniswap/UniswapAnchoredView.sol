@@ -120,7 +120,7 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function getUnderlyingPrice(address cToken) public view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
-        return priceInternal(config);
+        return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
     /**

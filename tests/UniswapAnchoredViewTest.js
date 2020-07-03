@@ -1,40 +1,6 @@
 const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
 const { uint, keccak256, time, numToHex, address } = require('./Helpers');
-
-async function setupTokenPairs() {
-  const usdc_eth_pair = await deploy("MockUniswapTokenPair", [
-    "813725491531",
-    "3528370026596436015330",
-    "1592425065",
-    "89787367080567803087602061047487264867725350639236",
-    "4227331029917950029016325075489",
-  ]);
-
-  // Initialize DAI_ETH pair with values from mainnet
-  const dai_eth_pair = await deploy("MockUniswapTokenPair", [
-    "3819295813913808439597752",
-    "16827762284444122963188",
-    "1592424969",
-    "70542767013453060453249113968571452619",
-    "3489726182379184118152186925401931467229632",
-  ]);
-
-  // Initialize REP_ETH pair with values from mainnet
-  const rep_eth_pair = await deploy("MockUniswapTokenPair", [
-    "157323115357569242624896",
-    "10627310410144389510631",
-    "1592425041",
-    "819360504021542874838907395123146706291",
-    "221435982014902761159721791828816348231935",
-  ]);
-
-  return {
-    USDC_ETH: usdc_eth_pair._address,
-    DAI_ETH: dai_eth_pair._address,
-    REP_ETH: rep_eth_pair._address,
-  }
-}
-
+const BigNumber = require('bignumber.js');
 
 async function setup(opts)  {
   ({isMockedView} = opts);
@@ -43,17 +9,26 @@ async function setup(opts)  {
   const priceData = await deploy('OpenOraclePriceData', []);
   const anchorPeriod = 60;
 
+  const FIXED_ETH_AMOUNT = 0.005e18;
 
-  const pairs = await setupTokenPairs();
+  const dummyPair = await deploy("MockUniswapTokenPair", [
+    "157323115357569242624896",
+    "10627310410144389510631",
+    "1592425041",
+    "819360504021542874838907395123146706291",
+    "221435982014902761159721791828816348231935",
+  ]);
+
   const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
-  const cToken = {ETH: address(1), DAI: address(2), REP: address(3), USDT: address(4), SAI: address(5)};
+  const cToken = {ETH: address(1), DAI: address(2), REP: address(3), USDT: address(4), SAI: address(5), WBTC: address(6)};
+  const dummyAddress = address(0)
   const tokenConfigs = [
-    {cToken: cToken.ETH, underlying: address(1), symbolHash: keccak256('ETH'), baseUnit: uint(1e6), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.USDC_ETH, isUniswapReversed: true},
-    {cToken: cToken.DAI, underlying: address(2), symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.DAI_ETH, isUniswapReversed: false},
-    {cToken: cToken.REP, underlying: address(3), symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.REP_ETH, isUniswapReversed: false},
-    // NOTE CHANGE MARKET PAIR
-    {cToken: cToken.USDT, underlying: address(4), symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_USD, fixedPrice: uint(1e18), uniswapMarket: pairs.REP_ETH, isUniswapReversed: false},
-    {cToken: cToken.SAI, underlying: address(5), symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_ETH, fixedPrice: uint(0.05e18), uniswapMarket: pairs.REP_ETH, isUniswapReversed: false},
+    {cToken: cToken.ETH, underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: true},
+    {cToken: cToken.DAI, underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
+    {cToken: cToken.REP, underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
+    {cToken: cToken.USDT, underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e6), priceSource: priceSource.FIXED_USD, fixedPrice: uint(1e6), uniswapMarket: dummyPair._address, isUniswapReversed: false},
+    {cToken: cToken.SAI, underlying: dummyAddress, symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_ETH, fixedPrice: uint(FIXED_ETH_AMOUNT), uniswapMarket: dummyPair._address, isUniswapReversed: false},
+    {cToken: cToken.WBTC, underlying: dummyAddress, symbolHash: keccak256('WBTC'), baseUnit: uint(1e8), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
   ];
 
   let uniswapAnchoredView;
@@ -83,14 +58,13 @@ async function setup(opts)  {
       });
       return send(uniswapAnchoredView, 'postPrices', [messages, signatures, symbols]);
   }
-  return {reporter, anchorMantissa, priceData, anchorPeriod, pairs, uniswapAnchoredView, tokenConfigs, postPrices, cToken};
+  return {reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, cToken};
 }
 
-
 describe('UniswapAnchoredView', () => {
-  let cToken, reporter, anchorMantissa, priceData, anchorPeriod, pairs, uniswapAnchoredView, tokenConfigs, postPrices;
+  let cToken, reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices;
 
-  describe('Post Prices Unit Test', () => {
+  describe('postPrices Unit Test', () => {
     beforeEach(async done => {
       ({reporter, anchorMantissa, priceData, uniswapAnchoredView, postPrices} = await setup({isMockedView: true}));
       done();
@@ -105,7 +79,7 @@ describe('UniswapAnchoredView', () => {
       expect(await call(uniswapAnchoredView, 'prices', [keccak256('ETH')])).numEquals(0);
     });
 
-    it('should update view if price is within anchor bounds', async () => {
+    it('should update view if ETH price is within anchor bounds', async () => {
       const timestamp = time() - 5;
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 91e6]);
       const tx = await postPrices(timestamp, [[['ETH', 91]]], ['ETH']);
@@ -116,7 +90,7 @@ describe('UniswapAnchoredView', () => {
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(91e6);
     });
 
-    it('should not update view if price is below anchor bounds', async () => {
+    it('should not update view if ETH price is below anchor bounds', async () => {
       // anchorMantissa is 1e17, so 10% tolerance
       const timestamp = time() - 5;
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 89.9e6]);
@@ -128,7 +102,7 @@ describe('UniswapAnchoredView', () => {
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(100e6);
     });
 
-    it('should not update view if price is above anchor bounds', async () => {
+    it('should not update view if ETH price is above anchor bounds', async () => {
       // anchorMantissa is 1e17, so 10% tolerance
       const timestamp = time() - 5;
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 110.1e6]);
@@ -140,19 +114,59 @@ describe('UniswapAnchoredView', () => {
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(100e6);
     });
 
+    it.todo('test anchor with non-eth prices')
+
     it.todo('should invalidate reporter');
 
   });
 
   describe('getUnderlyingPrice', () => {
+    // everything must return 1e36 - underlying units
+
     beforeEach(async done => {
       ({cToken, uniswapAnchoredView, postPrices} = await setup({isMockedView: true}));
       done();
     })
 
-    it('should work w/ fixed USD', async () => {
-      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.USDT])).numEquals(1e18);
+    it('should work correctly for USDT fixed USD price source', async () => {
+      // 1 * (1e(36 - 6)) = 1e30
+      let expected = new BigNumber('1e30');
+      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.USDT])).numEquals(expected.toFixed());
     });
+
+    it('should return fixed ETH amount if SAI', async () => {
+      const timestamp = time() - 5;
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
+      const tx = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
+      // priceInternal:      returns 200e6 * 0.005e18 / 1e18 = 1e6
+      // getUnderlyingPrice:         1e30 * 1e6 / 1e18 = 1e18
+      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.SAI])).numEquals(1e18);
+    });
+
+    it('should return reported ETH price', async () => {
+      const timestamp = time() - 5;
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
+      const tx = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
+      // priceInternal:      returns 200e6
+      // getUnderlyingPrice: 1e30 * 200e6 / 1e18 = 200e18
+      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.ETH])).numEquals(200e18);
+    });
+
+    it('should return reported WBTC price', async () => {
+      const timestamp = time() - 5;
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['WBTC', 10000e6]);
+
+      const tx = await postPrices(timestamp, [[['ETH', 200], ['WBTC', 10000]]], ['ETH', 'WBTC']);
+      const wbtcPrice  = await call(uniswapAnchoredView, 'prices', [keccak256('WBTC')]);
+
+      expect(wbtcPrice).numEquals(10000e6);
+      // priceInternal:      returns 10000e6
+      // getUnderlyingPrice: 1e30 * 10000e6 / 1e8 = 1e32
+      let expected = new BigNumber('1e32');
+      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.WBTC])).numEquals(expected.toFixed());
+    });
+
   });
 
   })
