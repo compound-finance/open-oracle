@@ -1,4 +1,6 @@
-pragma solidity ^0.6.6;
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.6.10;
 
 contract MockUniswapTokenPair {
     uint112 public reserve0;

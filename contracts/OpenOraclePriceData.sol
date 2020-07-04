@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0
+
 pragma solidity ^0.6.10;
 
 import "./OpenOracleData.sol";
@@ -20,8 +22,8 @@ contract OpenOraclePriceData is OpenOracleData {
     }
 
     /**
-     * @dev The most recent authenticated data from all sources
-     * @dev This is private because dynamic mapping keys preclude auto-generated getters.
+     * @dev The most recent authenticated data from all sources.
+     *  This is private because dynamic mapping keys preclude auto-generated getters.
      */
     mapping(address => mapping(string => Datum)) private data;
 

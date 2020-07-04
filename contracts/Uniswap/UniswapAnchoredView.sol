@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0
+
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
@@ -16,7 +18,7 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
-    /// @notice the Open Oracle Reporter price reporter
+    /// @notice the Open Oracle Reporter
     address public immutable reporter;
 
     /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
@@ -159,14 +161,10 @@ contract UniswapAnchoredView is UniswapConfig {
             bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
 
             if (reporterInvalidated == true) {
-                if (prices[symbolHash] == anchorPrice) {
-                    prices[symbolHash] = anchorPrice;
-                }
+                prices[symbolHash] = anchorPrice;
             } else if (withinAnchor) {
-                if (prices[symbolHash] != reporterPrice) {
-                    prices[symbolHash] = reporterPrice;
-                    emit PriceUpdated(symbol, reporterPrice);
-                }
+                prices[symbolHash] = reporterPrice;
+                emit PriceUpdated(symbol, reporterPrice);
             } else {
                 emit PriceGuarded(symbol, reporterPrice, anchorPrice);
             }
