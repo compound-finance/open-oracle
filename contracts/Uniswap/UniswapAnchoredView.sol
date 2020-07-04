@@ -52,7 +52,7 @@ contract UniswapAnchoredView is UniswapConfig {
     event UniswapWindowUpdate(address indexed uniswapMarket, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
 
     /// @notice The event emitted when anchor price is updated
-    event AnchorPriceUpdate(uint anchorPrice, uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp);
+    event AnchorPriceUpdate(address indexed uniswapMarket, uint anchorPrice, uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp);
 
     bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
     bytes32 constant rotateHash = keccak256(abi.encodePacked("rotate"));
@@ -212,7 +212,7 @@ contract UniswapAnchoredView is UniswapConfig {
             anchorPrice = mul(anchorPriceUnscaled, config.baseUnit) / 1e36;
         }
 
-        emit AnchorPriceUpdate(anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
+        emit AnchorPriceUpdate(config.uniswapMarket, anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
 
         return anchorPrice;
     }
