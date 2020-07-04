@@ -157,18 +157,24 @@ contract UniswapAnchoredView is UniswapConfig {
                 anchorPrice = fetchAnchorPrice(config, ethPrice);
             }
 
-            uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
-            bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
-
             if (reporterInvalidated == true) {
                 prices[symbolHash] = anchorPrice;
-            } else if (withinAnchor) {
+                emit PriceUpdated(symbol, anchorPrice);
+            } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
                 prices[symbolHash] = reporterPrice;
                 emit PriceUpdated(symbol, reporterPrice);
             } else {
                 emit PriceGuarded(symbol, reporterPrice, anchorPrice);
             }
         }
+    }
+
+    function isWithinAnchor(uint reporterPrice, uint anchorPrice) internal view returns (bool) {
+        if (reporterPrice > 0) {
+            uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
+            return anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
+        }
+        return false;
     }
 
     /**
@@ -196,6 +202,9 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
+
+        // This should be impossible, but better safe than sorry
+        require(block.timestamp > oldTimestamp, "now must come after before");
         uint timeElapsed = block.timestamp - oldTimestamp;
 
         // Calculate uniswap time-weighted average price
