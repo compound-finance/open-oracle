@@ -1,23 +1,7 @@
 
 // @notice UniswapAnchoredView `postPrices` test
 // Based on data from Coinbase oracle https://api.pro.coinbase.com/oracle and Uniswap token pairs at July 2nd 2020.
-const { sendRPC } = require('./Helpers');
-
-function address(n) {
-    return `0x${n.toString(16).padStart(40, "0")}`;
-}
-
-function uint(n) {
-  return web3.utils.toBN(n).toString();
-}
-
-function keccak256(str) {
-  return web3.utils.keccak256(str);
-}
-
-function numToHex(num) {
-  return web3.utils.numberToHex(num);
-}
+const { sendRPC, address, uint, keccak256, numToHex } = require('./Helpers');
 
 async function setupTokenPairs() {
   // Reversed market for ETH, read value of ETH in USDC
@@ -251,57 +235,59 @@ describe("UniswapAnchoredView, postPrices test", () => {
 
     // Check price updates
     priceUpdatedEvents.forEach((updateEvent) => {
-      if (updateEvent.returnValues.symbol == "BTC") {
-        expect(updateEvent.returnValues.price).toBe("9100190000");
-      }
-      if (updateEvent.returnValues.symbol == "ETH") {
-        expect(updateEvent.returnValues.price).toBe("226815000");
-      }
-      if (updateEvent.returnValues.symbol == "DAI") {
-        expect(updateEvent.returnValues.price).toBe("1016313");
-      }
-      if (updateEvent.returnValues.symbol == "ZRX") {
-        expect(updateEvent.returnValues.price).toBe("356479");
-      }
-      if (updateEvent.returnValues.symbol == "REP") {
-        expect(updateEvent.returnValues.price).toBe("17275000");
-      }
-      if (updateEvent.returnValues.symbol == "BAT") {
-        expect(updateEvent.returnValues.price).toBe("243858");
-      }
-      if (updateEvent.returnValues.symbol == "KNC") {
-        expect(updateEvent.returnValues.price).toBe("1634700");
-      }
-      if (updateEvent.returnValues.symbol == "LINK") {
-        expect(updateEvent.returnValues.price).toBe("4792460");
+      switch(updateEvent.returnValues.price) {
+        case "BTC":
+          expect(updateEvent.returnValues.price).toBe("9100190000");
+          break;
+        case "ETH":
+          expect(updateEvent.returnValues.price).toBe("226815000");
+          break;
+        case "DAI":
+          expect(updateEvent.returnValues.price).toBe("1016313");
+          break;
+        case "ZRX":
+          expect(updateEvent.returnValues.price).toBe("356479");
+          break;
+        case "REP":
+          expect(updateEvent.returnValues.price).toBe("17275000");
+          break;
+        case "BAT":
+          expect(updateEvent.returnValues.price).toBe("243858");
+          break;
+        case "KNC":
+          expect(updateEvent.returnValues.price).toBe("1634700");
+          break;
+        case "LINK":
+          expect(updateEvent.returnValues.price).toBe("4792460");
       }
     });
 
     // Check anchor prices
     anchorEvents.forEach((anchorEvent) => {
-      if (anchorEvent.returnValues.uniswapMarket == pairs.USDC_ETH) {
-        expect(anchorEvent.returnValues.anchorPrice).toBe("227415058");
-      }
-      if (anchorEvent.returnValues.uniswapMarket == pairs.DAI_ETH) {
-        expect(anchorEvent.returnValues.anchorPrice).toBe("1019878");
-      }
-      if (anchorEvent.returnValues.uniswapMarket == pairs.REP_ETH) {
-        expect(anchorEvent.returnValues.anchorPrice).toBe("17189956");
-      }
-      if (anchorEvent.returnValues.uniswapMarket == pairs.BAT_ETH) {
-        expect(anchorEvent.returnValues.anchorPrice).toBe("242933");
-      }
-      if (anchorEvent.returnValues.uniswapMarket == pairs.ETH_ZRX) {
-        expect(anchorEvent.returnValues.anchorPrice).toBe("359004");
-      }
-      if (anchorEvent.returnValues.uniswapMarket == pairs.WBTC_ETH) {
-        expect(anchorEvent.returnValues.anchorPrice).toBe("9154767327");
-      }
-      if (anchorEvent.returnValues.uniswapMarket == pairs.ETH_KNC) {
-        expect(anchorEvent.returnValues.anchorPrice).toBe("1661588");
-      }
-      if (anchorEvent.returnValues.uniswapMarket == pairs.LINK_ETH) {
-        expect(anchorEvent.returnValues.anchorPrice).toBe("4820505");
+      switch(anchorEvent.returnValues.uniswapMarket) {
+        case pairs.USDC_ETH:
+          expect(anchorEvent.returnValues.anchorPrice).toBe("227415058");
+          break;
+        case pairs.DAI_ETH:
+          expect(anchorEvent.returnValues.anchorPrice).toBe("1019878");
+          break;
+        case pairs.REP_ETH:
+          expect(anchorEvent.returnValues.anchorPrice).toBe("17189956");
+          break;
+        case pairs.BAT_ETH:
+          expect(anchorEvent.returnValues.anchorPrice).toBe("242933");
+          break;
+        case pairs.ETH_ZRX:
+          expect(anchorEvent.returnValues.anchorPrice).toBe("359004");
+          break;
+        case pairs.WBTC_ETH:
+          expect(anchorEvent.returnValues.anchorPrice).toBe("9154767327");
+          break;
+        case pairs.ETH_KNC:
+          expect(anchorEvent.returnValues.anchorPrice).toBe("1661588");
+          break;
+        case pairs.LINK_ETH:
+          expect(anchorEvent.returnValues.anchorPrice).toBe("4820505");
       }
     });
   });
