@@ -1,6 +1,7 @@
 
 // @notice UniswapAnchoredView `postPrices` test
 // Based on data from Coinbase oracle https://api.pro.coinbase.com/oracle and Uniswap token pairs at July 2nd 2020.
+const BN = require("bignumber.js");
 const { sendRPC, address, uint, keccak256, numToHex } = require('./Helpers');
 
 async function setupTokenPairs() {
@@ -88,51 +89,138 @@ async function setupTokenPairs() {
   ])
 
   return {
-    USDC_ETH: usdc_eth_pair._address,
-    DAI_ETH: dai_eth_pair._address,
-    REP_ETH: rep_eth_pair._address,
-    BAT_ETH: bat_eth_pair._address,
-    ETH_ZRX: eth_zrx_pair._address,
-    WBTC_ETH: wbtc_eth_pair._address,
-    COMP_ETH: comp_eth_pair._address,
-    ETH_KNC: eth_knc_pair._address,
-    LINK_ETH: link_eth_pair._address,
+    USDC_ETH: usdc_eth_pair,
+    DAI_ETH: dai_eth_pair,
+    REP_ETH: rep_eth_pair,
+    BAT_ETH: bat_eth_pair,
+    ETH_ZRX: eth_zrx_pair,
+    WBTC_ETH: wbtc_eth_pair,
+    COMP_ETH: comp_eth_pair,
+    LINK_ETH: link_eth_pair,
+    ETH_KNC: eth_knc_pair,
   }
 }
 
-async function setupUniswapAnchoredView() {
+async function setupUniswapAnchoredView(pairs) {
+  const PriceSource = {
+    FIXED_ETH: 0,
+    FIXED_USD: 1,
+    REPORTER: 2
+  };
+
   const reporter = "0xfCEAdAFab14d46e20144F48824d0C09B1a03F2BC";
   const anchorMantissa = numToHex(1e17);  //1e17 equates to 10% tolerance for source price to be above or below anchor
   const priceData = await deploy("OpenOraclePriceData", []);
   const anchorPeriod = 30 * 60;
 
-  const pairs = await setupTokenPairs();
   const tokenConfigs = [
-    {cToken: address(1), underlying: address(1), symbolHash: keccak256("ETH"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.USDC_ETH, isUniswapReversed: true},
-    {cToken: address(2), underlying: address(2), symbolHash: keccak256("DAI"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.DAI_ETH, isUniswapReversed: false},
-    {cToken: address(3), underlying: address(3), symbolHash: keccak256("REP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.REP_ETH, isUniswapReversed: false},
-    {cToken: address(4), underlying: address(4), symbolHash: keccak256("BAT"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BAT_ETH, isUniswapReversed: false},
-    {cToken: address(5), underlying: address(5), symbolHash: keccak256("ZRX"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH_ZRX, isUniswapReversed: true},
-    {cToken: address(6), underlying: address(6), symbolHash: keccak256("BTC"), baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.WBTC_ETH, isUniswapReversed: false},
-    {cToken: address(7), underlying: address(7), symbolHash: keccak256("COMP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.COMP_ETH, isUniswapReversed: false},
-    {cToken: address(8), underlying: address(8), symbolHash: keccak256("KNC"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH_KNC, isUniswapReversed: true},
-    {cToken: address(9), underlying: address(9), symbolHash: keccak256("LINK"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.LINK_ETH, isUniswapReversed: false},
+    {cToken: address(1), underlying: address(1), symbolHash: keccak256("ETH"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.USDC_ETH._address, isUniswapReversed: true},
+    {cToken: address(2), underlying: address(2), symbolHash: keccak256("DAI"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.DAI_ETH._address, isUniswapReversed: false},
+    {cToken: address(3), underlying: address(3), symbolHash: keccak256("REP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.REP_ETH._address, isUniswapReversed: false},
+    {cToken: address(4), underlying: address(4), symbolHash: keccak256("BAT"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BAT_ETH._address, isUniswapReversed: false},
+    {cToken: address(5), underlying: address(5), symbolHash: keccak256("ZRX"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH_ZRX._address, isUniswapReversed: true},
+    {cToken: address(6), underlying: address(6), symbolHash: keccak256("BTC"), baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.WBTC_ETH._address, isUniswapReversed: false},
+    {cToken: address(7), underlying: address(7), symbolHash: keccak256("COMP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.COMP_ETH._address, isUniswapReversed: false},
+    {cToken: address(8), underlying: address(8), symbolHash: keccak256("KNC"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH_KNC._address, isUniswapReversed: true},
+    {cToken: address(9), underlying: address(9), symbolHash: keccak256("LINK"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.LINK_ETH._address, isUniswapReversed: false},
   ];
 
-  const uniswapAnchoredView = await deploy("UniswapAnchoredView", [priceData._address, reporter, anchorMantissa, anchorPeriod, tokenConfigs]);
-  return [uniswapAnchoredView, pairs];
+  return deploy("UniswapAnchoredView", [priceData._address, reporter, anchorMantissa, anchorPeriod, tokenConfigs]);
 }
 
-const PriceSource = {
-  FIXED_ETH: 0,
-  FIXED_USD: 1,
-  REPORTER: 2
-};
+async function setup() {
+  const pairs = await setupTokenPairs();
+  const uniswapAnchoredView = await setupUniswapAnchoredView(pairs);
 
-describe("UniswapAnchoredView, postPrices test", () => {
+  function isReversedMarket(name) {
+    return name == "USDC_ETH" || name == "ETH_ZRX" || name == "ETH_KNC";
+  }
+
+  function decode(cumulativePrice) {
+    return cumulativePrice.multipliedBy(1e18).dividedBy(new BN(2).pow(112))
+  }
+
+  function fraction(numerator, denominator){
+    return new BN(numerator).multipliedBy(new BN(2).pow(112)).mod(new BN(2).pow(224)).dividedBy(denominator).mod(new BN(2).pow(224));
+  }
+
+   // helper function that returns the current block timestamp within the range of uint32, i.e. [0, 2**32 - 1]
+   async function currentBlockTimestamp() {
+    const blockNumber = await sendRPC(web3, "eth_blockNumber", []);
+    const block = await sendRPC(web3, "eth_getBlockByNumber", [ blockNumber.result, false]);
+    return new BN(block.result.timestamp).mod(new BN(2).pow(32));
+  }
+
+  async function currentCumulativePrice(pair, isReversedMarket = false) {
+    const blockTimestamp = await currentBlockTimestamp();
+    let priceCumulative = isReversedMarket ? await call(pair, "price1CumulativeLast", []): await call(pair, "price0CumulativeLast", []);
+
+    const blockTimestampLast = await call(pair, "blockTimestampLast", []);
+    if (blockTimestampLast != blockTimestamp.toString()) {
+      const timeElapsed = blockTimestamp.minus(new BN(blockTimestampLast));
+
+      const fractionDelta = await call(pair, "getReservesFraction", [isReversedMarket]);
+      const priceDelta = new BN(fractionDelta).multipliedBy(timeElapsed);
+      priceCumulative = new BN(priceCumulative).plus(priceDelta);
+    }
+
+    return [priceCumulative, blockTimestamp];
+  }
+
+  async function currentCumulativePriceAdjusted(pair, timeElapsed, isReversedMarket = false) {
+    const fractionDelta = await call(pair, "getReservesFraction", [isReversedMarket]);
+    const priceDelta = new BN(fractionDelta).multipliedBy(timeElapsed);
+
+    return priceDelta;
+  }
+
+  return {
+    uniswapAnchoredView,
+    pairs,
+    isReversedMarket,
+    decode,
+    fraction,
+    currentBlockTimestamp,
+    currentCumulativePrice,
+    currentCumulativePriceAdjusted
+  }
+}
+
+  // calculateTWAP: (priceCumulativeOld, timestampOld) => {
+  //   [] = 
+  //   return priceCumulativeNew.minus(priceCumulativeOld).dividedBy(timeElapsed);
+
+
+describe("UniswapAnchoredView", () => {
+  beforeEach(async done => {
+    ({
+      uniswapAnchoredView,
+      pairs,
+      isReversedMarket,
+      decode,
+      fraction,
+      currentBlockTimestamp,
+      currentCumulativePrice,
+      currentCumulativePriceAdjusted
+    } = await setup());
+    done();
+  });
+
+  it("check initialization of cumulative prices", async () => {
+    await Promise.all(Object.keys(pairs).map(async (key) => {
+      const [price, timestamp] = await currentCumulativePrice(pairs[key], isReversedMarket(key));
+      const oldObservation = await call(uniswapAnchoredView, "oldObservations", [pairs[key]._address]);
+      const newObservation = await call(uniswapAnchoredView, "newObservations", [pairs[key]._address]);
+
+      // Sometimes `timestamp` and observation.timestamp are different, adjust cumulative prices to reflect difference
+      const diff = await currentCumulativePriceAdjusted(pairs[key], timestamp.minus(oldObservation.timestamp).abs().toFixed(), isReversedMarket(key));
+      expect(diff.plus(price).toFixed()).toBe(oldObservation.acc);
+      expect(diff.plus(price).toFixed()).toBe(newObservation.acc);
+      expect(oldObservation.timestamp).toBe(newObservation.timestamp);
+    }));
+  });
 
   it("basic scenario, use real world data", async () => {
-    const [uniswapAnchoredView, _] = await setupUniswapAnchoredView();
     await sendRPC(web3, "evm_increaseTime", [31 * 60]);
 
     const messages = [
@@ -168,6 +256,7 @@ describe("UniswapAnchoredView, postPrices test", () => {
 
     const btc_price = await call(uniswapAnchoredView, "price", ["BTC"]);
     expect(btc_price).toBe("9100190000");
+    // expect(btc_price).toBe()
 
     const eth_price = await call(uniswapAnchoredView, "price", ["ETH"]);
     expect(eth_price).toBe("226815000");
@@ -192,7 +281,6 @@ describe("UniswapAnchoredView, postPrices test", () => {
   });
 
   it("test price events", async () => {
-    const [uniswapAnchoredView, pairs] = await setupUniswapAnchoredView();
     await sendRPC(web3, "evm_increaseTime", [31 * 60]);
 
     const messages = [
@@ -265,35 +353,34 @@ describe("UniswapAnchoredView, postPrices test", () => {
     // Check anchor prices
     anchorEvents.forEach((anchorEvent) => {
       switch(anchorEvent.returnValues.uniswapMarket) {
-        case pairs.USDC_ETH:
+        case pairs.USDC_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("227415058");
           break;
-        case pairs.DAI_ETH:
+        case pairs.DAI_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("1019878");
           break;
-        case pairs.REP_ETH:
+        case pairs.REP_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("17189956");
           break;
-        case pairs.BAT_ETH:
+        case pairs.BAT_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("242933");
           break;
-        case pairs.ETH_ZRX:
+        case pairs.ETH_ZRX._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("359004");
           break;
-        case pairs.WBTC_ETH:
+        case pairs.WBTC_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("9154767327");
           break;
-        case pairs.ETH_KNC:
+        case pairs.ETH_KNC._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("1661588");
           break;
-        case pairs.LINK_ETH:
+        case pairs.LINK_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("4820505");
       }
     });
   });
 
   it("test uniswap window events", async () => {
-    const [uniswapAnchoredView, _] = await setupUniswapAnchoredView();
     await sendRPC(web3, "evm_increaseTime", [31 * 60]);
 
     const messages1 = [
@@ -372,4 +459,5 @@ describe("UniswapAnchoredView, postPrices test", () => {
       expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + 5).toBe(true);
     });
   });
+
 });

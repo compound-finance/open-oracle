@@ -41,4 +41,14 @@ contract MockUniswapTokenPair {
     function getReserves() external view returns(uint112, uint112, uint32) {
         return (reserve0, reserve1, blockTimestampLast);
     }
+
+    function getReservesFraction(bool reversedMarket) external view returns (uint224) {
+        require(reserve0 > 0, "Reserve is equal to 0");
+        require(reserve1 > 0, "Reserve is equal to 0");
+        if (reversedMarket) {
+          return (uint224(reserve0) << 112) / reserve1;
+        } else {
+          return (uint224(reserve1) << 112) / reserve0;
+        }
+    }
 }
