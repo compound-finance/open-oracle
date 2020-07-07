@@ -4,6 +4,9 @@
 const BN = require("bignumber.js");
 const { sendRPC, address, uint, keccak256, numToHex } = require('./Helpers');
 
+// Cut all digits after decimal point
+BN.set({ DECIMAL_PLACES: 0, ROUNDING_MODE: 3 })
+
 async function setupTokenPairs() {
   // Reversed market for ETH, read value of ETH in USDC
   const usdc_eth_pair = await deploy("MockUniswapTokenPair", [
@@ -136,10 +139,6 @@ async function setup() {
     return name == "USDC_ETH" || name == "ETH_ZRX" || name == "ETH_KNC";
   }
 
-  function decode(cumulativePrice) {
-    return cumulativePrice.multipliedBy(1e18).dividedBy(new BN(2).pow(112))
-  }
-
   function fraction(numerator, denominator){
     return new BN(numerator).multipliedBy(new BN(2).pow(112)).mod(new BN(2).pow(224)).dividedBy(denominator).mod(new BN(2).pow(224));
   }
@@ -153,14 +152,12 @@ async function setup() {
 
   async function currentCumulativePrice(pair, isReversedMarket = false) {
     const blockTimestamp = await currentBlockTimestamp();
-    return getCumulativePrice(pair, blockTimestamp, isReversedMarket);
+    return [await getCumulativePrice(pair, blockTimestamp, isReversedMarket), blockTimestamp];
   }
 
   async function currentCumulativePriceDelta(pair, timeElapsed, isReversedMarket = false) {
     const fractionDelta = await call(pair, "getReservesFraction", [isReversedMarket]);
-    const priceDelta = new BN(fractionDelta).multipliedBy(timeElapsed);
-
-    return priceDelta;
+    return new BN(fractionDelta).multipliedBy(timeElapsed);
   }
 
   async function getCumulativePrice(pair, timestamp, isReversedMarket = false) {
@@ -176,7 +173,16 @@ async function setup() {
       priceCumulative = new BN(priceCumulative).plus(priceDelta);
     }
 
-    return [priceCumulative, blockTimestamp];
+    return priceCumulative;
+  }
+
+  function decode(price) {
+    return price.multipliedBy(1e18).dividedBy(new BN(2).pow(112))
+  }
+
+  function calculateTWAP(priceCumulativeOld, priceCumulativeNew, timestampOld, timestampNew) {
+    const timeElapsed = new BN(timestampNew - timestampOld);
+    return decode(new BN(priceCumulativeNew).minus(new BN(priceCumulativeOld)).dividedBy(timeElapsed));
   }
 
   const messages = [
@@ -211,14 +217,10 @@ async function setup() {
     fraction,
     currentCumulativePrice,
     currentCumulativePriceDelta,
-    getCumulativePrice
+    getCumulativePrice,
+    calculateTWAP
   }
 }
-
-  // calculateTWAP: (priceCumulativeOld, timestampOld) => {
-  //   [] = 
-  //   return priceCumulativeNew.minus(priceCumulativeOld).dividedBy(timeElapsed);
-
 
 describe("UniswapAnchoredView", () => {
   beforeEach(async done => {
@@ -232,7 +234,9 @@ describe("UniswapAnchoredView", () => {
       fraction,
       currentBlockTimestamp,
       currentCumulativePrice,
-      currentCumulativePriceDelta
+      currentCumulativePriceDelta,
+      getCumulativePrice,
+      calculateTWAP
     } = await setup());
     done();
   });
@@ -244,7 +248,7 @@ describe("UniswapAnchoredView", () => {
       const newObservation = await call(uniswapAnchoredView, "newObservations", [pairs[key]._address]);
 
       // Sometimes `timestamp` and observation.timestamp are different, adjust cumulative prices to reflect difference
-      const diff = await currentCumulativePriceDelta(pairs[key], timestamp.minus(oldObservation.timestamp).abs().toFixed(), isReversedMarket(key));
+      const diff = await currentCumulativePriceDelta(pairs[key], new BN(timestamp).minus(oldObservation.timestamp).abs().toFixed(), isReversedMarket(key));
       expect(diff.plus(price).toFixed()).toBe(oldObservation.acc);
       expect(diff.plus(price).toFixed()).toBe(newObservation.acc);
       expect(oldObservation.timestamp).toBe(newObservation.timestamp);
@@ -342,6 +346,12 @@ describe("UniswapAnchoredView", () => {
     // No data for COMP from Coinbase so far, it is not added to the oracle yet
     const symbols = ["BTC", "ETH", "DAI", "REP", "ZRX", "BAT", "KNC", "LINK"];
 
+    const observations = {};
+    await Promise.all(Object.keys(pairs).map(async (key) => {
+      const newObservation = await call(uniswapAnchoredView, "newObservations", [pairs[key]._address]);
+      observations[key] = {acc: newObservation.acc, timestamp: newObservation.timestamp};
+    }));
+
     const postRes = await send(uniswapAnchoredView, "postPrices", [
       messages,
       signatures,
@@ -353,34 +363,79 @@ describe("UniswapAnchoredView", () => {
     // Check anchor prices
     const block = await sendRPC(web3, "eth_getBlockByNumber", [ anchorEvents[0].blockNumber, false]);
     const blockTimestamp = block.result.timestamp;
-    console.log("BLOCK TIMESTAMP = ", blockTimestamp);
-    anchorEvents.forEach((anchorEvent) => {
+    const cumulativePrice_eth = await getCumulativePrice(pairs.USDC_ETH, blockTimestamp, true);
+    // Recalculate anchor price in JS code and compare to the contract result
+    const ethPrice = calculateTWAP(cumulativePrice_eth, observations["USDC_ETH"].acc, blockTimestamp, observations["USDC_ETH"].timestamp).toFixed();
+    await Promise.all(anchorEvents.map(async (anchorEvent) => {
       switch(anchorEvent.returnValues.uniswapMarket) {
         case pairs.USDC_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("227415058");
+          expect(anchorEvent.returnValues.anchorPrice).toBe(ethPrice);
           break;
         case pairs.DAI_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("1019878");
+
+          // Recalculate anchor price in JS code and compare to the contract result
+          const cumulativePrice_dai = await getCumulativePrice(pairs.DAI_ETH, blockTimestamp);
+          const daiTWAP = calculateTWAP(cumulativePrice_dai, observations["DAI_ETH"].acc, blockTimestamp, observations["DAI_ETH"].timestamp);
+          const daiPrice = daiTWAP.multipliedBy(ethPrice).dividedBy(1e18).toFixed()
+          expect(daiPrice).toBe(anchorEvent.returnValues.anchorPrice);
           break;
         case pairs.REP_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("17189956");
+
+          // Recalculate anchor price in JS code and compare to the contract result
+          const cumulativePrice_rep = await getCumulativePrice(pairs.REP_ETH, blockTimestamp);
+          const repTWAP = calculateTWAP(cumulativePrice_rep, observations["REP_ETH"].acc, blockTimestamp, observations["REP_ETH"].timestamp);
+          const repPrice = repTWAP.multipliedBy(ethPrice).dividedBy(1e18).toFixed()
+          expect(repPrice).toBe(anchorEvent.returnValues.anchorPrice);
           break;
         case pairs.BAT_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("242933");
+
+          // Recalculate anchor price in JS code and compare to the contract result
+          const cumulativePrice_bat = await getCumulativePrice(pairs.BAT_ETH, blockTimestamp);
+          const batTWAP = calculateTWAP(cumulativePrice_bat, observations["BAT_ETH"].acc, blockTimestamp, observations["BAT_ETH"].timestamp);
+          const batPrice = batTWAP.multipliedBy(ethPrice).dividedBy(1e18).toFixed()
+          expect(batPrice).toBe(anchorEvent.returnValues.anchorPrice);
           break;
         case pairs.ETH_ZRX._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("359004");
+
+          // Recalculate anchor price in JS code and compare to the contract result
+          cumulativePrice_zrx = await getCumulativePrice(pairs.ETH_ZRX, blockTimestamp, true);
+          const zrxTWAP = calculateTWAP(cumulativePrice_zrx, observations["ETH_ZRX"].acc, blockTimestamp, observations["ETH_ZRX"].timestamp);
+          const zrxPrice = zrxTWAP.multipliedBy(ethPrice).dividedBy(1e18).toFixed()
+          expect(zrxPrice).toBe(anchorEvent.returnValues.anchorPrice);
           break;
         case pairs.WBTC_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("9154767327");
+
+          // Recalculate anchor price in JS code and compare to the contract result
+          const cumulativePrice_wbtc = await getCumulativePrice(pairs.WBTC_ETH, blockTimestamp);
+          const wbtcTWAP = calculateTWAP(cumulativePrice_wbtc, observations["WBTC_ETH"].acc, blockTimestamp, observations["WBTC_ETH"].timestamp);
+          const wbtcPrice = wbtcTWAP.multipliedBy(ethPrice).dividedBy(1e18).dividedBy(1e10).toFixed()
+          expect(wbtcPrice).toBe(anchorEvent.returnValues.anchorPrice);
           break;
         case pairs.ETH_KNC._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("1661588");
+
+          // Recalculate anchor price in JS code and compare to the contract result
+          cumulativePrice_knc = await getCumulativePrice(pairs.ETH_KNC, blockTimestamp, true);
+          const kncTWAP = calculateTWAP(cumulativePrice_knc, observations["ETH_KNC"].acc, blockTimestamp, observations["ETH_KNC"].timestamp);
+          const kncPrice = kncTWAP.multipliedBy(ethPrice).dividedBy(1e18).toFixed()
+          expect(kncPrice).toBe(anchorEvent.returnValues.anchorPrice);
           break;
         case pairs.LINK_ETH._address:
           expect(anchorEvent.returnValues.anchorPrice).toBe("4820505");
+
+          // Recalculate anchor price in JS code and compare to the contract result
+          const cumulativePrice_link = await getCumulativePrice(pairs.LINK_ETH, blockTimestamp);
+          const linkTWAP = calculateTWAP(cumulativePrice_link, observations["LINK_ETH"].acc, blockTimestamp, observations["LINK_ETH"].timestamp);
+          const linkPrice = linkTWAP.multipliedBy(ethPrice).dividedBy(1e18).toFixed()
+          expect(linkPrice).toBe(anchorEvent.returnValues.anchorPrice);
       }
-    });
+    }));
   });
 
   it("test uniswap window events", async () => {
@@ -440,5 +495,4 @@ describe("UniswapAnchoredView", () => {
       expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + 5).toBe(true);
     });
   });
-
 });
