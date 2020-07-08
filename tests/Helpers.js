@@ -40,13 +40,13 @@ async function currentBlockTimestamp(web3_) {
   return block.result.timestamp;
 }
 
-function sendRPC(web3, method, params) {
+function sendRPC(web3_, method, params) {
   return new Promise((resolve, reject) => {
-    if (!web3.currentProvider || typeof (web3.currentProvider) === 'string') {
-      return reject(`cannot send from currentProvider=${web3.currentProvider}`);
+    if (!web3_.currentProvider || typeof (web3_.currentProvider) === 'string') {
+      return reject(`cannot send from currentProvider=${web3_.currentProvider}`);
     }
 
-    web3.currentProvider.send(
+    web3_.currentProvider.send(
       {
         jsonrpc: '2.0',
         method: method,

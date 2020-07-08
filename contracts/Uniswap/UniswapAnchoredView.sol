@@ -157,24 +157,18 @@ contract UniswapAnchoredView is UniswapConfig {
                 anchorPrice = fetchAnchorPrice(config, ethPrice);
             }
 
+            uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
+            bool withinAnchor = anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
+
             if (reporterInvalidated == true) {
                 prices[symbolHash] = anchorPrice;
-                emit PriceUpdated(symbol, anchorPrice);
-            } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
+            } else if (withinAnchor) {
                 prices[symbolHash] = reporterPrice;
                 emit PriceUpdated(symbol, reporterPrice);
             } else {
                 emit PriceGuarded(symbol, reporterPrice, anchorPrice);
             }
         }
-    }
-
-    function isWithinAnchor(uint reporterPrice, uint anchorPrice) internal view returns (bool) {
-        if (reporterPrice > 0) {
-            uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
-            return anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
-        }
-        return false;
     }
 
     /**
@@ -202,9 +196,6 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
-
-        // This should be impossible, but better safe than sorry
-        require(block.timestamp > oldTimestamp, "now must come after before");
         uint timeElapsed = block.timestamp - oldTimestamp;
 
         // Calculate uniswap time-weighted average price
@@ -238,7 +229,7 @@ contract UniswapAnchoredView is UniswapConfig {
         // Update new and old observations if elapsed time is greater than or equal to anchor period
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= anchorPeriod) {
-            emit UniswapWindowUpdate(uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.acc, newObservation.acc);
+            emit UniswapWindowUpdate(uniswapMarket, oldObservation.timestamp, newObservation.timestamp , oldObservation.acc, newObservation.acc);
             oldObservations[uniswapMarket].timestamp = newObservation.timestamp;
             oldObservations[uniswapMarket].acc = newObservation.acc;
 

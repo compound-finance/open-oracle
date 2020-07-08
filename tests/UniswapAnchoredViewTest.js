@@ -179,7 +179,7 @@ describe('UniswapAnchoredView', () => {
 
     it('should not update window values if not enough time elapsed', async () => {
       const timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod - 3;
-      await sendRPC(web3, 'evm_mine', [timestamp]);
+      await sendRPC(web3, 'evm_increaseTime', [anchorPeriod - 5]);
       const tx = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
       expect(tx.events.UniswapWindowUpdate).toBe(undefined);
     });
@@ -191,7 +191,8 @@ describe('UniswapAnchoredView', () => {
       const oldObs1 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
 
       timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod;
-      await sendRPC(web3, 'evm_mine', [timestamp]);
+      await sendRPC(web3, 'evm_increaseTime', [anchorPeriod]);
+
       const tx1 = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
       expect(tx1.events.UniswapWindowUpdate).not.toBe(undefined);
 
