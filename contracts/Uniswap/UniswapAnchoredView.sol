@@ -18,6 +18,12 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
+    /// @notice the number of wei in 1 ETH
+    uint public constant ethBaseUnit = 1e18;
+
+    /// @notice a common scaling factor to maintain precision
+    uint public constant expScale = 1e18;
+
     /// @notice the Open Oracle Reporter
     address public immutable reporter;
 
@@ -110,7 +116,7 @@ contract UniswapAnchoredView is UniswapConfig {
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash];
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-            return mul(usdPerEth, config.fixedPrice) / config.baseUnit;
+            return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
         }
     }
 
@@ -122,6 +128,8 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function getUnderlyingPrice(address cToken) public view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
+         // Comptroller needs prices in the format: ${raw price} * 1e(36 - baseUnit)
+         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6 - baseUnit)
         return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
@@ -147,7 +155,6 @@ contract UniswapAnchoredView is UniswapConfig {
             TokenConfig memory config = getTokenConfigBySymbol(symbols[i]);
             string memory symbol = symbols[i];
             bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-            if (source(messages[i], signatures[i]) != reporter) continue;
 
             uint reporterPrice = priceData.getPrice(reporter, symbol);
             uint anchorPrice;
@@ -194,11 +201,12 @@ contract UniswapAnchoredView is UniswapConfig {
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
     function fetchEthPrice() internal returns (uint) {
-        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), 1e18);
+        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
     /**
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
+     * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
     function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
@@ -209,14 +217,16 @@ contract UniswapAnchoredView is UniswapConfig {
 
         // Calculate uniswap time-weighted average price
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-        uint anchorPriceUnscaled = mul(priceAverage.decode112with18(), conversionFactor);
+        uint rawUniswapPriceMantissa = mul(priceAverage.decode112with18(), conversionFactor);
         uint anchorPrice;
 
-        // Adjust anchor price to val * 1e6 decimals format
+        // Adjust rawUniswapPrice according to the units of the non-ETH asset
+        // In the case of ETH, we would have to scale by 1e6 / USDC_UNITS, but since baseUnit2 is 1e6 (USDC), it cancels
         if (config.isUniswapReversed) {
-            anchorPrice = anchorPriceUnscaled / config.baseUnit;
+            // rawUniswapPriceMantissa * ethBaseUnit / config.baseUnit / expScale, but we simplify bc ethBaseUnit == expScale
+            anchorPrice = rawUniswapPriceMantissa / config.baseUnit;
         } else {
-            anchorPrice = mul(anchorPriceUnscaled, config.baseUnit) / 1e36;
+            anchorPrice = mul(rawUniswapPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
         }
 
         emit AnchorPriceUpdate(config.uniswapMarket, anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
@@ -232,18 +242,18 @@ contract UniswapAnchoredView is UniswapConfig {
         address uniswapMarket = config.uniswapMarket;
         uint cumulativePrice = currentCumulativePrice(config);
 
-        Observation storage newObservation = newObservations[uniswapMarket];
-        Observation storage oldObservation = oldObservations[uniswapMarket];
+        Observation memory newObservation = newObservations[uniswapMarket];
+        Observation memory oldObservation = oldObservations[uniswapMarket];
 
         // Update new and old observations if elapsed time is greater than or equal to anchor period
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= anchorPeriod) {
             emit UniswapWindowUpdate(uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.acc, newObservation.acc);
-            oldObservation.timestamp = newObservation.timestamp;
-            oldObservation.acc = newObservation.acc;
+            oldObservations[uniswapMarket].timestamp = newObservation.timestamp;
+            oldObservations[uniswapMarket].acc = newObservation.acc;
 
-            newObservation.timestamp = block.timestamp;
-            newObservation.acc = cumulativePrice;
+            newObservations[uniswapMarket].timestamp = block.timestamp;
+            newObservations[uniswapMarket].acc = cumulativePrice;
         }
         return (cumulativePrice, oldObservation.acc, oldObservation.timestamp);
     }
