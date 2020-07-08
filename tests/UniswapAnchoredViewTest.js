@@ -1,5 +1,5 @@
 const { encode, sign } = require('../sdk/javascript/.tsbuilt/reporter');
-const { uint, keccak256, time, numToHex, address } = require('./Helpers');
+const { uint, keccak256, time, numToHex, address, sendRPC, currentBlockTimestamp } = require('./Helpers');
 const BigNumber = require('bignumber.js');
 
 async function setup(opts)  {
@@ -11,7 +11,7 @@ async function setup(opts)  {
 
   const FIXED_ETH_AMOUNT = 0.005e18;
 
-  const dummyPair = await deploy("MockUniswapTokenPair", [
+  const mockPair = await deploy("MockUniswapTokenPair", [
     "157323115357569242624896",
     "10627310410144389510631",
     "1592425041",
@@ -23,12 +23,12 @@ async function setup(opts)  {
   const cToken = {ETH: address(1), DAI: address(2), REP: address(3), USDT: address(4), SAI: address(5), WBTC: address(6)};
   const dummyAddress = address(0);
   const tokenConfigs = [
-    {cToken: cToken.ETH, underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: true},
-    {cToken: cToken.DAI, underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
-    {cToken: cToken.REP, underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
+    {cToken: cToken.ETH, underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: true},
+    {cToken: cToken.DAI, underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
+    {cToken: cToken.REP, underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
     {cToken: cToken.USDT, underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e6), priceSource: priceSource.FIXED_USD, fixedPrice: uint(1e6), uniswapMarket: address(0), isUniswapReversed: false},
     {cToken: cToken.SAI, underlying: dummyAddress, symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_ETH, fixedPrice: uint(FIXED_ETH_AMOUNT), uniswapMarket: address(0), isUniswapReversed: false},
-    {cToken: cToken.WBTC, underlying: dummyAddress, symbolHash: keccak256('WBTC'), baseUnit: uint(1e8), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyPair._address, isUniswapReversed: false},
+    {cToken: cToken.WBTC, underlying: dummyAddress, symbolHash: keccak256('WBTC'), baseUnit: uint(1e8), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
   ];
 
   let uniswapAnchoredView;
@@ -58,11 +58,11 @@ async function setup(opts)  {
       });
       return send(uniswapAnchoredView, 'postPrices', [messages, signatures, symbols]);
   }
-  return {reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, cToken};
+  return {reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, cToken, mockPair};
 }
 
 describe('UniswapAnchoredView', () => {
-  let cToken, reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices;
+  let cToken, reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, mockPair;
 
   describe('postPrices Unit Test', () => {
     beforeEach(async done => {
@@ -168,4 +168,56 @@ describe('UniswapAnchoredView', () => {
     });
 
   });
+
+  describe('pokeWindowValues', () => {
+    beforeEach(async done => {
+      ({mockPair, anchorPeriod, uniswapAnchoredView, postPrices, tokenConfigs} = await setup({isMockedView: false}));
+      // random new vals
+      await send(mockPair, 'update', ["157323115357569242629000" , "10627310410144389510900", "1592429000", "819360504021542874838907395123146709000", "221435982014902761159721791828816348239900"]);
+      done();
+    });
+
+    it('should not update window values if not enough time elapsed', async () => {
+      const timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod - 3;
+      await sendRPC(web3, 'evm_mine', [timestamp]);
+      const tx = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
+      expect(tx.events.UniswapWindowUpdate).toBe(undefined);
+    });
+
+    it('should update window values if enough time elapsed', async () => {
+      let timestamp;
+      const mkt = mockPair._address;// ETH's mock market
+      const newObs1 = await call(uniswapAnchoredView, 'newObservations', [mkt]);
+      const oldObs1 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
+
+      timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod;
+      await sendRPC(web3, 'evm_mine', [timestamp]);
+      const tx1 = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
+      expect(tx1.events.UniswapWindowUpdate).not.toBe(undefined);
+
+      // on the first update, we expect on the new observation to change
+      const newObs2 = await call(uniswapAnchoredView, 'newObservations', [mkt]);
+      const oldObs2 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
+      expect(newObs2.acc).not.numEquals(newObs1.acc);
+      expect(newObs2.timestamp).not.numEquals(newObs1.timestamp);
+      expect(oldObs2.acc).numEquals(oldObs1.acc);
+      expect(oldObs2.timestamp).numEquals(oldObs1.timestamp);
+
+      // random new vals
+      await send(mockPair, 'update', ["157323115357569242629001" , "10627310410144389510901", "1592429001", "819360504021542874838907395123146709001", "221435982014902761159721791828816348239901"]);
+      timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod;
+      await sendRPC(web3, 'evm_mine', [timestamp]);
+      const tx2 = await postPrices(timestamp, [[['ETH', 201]]], ['ETH']);
+      expect(tx2.events.UniswapWindowUpdate).not.toBe(undefined);
+
+      // this time, both should change
+      const newObs3 = await call(uniswapAnchoredView, 'newObservations', [mkt]);
+      const oldObs3 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
+      expect(newObs3.acc).not.numEquals(newObs2.acc);
+      expect(newObs3.acc).not.numEquals(newObs2.timestamp);
+      //old becomes last new
+      expect(oldObs3.acc).numEquals(newObs2.acc);
+      expect(oldObs3.timestamp).numEquals(newObs2.timestamp);
+    });
+  })
 });

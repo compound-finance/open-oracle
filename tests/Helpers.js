@@ -34,6 +34,12 @@ function time(){
 	return Math.floor(new Date() / 1000);
 }
 
+async function currentBlockTimestamp(web3_) {
+  const blockNumber = await sendRPC(web3_, "eth_blockNumber", []);
+  const block = await sendRPC(web3_, "eth_getBlockByNumber", [ blockNumber.result, false]);
+  return block.result.timestamp;
+}
+
 function sendRPC(web3, method, params) {
   return new Promise((resolve, reject) => {
     if (!web3.currentProvider || typeof (web3.currentProvider) === 'string') {
@@ -67,5 +73,6 @@ module.exports = {
 	numToHex,
 	uint256,
 	uint,
-	keccak256
+	keccak256,
+  currentBlockTimestamp
 };
