@@ -18,6 +18,9 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
+    /// @notice the number of wei in 1 ETH
+    uint public constant ethBaseUnit = 1e18;
+
     /// @notice the Open Oracle Reporter
     address public immutable reporter;
 
@@ -110,7 +113,7 @@ contract UniswapAnchoredView is UniswapConfig {
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash];
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-            return mul(usdPerEth, config.fixedPrice) / config.baseUnit;
+            return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
         }
     }
 
@@ -122,6 +125,8 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function getUnderlyingPrice(address cToken) public view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
+         // Comptroller needs prices in the format: ${raw price} * 1e(36 - baseUnit)
+         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6 - baseUnit)
         return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
@@ -194,7 +199,7 @@ contract UniswapAnchoredView is UniswapConfig {
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
     function fetchEthPrice() internal returns (uint) {
-        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), 1e18);
+        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
     /**
@@ -209,14 +214,14 @@ contract UniswapAnchoredView is UniswapConfig {
 
         // Calculate uniswap time-weighted average price
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-        uint anchorPriceUnscaled = mul(priceAverage.decode112with18(), conversionFactor);
+        uint rawUniswapPriceMantissa = mul(priceAverage.decode112with18(), conversionFactor);
         uint anchorPrice;
 
         // Adjust anchor price to val * 1e6 decimals format
         if (config.isUniswapReversed) {
-            anchorPrice = anchorPriceUnscaled / config.baseUnit;
+            anchorPrice = rawUniswapPriceMantissa / config.baseUnit;
         } else {
-            anchorPrice = mul(anchorPriceUnscaled, config.baseUnit) / 1e36;
+            anchorPrice = mul(rawUniswapPriceMantissa, config.baseUnit) / 1e36;
         }
 
         emit AnchorPriceUpdate(config.uniswapMarket, anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
