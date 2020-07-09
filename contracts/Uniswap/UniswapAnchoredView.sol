@@ -21,6 +21,9 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice the number of wei in 1 ETH
     uint public constant ethBaseUnit = 1e18;
 
+    /// @notice a common scaling factor to maintain precision
+    uint public constant expScale = 1e18;
+
     /// @notice the Open Oracle Reporter
     address public immutable reporter;
 
@@ -152,7 +155,6 @@ contract UniswapAnchoredView is UniswapConfig {
             TokenConfig memory config = getTokenConfigBySymbol(symbols[i]);
             string memory symbol = symbols[i];
             bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-            if (source(messages[i], signatures[i]) != reporter) continue;
 
             uint reporterPrice = priceData.getPrice(reporter, symbol);
             uint anchorPrice;
@@ -204,6 +206,7 @@ contract UniswapAnchoredView is UniswapConfig {
 
     /**
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
+     * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
     function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
@@ -217,11 +220,12 @@ contract UniswapAnchoredView is UniswapConfig {
         uint rawUniswapPriceMantissa = mul(priceAverage.decode112with18(), conversionFactor);
         uint anchorPrice;
 
-        // Adjust anchor price to val * 1e6 decimals format
+        // Adjust rawUniswapPrice according to the units of the non-ETH asset
+        // In the case of ETH, we would have to scale by 1e6 / USDC_UNITS, but since baseUnit2 is 1e6 (USDC), it cancels
         if (config.isUniswapReversed) {
-            anchorPrice = rawUniswapPriceMantissa / config.baseUnit;
+            anchorPrice = mul(rawUniswapPriceMantissa, ethBaseUnit) / config.baseUnit / expScale;
         } else {
-            anchorPrice = mul(rawUniswapPriceMantissa, config.baseUnit) / 1e36;
+            anchorPrice = mul(rawUniswapPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
         }
 
         emit AnchorPriceUpdate(config.uniswapMarket, anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
