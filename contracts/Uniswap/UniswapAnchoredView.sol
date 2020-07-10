@@ -223,7 +223,8 @@ contract UniswapAnchoredView is UniswapConfig {
         // Adjust rawUniswapPrice according to the units of the non-ETH asset
         // In the case of ETH, we would have to scale by 1e6 / USDC_UNITS, but since baseUnit2 is 1e6 (USDC), it cancels
         if (config.isUniswapReversed) {
-            anchorPrice = mul(rawUniswapPriceMantissa, ethBaseUnit) / config.baseUnit / expScale;
+            // rawUniswapPriceMantissa * ethBaseUnit / config.baseUnit / expScale, but we simplify bc ethBaseUnit == expScale
+            anchorPrice = rawUniswapPriceMantissa / config.baseUnit;
         } else {
             anchorPrice = mul(rawUniswapPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
         }
