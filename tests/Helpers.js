@@ -1,6 +1,11 @@
 const Web3 = require('web3');
+const BigNumber = require("bignumber.js");
 
 const web3 = new Web3(); // no provider, since we won't make any calls
+
+const fixed = num => {
+  return (new BigNumber(num).toFixed());
+};
 
 function uint(n) {
   return web3.utils.toBN(n).toString();
@@ -74,5 +79,6 @@ module.exports = {
   uint256,
   uint,
   keccak256,
-  currentBlockTimestamp
+  currentBlockTimestamp,
+  fixed
 };
