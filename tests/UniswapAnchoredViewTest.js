@@ -73,10 +73,13 @@ describe('UniswapAnchoredView', () => {
     it('should not update view if sender is not reporter', async () => {
       const timestamp = time() - 5;
       const nonSource = web3.eth.accounts.privateKeyToAccount('0x666ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
-      const tx = await postPrices(timestamp, [[['ETH', 91]]], ['ETH'], nonSource);
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 91e6]);
+      await postPrices(timestamp, [[['ETH', 91]]], ['ETH'], reporter);
+
+      const tx = await postPrices(timestamp, [[['ETH', 95]]], ['ETH'], nonSource);
       expect(tx.events.PriceGuarded).toBe(undefined);
       expect(tx.events.PricePosted).toBe(undefined);
-      expect(await call(uniswapAnchoredView, 'prices', [keccak256('ETH')])).numEquals(0);
+      expect(await call(uniswapAnchoredView, 'prices', [keccak256('ETH')])).numEquals(91e6);
     });
 
     it('should update view if ETH price is within anchor bounds', async () => {
