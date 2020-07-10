@@ -242,18 +242,18 @@ contract UniswapAnchoredView is UniswapConfig {
         address uniswapMarket = config.uniswapMarket;
         uint cumulativePrice = currentCumulativePrice(config);
 
-        Observation storage newObservation = newObservations[uniswapMarket];
-        Observation storage oldObservation = oldObservations[uniswapMarket];
+        Observation memory newObservation = newObservations[uniswapMarket];
+        Observation memory oldObservation = oldObservations[uniswapMarket];
 
-        // Update new and old observations if elapsed time is bigger or equal to anchor period
+        // Update new and old observations if elapsed time is greater than or equal to anchor period
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= anchorPeriod) {
             emit UniswapWindowUpdate(uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.acc, newObservation.acc);
-            oldObservation.timestamp = newObservation.timestamp;
-            oldObservation.acc = newObservation.acc;
+            oldObservations[uniswapMarket].timestamp = newObservation.timestamp;
+            oldObservations[uniswapMarket].acc = newObservation.acc;
 
-            newObservation.timestamp = block.timestamp;
-            newObservation.acc = cumulativePrice;
+            newObservations[uniswapMarket].timestamp = block.timestamp;
+            newObservations[uniswapMarket].acc = cumulativePrice;
         }
         return (cumulativePrice, oldObservation.acc, oldObservation.timestamp);
     }
