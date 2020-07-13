@@ -116,11 +116,7 @@ contract UniswapAnchoredView is UniswapConfig {
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash];
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-<<<<<<< HEAD
-            return mul(usdPerEth, config.fixedPrice) / config.baseUnit;
-=======
             return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
->>>>>>> jflatow/uniswap-oracle
         }
     }
 
@@ -132,11 +128,8 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function getUnderlyingPrice(address cToken) public view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
-<<<<<<< HEAD
-=======
          // Comptroller needs prices in the format: ${raw price} * 1e(36 - baseUnit)
          // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6 - baseUnit)
->>>>>>> jflatow/uniswap-oracle
         return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
@@ -162,10 +155,6 @@ contract UniswapAnchoredView is UniswapConfig {
             TokenConfig memory config = getTokenConfigBySymbol(symbols[i]);
             string memory symbol = symbols[i];
             bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-<<<<<<< HEAD
-            if (source(messages[i], signatures[i]) != reporter) continue;
-=======
->>>>>>> jflatow/uniswap-oracle
 
             uint reporterPrice = priceData.getPrice(reporter, symbol);
             uint anchorPrice;
