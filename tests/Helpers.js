@@ -65,7 +65,7 @@ function sendRPC(web3_, method, params) {
 }
 
 module.exports = {
-  sendRPC,
+        sendRPC,
 	address,
 	bytes,
 	time,
