@@ -181,7 +181,7 @@ async function setup() {
   }
 
   function calculateTWAP(priceCumulativeOld, priceCumulativeNew, timestampOld, timestampNew) {
-    const timeElapsed = new BN(timestampNew - timestampOld);
+    const timeElapsed = new BN(timestampNew).minus(new BN(timestampOld));
     return decode(new BN(priceCumulativeNew).minus(new BN(priceCumulativeOld)).dividedBy(timeElapsed));
   }
 
@@ -495,4 +495,52 @@ describe("UniswapAnchoredView", () => {
       expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + 5).toBe(true);
     });
   });
+
+  it("test ETH pair while token reserves change", async() => {
+    // Emulate timeElapsed for USDC_ETH token pair, so that timestamps are set up correctly
+    // 1594232101 - 1593755855 = 476246
+    await sendRPC(web3, "evm_increaseTime", [476246]);
+
+    // Update reserves, last block timestamp and cumulative prices for uniswap token pair
+    await send(pairs.USDC_ETH, "update", ["2699846518724", "10900804290754780075806", "1594232101", "130440674219479413955332918569393260852443923640848", "6394369143386285784459187027043"]);
+    const messages1 = ["0x0000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000005f060cac00000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000eb20df00000000000000000000000000000000000000000000000000000000000000006707269636573000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034554480000000000000000000000000000000000000000000000000000000000"];
+    const signatures1 = ["0x3b5dd2e97c072df44a576f1599a1a7beecef194596c0924c6f696f05c46e7494637041f819e7c89c897327f5932dddc3e4c811793bf5378bcd2289e3c2bd6210000000000000000000000000000000000000000000000000000000000000001b"];
+    const symbols1 = ["ETH"];
+    const postRes1 = await send(uniswapAnchoredView, "postPrices", [
+      messages1,
+      signatures1,
+      symbols1,
+    ]);
+    const oldObservation1 = await call(uniswapAnchoredView, "oldObservations", [pairs["USDC_ETH"]._address]);
+    const anchorEvent1 = postRes1.events.AnchorPriceUpdate;
+    const block1 = await sendRPC(web3, "eth_getBlockByNumber", [anchorEvent1.blockNumber, false]);
+    const blockTimestamp1 = block1.result.timestamp;
+
+    const cumulativePrice_eth1 = await getCumulativePrice(pairs.USDC_ETH, blockTimestamp1, true);
+    const ethPrice1 = calculateTWAP(cumulativePrice_eth1, oldObservation1.acc, blockTimestamp1, oldObservation1.timestamp).toFixed();
+    expect(anchorEvent1.returnValues.anchorPrice).toBe(ethPrice1);
+
+    // Emulate timeElapsed for USDC_ETH token pair, so that timestamps are set up correctly
+    // 1594232585 - 1594232101 = 484
+    await sendRPC(web3, "evm_increaseTime", [484]);
+    // Update reserves, last block timestamp and cumulative prices for uniswap token pair
+    await send(pairs.USDC_ETH, "update", ["2699481954534", "10928542275748114013210", "1594232585", "130450824938813990811384244472088515000814627335952", "6394991319166063175850559023838"]);
+    const messages2 = ["0x0000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000005f060e8c00000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000eb2aa300000000000000000000000000000000000000000000000000000000000000006707269636573000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000034554480000000000000000000000000000000000000000000000000000000000"];
+    const signatures2 = ["0xa9f78f3b7b3f35b124b186fc30a49418cde2baf40b01f7e710239a5e1c4c68bc0e1ae1abd93d3a79c20d4a742983fffd63ab5b239d36d77051ee265e36819920000000000000000000000000000000000000000000000000000000000000001b"];
+    const symbols2 = ["ETH"];
+    const postRes2 = await send(uniswapAnchoredView, "postPrices", [
+      messages2,
+      signatures2,
+      symbols2,
+    ]);
+    const oldObservation2 = await call(uniswapAnchoredView, "oldObservations", [pairs["USDC_ETH"]._address]);
+    const anchorEvent2 = postRes2.events.AnchorPriceUpdate;
+    const block2 = await sendRPC(web3, "eth_getBlockByNumber", [anchorEvent2.blockNumber, false]);
+    const blockTimestamp2 = block2.result.timestamp;
+    const cumulativePrice_eth2 = await getCumulativePrice(pairs.USDC_ETH, blockTimestamp2, true);
+    const ethPrice2 = calculateTWAP(cumulativePrice_eth2, oldObservation2.acc, blockTimestamp2, oldObservation2.timestamp).toFixed();
+
+    expect(anchorEvent2.returnValues.anchorPrice).toBe(ethPrice2);
+  });
+
 });
