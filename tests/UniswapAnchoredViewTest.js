@@ -281,6 +281,7 @@ describe('UniswapAnchoredView', () => {
   })
 
   describe('constructor', () => {
+
     it('should fail if anchor mantissa is too high', async () => {
       const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
       const priceData = await deploy('OpenOraclePriceData', []);
