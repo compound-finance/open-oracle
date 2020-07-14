@@ -379,7 +379,7 @@ describe('UniswapAnchoredView', () => {
 
       // Check that event is emitted
       expect(tx.events.ReporterInvalidated).not.toBe(undefined);
-      expect(tx.events.ReporterInvalidated.reporter).not.toBe(reporter);
+      expect(tx.events.ReporterInvalidated.returnValues.reporter).toBe(reporter.address);
     });
 
     it("basic scenario, return anchor price after reporter is invalidated", async () => {
