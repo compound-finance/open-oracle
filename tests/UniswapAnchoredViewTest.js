@@ -64,7 +64,7 @@ async function setup(opts)  {
 describe('UniswapAnchoredView', () => {
   let cToken, reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, mockPair;
 
-  describe('postPrices Unit Test', () => {
+  describe('postPrices', () => {
     beforeEach(async done => {
       ({reporter, anchorMantissa, priceData, uniswapAnchoredView, postPrices} = await setup({isMockedView: true}));
       done();
@@ -115,6 +115,50 @@ describe('UniswapAnchoredView', () => {
       expect(tx.events.PriceUpdated).toBe(undefined);
       expect(await call(uniswapAnchoredView, 'prices', [keccak256('ETH')])).numEquals(0);
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(100e6);
+    });
+
+    it('should revert on posting arrays of messages and signatures with different lengths', async () => {
+      await expect(
+        send(uniswapAnchoredView, 'postPrices', [['0xabc'], ['0x123', '0x123'], []])
+      ).rejects.toRevert("revert messages and signatures must be 1:1");
+
+      await expect(
+        send(uniswapAnchoredView, 'postPrices', [['0xabc', '0xabc'], ['0x123'], []])
+      ).rejects.toRevert("revert messages and signatures must be 1:1");
+    });
+
+    it('should revert on posting arrays with invalid symbols', async () => {
+      const timestamp = time() - 5;
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 91e6]);
+
+      await expect(
+        postPrices(timestamp, [[['ETH', 91]]], ['HOHO'])
+      ).rejects.toRevert("revert token config not found");
+
+      await expect(
+        postPrices(timestamp, [[['HOHO', 91]]], ['HOHO'])
+      ).rejects.toRevert("revert token config not found");
+
+      await expect(
+        postPrices(timestamp, [[['ETH', 91], ['WBTC', 1000]]], ['ETH', 'HOHO'])
+      ).rejects.toRevert("revert token config not found");
+    });
+
+    it('should revert on posting arrays with invalid symbols', async () => {
+      const timestamp = time() - 5;
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 91e6]);
+
+      await expect(
+        postPrices(timestamp, [[['ETH', 91]]], ['HOHO'])
+      ).rejects.toRevert("revert token config not found");
+
+      await expect(
+        postPrices(timestamp, [[['HOHO', 91]]], ['HOHO'])
+      ).rejects.toRevert("revert token config not found");
+
+      await expect(
+        postPrices(timestamp, [[['ETH', 91], ['WBTC', 1000]]], ['ETH', 'HOHO'])
+      ).rejects.toRevert("revert token config not found");
     });
 
     it.todo('test anchor with non-eth prices')
@@ -223,5 +267,55 @@ describe('UniswapAnchoredView', () => {
       expect(oldObs3.acc).numEquals(newObs2.acc);
       expect(oldObs3.timestamp).numEquals(newObs2.timestamp);
     });
+  })
+
+  describe('constructor', () => {
+
+    it('should fail if anchor mantissa is too high', async () => {
+      const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
+      const priceData = await deploy('OpenOraclePriceData', []);
+      const anchorMantissa = numToHex(2e18);
+      await expect(
+        deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, []])
+      ).rejects.toRevert("revert anchor tolerance is too high");
+    });
+
+    it('should fail if uniswap market is not defined', async () => {
+      const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
+      const priceData = await deploy('OpenOraclePriceData', []);
+      const anchorMantissa = numToHex(1e17);
+
+      const dummyAddress = address(0);
+      const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
+      const tokenConfigs = [
+        // Set dummy address as a uniswap market address
+        {cToken: address(1), underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyAddress, isUniswapReversed: true},
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(4), isUniswapReversed: false},
+        {cToken: address(3), underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
+      await expect(
+        deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, tokenConfigs])
+      ).rejects.toRevert("revert reported prices must have an anchor");
+    });
+
+    it('should fail if non-reporter price utilizes an anchor', async () => {
+      const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
+      const priceData = await deploy('OpenOraclePriceData', []);
+      const anchorMantissa = numToHex(1e17);
+
+      const dummyAddress = address(0);
+      const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
+      const tokenConfigs1 = [
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_USD, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
+      await expect(
+        deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, tokenConfigs1])
+      ).rejects.toRevert("revert only reported prices utilize an anchor");
+
+      const tokenConfigs2 = [
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_ETH, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
+      await expect(
+        deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, tokenConfigs2])
+      ).rejects.toRevert("revert only reported prices utilize an anchor");
+    });
+
   })
 });
