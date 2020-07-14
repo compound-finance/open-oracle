@@ -314,6 +314,27 @@ describe('UniswapAnchoredView', () => {
       ).rejects.toRevert("revert only reported prices utilize an anchor");
     });
 
+    it('basic scnario, successfully initialize observations initial state', async () => {
+      const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
+      ({reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, cToken, mockPair} = await setup({isMockedView: true}));
+      expect(await call(uniswapAnchoredView, 'reporter')).toBe(reporter.address);
+      expect(await call(uniswapAnchoredView, 'anchorPeriod')).numEquals(anchorPeriod);
+      expect(await call(uniswapAnchoredView, 'upperBoundAnchorRatio')).numEquals(new BigNumber(anchorMantissa).plus(1e18));
+      expect(await call(uniswapAnchoredView, 'lowerBoundAnchorRatio')).numEquals(new BigNumber(1e18).minus(anchorMantissa));
+
+      await Promise.all(tokenConfigs.map(async config => {
+        const oldObservation = await call(uniswapAnchoredView, 'oldObservations', [config.uniswapMarket]);
+        const newObservation = await call(uniswapAnchoredView, 'newObservations', [config.uniswapMarket]);
+        expect(oldObservation.timestamp).numEquals(newObservation.timestamp);
+        expect(oldObservation.acc).numEquals(newObservation.acc);
+        if (config.priceSource != priceSource.REPORTER) {
+          expect(oldObservation.acc).numEquals(0);
+          expect(newObservation.acc).numEquals(0);
+          expect(oldObservation.timestamp).numEquals(0);
+          expect(newObservation.timestamp).numEquals(0);
+        }
+      }))
+    });
   })
 
   describe('invalidateReporter', () => {
