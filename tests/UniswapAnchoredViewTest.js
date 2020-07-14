@@ -1,5 +1,5 @@
 const { encode, sign, encodeRotationMessage } = require('../sdk/javascript/.tsbuilt/reporter');
-const { uint, keccak256, time, numToHex, address, sendRPC, currentBlockTimestamp } = require('./Helpers');
+const { uint, keccak256, time, numToHex, address, sendRPC, currentBlockTimestamp, fixed } = require('./Helpers');
 const BigNumber = require('bignumber.js');
 
 async function setup(opts)  {
@@ -11,12 +11,13 @@ async function setup(opts)  {
 
   const FIXED_ETH_AMOUNT = 0.005e18;
 
+  await sendRPC(web3, 'evm_mine', [fixed(1.6e9)]);
   const mockPair = await deploy("MockUniswapTokenPair", [
-    "157323115357569242624896",
-    "10627310410144389510631",
-    "1592425041",
-    "819360504021542874838907395123146706291",
-    "221435982014902761159721791828816348231935",
+    fixed(1.5e23),
+    fixed(1e22),
+    fixed(1.6e9),//timestamp
+    fixed(8e38),
+    fixed(2e41)// acc
   ]);
 
   const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
@@ -217,8 +218,6 @@ describe('UniswapAnchoredView', () => {
   describe('pokeWindowValues', () => {
     beforeEach(async done => {
       ({mockPair, anchorPeriod, uniswapAnchoredView, postPrices, tokenConfigs} = await setup({isMockedView: false}));
-      // random new vals
-      await send(mockPair, 'update', ["157323115357569242629000" , "10627310410144389510900", "1592429000", "819360504021542874838907395123146709000", "221435982014902761159721791828816348239900"]);
       done();
     });
 
@@ -241,29 +240,35 @@ describe('UniswapAnchoredView', () => {
       const tx1 = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
       expect(tx1.events.UniswapWindowUpdate).not.toBe(undefined);
 
-      // on the first update, we expect on the new observation to change
+      // on the first update, we expect the new observation to change
       const newObs2 = await call(uniswapAnchoredView, 'newObservations', [mkt]);
       const oldObs2 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
-      expect(newObs2.acc).not.numEquals(newObs1.acc);
-      expect(newObs2.timestamp).not.numEquals(newObs1.timestamp);
+      expect(newObs2.acc).greaterThan(newObs1.acc);
+      expect(newObs2.timestamp).greaterThan(newObs1.timestamp);
       expect(oldObs2.acc).numEquals(oldObs1.acc);
       expect(oldObs2.timestamp).numEquals(oldObs1.timestamp);
 
-      // random new vals
-      await send(mockPair, 'update', ["157323115357569242629001" , "10627310410144389510901", "1592429001", "819360504021542874838907395123146709001", "221435982014902761159721791828816348239901"]);
       timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod;
       await sendRPC(web3, 'evm_mine', [timestamp]);
       const tx2 = await postPrices(timestamp, [[['ETH', 201]]], ['ETH']);
-      expect(tx2.events.UniswapWindowUpdate).not.toBe(undefined);
+
+      const windowUpdate = tx2.events.UniswapWindowUpdate.returnValues;
+      expect(windowUpdate.uniswapMarket).toEqual(mkt);
+      expect(timestamp).greaterThan(windowUpdate.oldTimestamp);
+      expect(windowUpdate.newPrice).greaterThan(windowUpdate.oldPrice);// accumulator should always go up
 
       // this time, both should change
       const newObs3 = await call(uniswapAnchoredView, 'newObservations', [mkt]);
       const oldObs3 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
-      expect(newObs3.acc).not.numEquals(newObs2.acc);
-      expect(newObs3.acc).not.numEquals(newObs2.timestamp);
-      //old becomes last new
+      expect(newObs3.acc).greaterThan(newObs2.acc);
+      expect(newObs3.acc).greaterThan(newObs2.timestamp);
+      // old becomes last new
       expect(oldObs3.acc).numEquals(newObs2.acc);
       expect(oldObs3.timestamp).numEquals(newObs2.timestamp);
+
+      const anchorPriceUpdate = tx2.events.AnchorPriceUpdate.returnValues;
+      expect(oldObs3.timestamp).toBe(anchorPriceUpdate.oldTimestamp);
+      expect(oldObs3.acc).toBe(anchorPriceUpdate.oldCumulativePrice);
     });
   })
 
