@@ -154,27 +154,30 @@ contract UniswapAnchoredView is UniswapConfig {
 
         // Try to update the view storage
         for (uint i = 0; i < symbols.length; i++) {
-            TokenConfig memory config = getTokenConfigBySymbol(symbols[i]);
-            string memory symbol = symbols[i];
-            bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+            postPriceInternal(symbols[i], ethPrice);
+        }
+    }
 
-            uint reporterPrice = priceData.getPrice(reporter, symbol);
-            uint anchorPrice;
-            if (symbolHash == ethHash) {
-                anchorPrice = ethPrice;
-            } else {
-                anchorPrice = fetchAnchorPrice(config, ethPrice);
-            }
+    function postPriceInternal(string memory symbol, uint ethPrice) internal {
+        TokenConfig memory config = getTokenConfigBySymbol(symbol);
+        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
 
-            if (reporterInvalidated == true) {
-                prices[symbolHash] = anchorPrice;
-                emit PriceUpdated(symbol, anchorPrice);
-            } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
-                prices[symbolHash] = reporterPrice;
-                emit PriceUpdated(symbol, reporterPrice);
-            } else {
-                emit PriceGuarded(symbol, reporterPrice, anchorPrice);
-            }
+        uint reporterPrice = priceData.getPrice(reporter, symbol);
+        uint anchorPrice;
+        if (symbolHash == ethHash) {
+            anchorPrice = ethPrice;
+        } else {
+            anchorPrice = fetchAnchorPrice(config, ethPrice);
+        }
+
+        if (reporterInvalidated == true) {
+            prices[symbolHash] = anchorPrice;
+            emit PriceUpdated(symbol, anchorPrice);
+        } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
+            prices[symbolHash] = reporterPrice;
+            emit PriceUpdated(symbol, reporterPrice);
+        } else {
+            emit PriceGuarded(symbol, reporterPrice, anchorPrice);
         }
     }
 

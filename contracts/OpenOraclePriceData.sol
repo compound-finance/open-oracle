@@ -34,13 +34,11 @@ contract OpenOraclePriceData is OpenOracleData {
      * @return The keys that were written
      */
     function put(bytes calldata message, bytes calldata signature) external returns (string memory) {
-        // Recover the source address
-        address source = source(message, signature);
+        (address source, uint64 timestamp, string memory key, uint64 value) = decodeMessage(message, signature);
+        return putInternal(source, timestamp, key, value);
+    }
 
-        // Decode the message and check the kind
-        (string memory kind, uint64 timestamp, string memory key, uint64 value) = abi.decode(message, (string, uint64, string, uint64));
-        require(keccak256(abi.encodePacked(kind)) == keccak256(abi.encodePacked("prices")), "Kind of data must be 'prices'");
-
+    function putInternal(address source, uint64 timestamp, string memory key, uint64 value) internal returns (string memory) {
         // Only update if newer than stored, according to source
         Datum storage prior = data[source][key];
         if (timestamp > prior.timestamp && timestamp < block.timestamp + 60 minutes && source != address(0)) {
@@ -49,8 +47,17 @@ contract OpenOraclePriceData is OpenOracleData {
         } else {
             emit NotWritten(prior.timestamp, timestamp, block.timestamp);
         }
-
         return key;
+    }
+
+    function decodeMessage(bytes calldata message, bytes calldata signature) internal pure returns (address, uint64, string memory, uint64) {
+        // Recover the source address
+        address source = source(message, signature);
+
+        // Decode the message and check the kind
+        (string memory kind, uint64 timestamp, string memory key, uint64 value) = abi.decode(message, (string, uint64, string, uint64));
+        require(keccak256(abi.encodePacked(kind)) == keccak256(abi.encodePacked("prices")), "Kind of data must be 'prices'");
+        return (source, timestamp, key, value);
     }
 
     /**
