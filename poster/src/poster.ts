@@ -2,21 +2,32 @@ import { postWithRetries } from './post_with_retries';
 import fetch from 'node-fetch';
 import Web3 from 'web3';
 import { TransactionConfig } from 'web3-core';
-import AbiCoder from 'web3-eth-abi';
-import helpers from './prev_price';
+import {
+  getDataAddress,
+  getPreviousPrice,
+  getSourceAddress
+} from './prev_price';
 import { BigNumber as BN } from 'bignumber.js';
+import { readCoinbasePayload } from './sources/coinbase';
+import { encode } from './util';
 
-async function main(sources: string,
-  senderKey: string,
-  viewAddress: string,
-  functionSig: string,
-  gas: number,
-  delta: number,
-  assets: string,
-  web3: Web3) {
-  const payloads = await fetchPayloads(sources.split(","));
+const GAS_PRICE_API = 'https://api.compound.finance/api/gas_prices/get_gas_price';
+const DEFAULT_GAS_PRICE = 3_000_000_000; // use 3 gwei if api is unreachable for some reason
+
+export async function main(
+    sources: string[],
+    senderKey: string,
+    viewAddress: string,
+    functionSig: string,
+    gas: number,
+    delta: number,
+    assets: string[],
+    web3: Web3) {
+
+  const payloads = await fetchPayloads(sources);
   const filteredPayloads = await filterPayloads(payloads, viewAddress, assets, delta, web3);
-  if (filteredPayloads.length != 0) {
+
+  if (filteredPayloads.length > 0) {
     const gasPrice = await fetchGasPrice();
     const trxData = buildTrxData(filteredPayloads, functionSig);
 
@@ -31,195 +42,121 @@ async function main(sources: string,
   }
 }
 
-async function filterPayloads(payloads: DelFiReporterPayload[],
-  viewAddress: string,
-  assets: string,
-  delta: number,
-  web3: Web3): Promise<DelFiReporterPayload[]> {
-  const dataAddress = await helpers.getDataAddress(viewAddress, web3);
-  const supportedAssets = assets.split(",");
+export async function filterPayloads(
+    payloads: OpenPriceFeedPayload[],
+    viewAddress: string,
+    supportedAssets: string[],
+    delta: number,
+    web3: Web3): Promise<OpenPriceFeedPayload[]> {
 
-  await Promise.all(payloads.map(async payload => {
-    const sourceAddress = await helpers.getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
+  const dataAddress = await getDataAddress(viewAddress, web3);
 
-    const filteredPrices = {};
-    const filteredMessages: string[] = [];
-    const filteredSignatures: string[] = [];
-    let index = 0;
-    for (const [asset, price] of Object.entries(payload.prices)) {
-      // Post only prices for supported assets, skip prices for unregistered assets
-      if (!supportedAssets.includes(asset.toUpperCase())) {
-        index++;
-        continue;
-      }
+  let filteredPayloads = await Promise.all(payloads.map(async payload => {
+    let sourceAddresses = await Promise.all(payload.messages.map((_, i) => {
+      return getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
+    }));
 
-      const prev_price = await helpers.getPreviousPrice(sourceAddress, asset, dataAddress, web3);
-      console.log(`For asset ${asset}: prev price = ${prev_price}, new price = ${price}`);
-
-      // Update price only if new price is different by more than delta % from the previous price
-      if (!inDeltaRange(delta, Number(price), prev_price)) {
-        console.log(`Not in delta range for asset ${asset}, price = ${Number(price)}, prev price = ${prev_price}`);
-        filteredPrices[asset] = price;
-        filteredMessages.push(payload.messages[index]);
-        filteredSignatures.push(payload.signatures[index]);
-      }
-      index++;
+    if ([...new Set(sourceAddresses)].length !== 1) {
+      throw new Error(`Invalid source addresses, got: ${JSON.stringify(sourceAddresses)}`);
     }
-    payload.prices = filteredPrices;
-    payload.messages = filteredMessages;
-    payload.signatures = filteredSignatures;
-  }))
+    const sourceAddress = sourceAddresses[0]; // We proved they all match this single address
 
-  // Filter payloads with no updated prices
-  const filteredPayloads = payloads.filter(payload => payload.messages.length > 0);
-  return filteredPayloads;
+    return await Object.entries(payload.prices).reduce<Promise<OpenPriceFeedPayload>>(async (accP, [asset, priceRaw]: [string, string], index: number) => {
+      let acc = await accP;
+      let price = Number(priceRaw);
+
+      if (supportedAssets.includes(asset.toUpperCase())) {
+        const prevPrice = await getPreviousPrice(sourceAddress, asset, dataAddress, web3);
+
+        console.debug(`Previous Price Data: asset=${asset}, prev_price=${prevPrice}, new_price=${price}`);
+
+        // Update price only if new price is different by more than delta % from the previous price
+        if (!inDeltaRange(delta, price, prevPrice)) {
+          console.log(`Setting Price: asset=${asset}, price=${price}, prev_price=${prevPrice}`);
+
+          return {
+            prices: {
+              ...acc.prices,
+              [asset]: priceRaw
+            },
+            messages: [...acc.messages, payload.messages[index]],
+            signatures: [...acc.signatures, payload.signatures[index]]
+          };
+        } else {
+          return acc;
+        }
+      } else {
+        // Post only prices for supported assets, skip prices for unregistered assets
+        console.debug(`Skipping ${asset} as not part of supported assets: ${JSON.stringify(supportedAssets)}`);
+
+        return acc;
+      }
+    }, Promise.resolve({ prices: {}, messages: [], signatures: [] }));
+  }));
+
+  return filteredPayloads.filter(payload => payload.messages.length > 0);
 }
 
 // Checks if new price is less than delta percent different form the old price
-function inDeltaRange(delta: number, price: number, prev_price: number) {
+// Note TODO: price here is uh... a number that needs to be scaled by 1e6?
+export function inDeltaRange(delta: number, price: number, prevPrice: number) {
   // Always update prices if delta is set to 0 or delta is not within expected range [0..100]%
-  if (delta <= 0 || delta > 100) return false;
-  const minDifference = new BN(prev_price).multipliedBy(delta).dividedBy(100);
-  const difference = new BN(prev_price).minus(new BN(price).multipliedBy(1e6)).abs();
+  if (delta <= 0 || delta > 100) {
+    return false
+  };
+
+  const minDifference = new BN(prevPrice).multipliedBy(delta).dividedBy(100);
+  const difference = new BN(prevPrice).minus(new BN(price).multipliedBy(1e6)).abs();
+
   return difference.isLessThanOrEqualTo(minDifference);
 }
 
-async function fetchPayloads(sources: string[], fetchFn = fetch): Promise<DelFiReporterPayload[]> {
-  let sourcePromises = sources.map(async (source) => {
+export async function fetchPayloads(sources: string[], fetchFn=fetch): Promise<OpenPriceFeedPayload[]> {
+  let promises = await Promise.allSettled(sources.map(async (sourceRaw) => {
+    let source = sourceRaw.includes('{') ? JSON.parse(sourceRaw) : sourceRaw;
+
     try {
       let response;
-      if(source == "https://api.pro.coinbase.com/oracle") {
-        const crypto = require('crypto');
-
-        const key_id = <string>process.env.API_KEY_ID;
-        const secret = <string>process.env.API_SECRET;
-        const passphrase = <string>process.env.API_PASSPHRASE;
-
-
-        let timestamp = Date.now() / 1000;
-
-        let method = 'GET';
-
-        // create the prehash string by concatenating required parts
-        let what = timestamp + method + "/oracle";
-
-        // decode the base64 secret
-        let key =  Buffer.from(secret, 'base64');
-
-        // create a sha256 hmac with the secret
-        let hmac = crypto.createHmac('sha256', key);
-
-        // sign the require message with the hmac
-        // and finally base64 encode the result
-        let signature = hmac.update(what).digest('base64');
-        let headers = {
-          'CB-ACCESS-KEY': key_id,
-          'CB-ACCESS-SIGN': signature,
-          'CB-ACCESS-TIMESTAMP': timestamp,
-          'CB-ACCESS-PASSPHRASE': passphrase,
-          'Content-Type': 'application/json'
-        }
-
-        response = await fetchFn(source, {
-          headers: headers
-        })
-
-      } else {
+      if (typeof(source) === 'string') {
         response = await fetchFn(source);
+      } else if (source.source === 'coinbase') {
+        response = readCoinbasePayload(source, fetchFn);
       }
+
       return response.json();
     } catch (e) {
+      // This is now just for some extra debugging messages
+      console.error("Error Fetching Payload for ${source}")
       console.error(e);
-      return null;
+      throw e;
     }
-  });
+  }, []));
 
-  return (await Promise.all(sourcePromises)).filter(x => x != null);
+  return promises
+    .filter((promise) => promise.status === 'fulfilled')
+    .map((promise => (<PromiseFulfilledResult<OpenPriceFeedPayload>>promise).value));
 }
 
-async function fetchGasPrice(fetchFn = fetch): Promise<number> {
+export async function fetchGasPrice(fetchFn = fetch): Promise<number> {
   try {
-    let source = "https://api.compound.finance/api/gas_prices/get_gas_price";
-    let response = await fetchFn(source);
+    let response = await fetchFn(GAS_PRICE_API);
     let prices = await response.json();
-    let averagePrice = Number(prices["average"]["value"]);
-    return averagePrice;
+    return Number(prices["average"]["value"]);
   } catch (e) {
-    // use 3 gwei if api is unreachable for some reason
     console.warn(`Failed to fetch gas price`, e);
-    return 3_000_000_000;
+    return DEFAULT_GAS_PRICE;
   }
 }
 
-function buildTrxData(payloads: DelFiReporterPayload[], functionSig: string): string {
-  const types = findTypes(functionSig);
-
-  let messages = payloads.reduce((a: string[], x) => a.concat(x.messages), []);
-  let signatures = payloads.reduce((a: string[], x) => a.concat(x.signatures), []);
+export function buildTrxData(payloads: OpenPriceFeedPayload[], functionSig: string): string {
+  let messages = payloads.reduce((a: string[], x) => [...a , ...x.messages], []);
+  let signatures = payloads.reduce((a: string[], x) => [...a, ...x.signatures], []);
   let priceKeys = payloads.map(x => Object.keys(x.prices));
-  let symbols = new Set(priceKeys.reduce((acc, val) => acc.concat(val)));
-  let upperCaseDeDuped = [...symbols].map((x) => x.toUpperCase())
+  let symbols = new Set(priceKeys.reduce((acc, val) => [...acc, ...val]));
+  let upperCaseDeDuped = [...symbols].map((x) => x.toUpperCase());
 
-  // see https://github.com/ethereum/web3.js/blob/2.x/packages/web3-eth-abi/src/AbiCoder.js#L112
-  return (<any>AbiCoder).encodeFunctionSignature(functionSig) +
-    (<any>AbiCoder)
-      .encodeParameters(types, [messages, signatures, [...upperCaseDeDuped]])
-      .replace('0x', '');
-}
-
-// e.g. findTypes("postPrices(bytes[],bytes[],string[])")-> ["bytes[]","bytes[]","string[]"]
-function findTypes(functionSig: string): string[] {
-  // this unexported function from ethereumjs-abi is copy pasted from source
-  // see https://github.com/ethereumjs/ethereumjs-abi/blob/master/lib/index.js#L81
-  let parseSignature = function (sig) {
-    var tmp = /^(\w+)\((.*)\)$/.exec(sig) || [];
-
-    if (tmp.length !== 3) {
-      throw new Error('Invalid method signature')
-    }
-
-    var args = /^(.+)\):\((.+)$/.exec(tmp[2])
-
-    if (args !== null && args.length === 3) {
-      return {
-        method: tmp[1],
-        args: args[1].split(','),
-        retargs: args[2].split(',')
-      }
-    } else {
-      var params = tmp[2].split(',')
-      if (params.length === 1 && params[0] === '') {
-        // Special-case (possibly naive) fixup for functions that take no arguments.
-        // TODO: special cases are always bad, but this makes the function return
-        // match what the calling functions expect
-        params = []
-      }
-      return {
-        method: tmp[1],
-        args: params
-      }
-    }
-  }
-
-  return parseSignature(functionSig).args;
-}
-
-function getEnvVar(name: string): string {
-  const result: string | undefined = process.env[name];
-
-  if (result) {
-    return result;
-  } else {
-    throw `Missing required env var: ${name}`;
-  }
-}
-
-export {
-  buildTrxData,
-  findTypes,
-  fetchGasPrice,
-  fetchPayloads,
-  main,
-  inDeltaRange, 
-  filterPayloads
+  return encode(
+    functionSig,
+    [messages, signatures, [...upperCaseDeDuped]]
+  );
 }

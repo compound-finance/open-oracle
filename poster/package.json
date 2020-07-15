@@ -21,14 +21,14 @@
     "typescript": "^3.7.3"
   },
   "dependencies": {
-    "@types/web3": "^1.2.2",
     "bignumber.js": "^9.0.0",
     "ganache-core": "github:compound-finance/ganache-core.git#compound",
     "node-fetch": "^2.6.0",
-    "web3": "1.2.4",
+    "web3": "1.2.9",
     "yargs": "^15.0.2"
   },
   "resolutions": {
-    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz"
+    "scrypt.js": "https://registry.npmjs.org/@compound-finance/ethereumjs-wallet/-/ethereumjs-wallet-0.6.3.tgz",
+    "**/sha3": "^2.1.2"
   }
 }

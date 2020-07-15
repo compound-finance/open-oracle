@@ -4,27 +4,39 @@ import Web3 from 'web3';
 import yargs from 'yargs';
 
 async function run() {
-  const argv = yargs
+  const parsed = yargs
     .env('POSTER')
     .option('sources', {alias: 's', description: 'Sources to pull price messages from, a list of https endpoints created by open oracle reporters serving open oracle payloads as json', type: 'string'})
-    .option('poster_key', {alias: 'k', description: 'Private key holding enough gas to post (try: `file:<file> or env:<env>)`', type: 'string'})
-    .option('view_address', {alias: 'a', description: 'Address of open oracle view to post through', type: 'string'})
-    .option('view_function', {alias: 'f', description: 'Function signature for the view', type: 'string', default: 'postPrices(bytes[],bytes[],string[])'})
-    .option('web3_provider', {description: 'Web 3 provider', type: 'string', default: 'http://127.0.0.1:8545'})
+    .option('poster-key', {alias: 'k', description: 'Private key holding enough gas to post (try: `file:<file> or env:<env>)`', type: 'string'})
+    .option('view-address', {alias: 'v', description: 'Address of open oracle view to post through', type: 'string'})
+    .option('view-function', {alias: 'f', description: 'Function signature for the view', type: 'string', default: 'postPrices(bytes[],bytes[],string[])'})
+    .option('web3-provider', {description: 'Web 3 provider', type: 'string', default: 'http://127.0.0.1:8545'})
     .option('timeout', {alias: 't', description: 'how many seconds to wait before retrying with more gas', type: 'number', default: 180})
-    .option('gas_limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
-    .option('price_delta', {alias: 'd', description: 'the min required difference between new and previous asset price for price update on blockchain', type: 'number', default: 1})
-    .option('supported_assets', {alias: 'sa', description: 'A list of supported token names for posting prices', type: 'string', default: 'BTC,ETH,DAI,REP,ZRX,BAT,KNC,LINK,COMP'})
+    .option('gas-limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
+    .option('price-delta', {alias: 'd', description: 'the min required difference between new and previous asset price for price update on blockchain', type: 'number', default: 1})
+    .option('assets', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
     .help()
     .alias('help', 'h')
-    .demandOption(['poster_key', 'sources', 'view_function', 'web3_provider', 'view_address'], 'Provide all the arguments')
+    .demandOption(['poster-key', 'sources', 'view-function', 'web3-provider', 'view-address'], 'Provide all the arguments')
     .argv;
 
-  // posting promise will reject and retry once with higher gas after this timeout
-  const web3 = await new Web3(argv.web3_provider);
-  web3.eth.transactionPollingTimeout = argv.timeout;
+  const sources = Array.isArray(parsed['sources']) ? parsed['sources'] : [ parsed['sources'] ];
+  const poster_key = parsed['poster-key'];
+  const view_address = parsed['view-address'];
+  const view_function = parsed['view-function'];
+  const web3_provider = parsed['web3-provider'];
+  const timeout = parsed['timeout'];
+  const gas_limit = parsed['gas-limit'];
+  const price_delta = parsed['price-delta'];
+  const assets = <string[]>parsed['assets'];
 
-  if (argv.web3_provider.match(/.*:8545$/)) {
+  // posting promise will reject and retry once with higher gas after this timeout
+  const web3 = await new Web3(web3_provider);
+  web3.eth.transactionPollingTimeout = timeout;
+
+  // TODO: We should probably just have a `network` var here, or
+  //       pass this in as an option.
+  if (web3_provider.match(/.*:8545$/)) {
     // confirm immediately in dev
     web3.eth.transactionConfirmationBlocks = 1
   } else {
@@ -32,11 +44,11 @@ async function run() {
   }
 
   try {
-    await main(argv.sources, argv.poster_key, argv.view_address, argv.view_function, argv.gas_limit, argv.price_delta, argv.supported_assets, web3);
-    console.log("main completed")
+    await main(sources, poster_key, view_address, view_function, gas_limit, price_delta, assets, web3);
+    console.log('Poster run completed successfully');
   } catch (e) {
     console.error(`Poster failed to run`, e);
   }
 }
 
-run().then(console.log);
+run();

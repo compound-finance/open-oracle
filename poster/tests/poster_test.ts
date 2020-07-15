@@ -1,6 +1,13 @@
-import {buildTrxData, findTypes, fetchGasPrice, fetchPayloads, inDeltaRange, filterPayloads} from '../src/poster';
-import helpers from '../src/prev_price';
 import Web3 from 'web3';
+import {
+  buildTrxData,
+  fetchGasPrice,
+  fetchPayloads,
+  inDeltaRange,
+  filterPayloads
+} from '../src/poster';
+import * as prevPrice from '../src/prev_price';
+import { findTypes } from '../src/util';
 
 const endpointResponses = {
   "http://localhost:3000": {
@@ -143,14 +150,21 @@ describe('checking that numbers are within the specified delta range', () => {
 })
 
 describe('filtering payloads', () => {
-  let prevPrices = {};
-  async function mockPreviosPrice(_sourceAddress, asset, _dataAddress, _web3) {
-    return prevPrices[asset];
-  }
+  function setSpies(prevPrices={}) {
+    async function mockPreviousPrice(_sourceAddress, asset, _dataAddress, _web3) {
+      return prevPrices[asset];
+    }
+
+    const getSourceAddressSpy = jest.spyOn(prevPrice, 'getSourceAddress');
+    getSourceAddressSpy.mockImplementation(() => Promise.resolve(""));
+    const getDataAddressSpy = jest.spyOn(prevPrice, 'getDataAddress');
+    getDataAddressSpy.mockImplementation(() => Promise.resolve(""));
+    const getPreviousPriceSpy = jest.spyOn(prevPrice, 'getPreviousPrice');
+    getPreviousPriceSpy.mockImplementation(() => Promise.resolve(mockPreviousPrice));
+  };
+
   test('Filtering payloads, BAT price is more than delta % different', async () => {
-    helpers.getSourceAddress = jest.fn();
-    helpers.getDataAddress = jest.fn();
-    helpers.getPreviousPrice = mockPreviosPrice;
+    setSpies();
 
     const payloads = [
       {
@@ -170,9 +184,9 @@ describe('filtering payloads', () => {
         }
       }
     ]
-    prevPrices = { 'BTC': 9149090000, 'ETH': 229435000, 'DAI': 1003372, 'REP': 16884999, 'ZRX': 357704, 'BAT': 260992, 'KNC': 1156300, 'LINK': 4704680 }
+    setSpies({ 'BTC': 9149090000, 'ETH': 229435000, 'DAI': 1003372, 'REP': 16884999, 'ZRX': 357704, 'BAT': 260992, 'KNC': 1156300, 'LINK': 4704680 });
 
-    const filteredPayloads = await filterPayloads(payloads, '0x0', 'BTC,ETH,DAI,REP,ZRX,BAT,KNC,LINK,COMP', 1, new Web3());
+    const filteredPayloads = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP'], 1, new Web3());
     expect(filteredPayloads).toEqual([
       {
         timestamp: '1593209100',
@@ -185,11 +199,7 @@ describe('filtering payloads', () => {
   })
 
   test('Filtering payloads, ETH, BTC and ZRX prices are more than delta % different, ZRX, XTZ are not supported', async () => {
-    prevPrices = { 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 }
-
-    helpers.getSourceAddress = jest.fn();
-    helpers.getDataAddress = jest.fn();
-    helpers.getPreviousPrice = mockPreviosPrice;
+    setSpies({ 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 });
 
     const payloads = [
       {
@@ -210,7 +220,7 @@ describe('filtering payloads', () => {
       }
     ]
 
-    const filteredPayloads = await filterPayloads(payloads, '0x0', 'BTC,ETH,DAI,REP,BAT,KNC,LINK,COMP', 1, new Web3());
+    const filteredPayloads = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'BAT', 'KNC', 'LINK', 'COMP'], 1, new Web3());
     expect(filteredPayloads).toEqual([
       {
         timestamp: '1593209100',
@@ -222,11 +232,7 @@ describe('filtering payloads', () => {
   })
 
   test('Filtering payloads, ETH, BTC and ZRX prices are more than delta % different, no assets are supported', async () => {
-    prevPrices = { 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 }
-
-    helpers.getSourceAddress = jest.fn();
-    helpers.getDataAddress = jest.fn();
-    helpers.getPreviousPrice = mockPreviosPrice;
+    setSpies({ 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 });
 
     const payloads = [
       {
@@ -247,16 +253,12 @@ describe('filtering payloads', () => {
       }
     ]
 
-    const filteredPayloads = await filterPayloads(payloads, '0x0', '', 1, new Web3());
+    const filteredPayloads = await filterPayloads(payloads, '0x0', [], 1, new Web3());
     expect(filteredPayloads).toEqual([]);
   })
 
   test('Filtering payloads, delta is 0% percent, all supported prices should be updated', async () => {
-    prevPrices = { 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 }
-
-    helpers.getSourceAddress = jest.fn();
-    helpers.getDataAddress = jest.fn();
-    helpers.getPreviousPrice = mockPreviosPrice;
+    setSpies({ 'BTC': 10000000000, 'ETH': 1000000000, 'ZRX': 1011000, 'REP': 16000000, 'DAI': 1000000, 'BAT': 1000000, 'KNC': 2000000, 'LINK': 5000000 });
 
     const payloads = [
       {
@@ -275,9 +277,9 @@ describe('filtering payloads', () => {
           LINK: '5'
         }
       }
-    ]
+    ];
 
-    const filteredPayloads = await filterPayloads(payloads, '0x0', 'BTC,ETH,DAI,REP,ZRX,BAT,KNC,LINK,COMP', 0, new Web3());
+    const filteredPayloads = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP'], 0, new Web3());
     expect(filteredPayloads).toEqual(payloads);
   })
-})
+});
