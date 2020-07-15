@@ -9,7 +9,7 @@ import {
 } from './prev_price';
 import { BigNumber as BN } from 'bignumber.js';
 import { readCoinbasePayload } from './sources/coinbase';
-import { encode } from './util';
+import { allSuccesses, decodeMessage, encode, zip } from './util';
 
 const GAS_PRICE_API = 'https://api.compound.finance/api/gas_prices/get_gas_price';
 const DEFAULT_GAS_PRICE = 3_000_000_000; // use 3 gwei if api is unreachable for some reason
@@ -25,18 +25,17 @@ export async function main(
     web3: Web3) {
 
   const payloads = await fetchPayloads(sources);
-  const filteredPayloads = await filterPayloads(payloads, viewAddress, assets, delta, web3);
+  const feedItems = await filterPayloads(payloads, viewAddress, assets, delta, web3);
 
-  if (filteredPayloads.length > 0) {
+  if (feedItems.length > 0) {
     const gasPrice = await fetchGasPrice();
-    const trxData = buildTrxData(filteredPayloads, functionSig);
-
+    const trxData = buildTrxData(feedItems, functionSig);
     const trx = <TransactionConfig>{
       data: trxData,
       to: viewAddress,
       gasPrice: gasPrice,
       gas: gas
-    }
+    };
 
     return await postWithRetries(trx, senderKey, web3);
   }
@@ -47,54 +46,53 @@ export async function filterPayloads(
     viewAddress: string,
     supportedAssets: string[],
     delta: number,
-    web3: Web3): Promise<OpenPriceFeedPayload[]> {
+    web3: Web3): Promise<OpenPriceFeedItem[]> {
 
   const dataAddress = await getDataAddress(viewAddress, web3);
 
-  let filteredPayloads = await Promise.all(payloads.map(async payload => {
-    let sourceAddresses = await Promise.all(payload.messages.map((_, i) => {
-      return getSourceAddress(dataAddress, payload.messages[0], payload.signatures[0], web3);
-    }));
+  let filteredFeedItems = await Promise.all(payloads.map(async payload => {
+    return await Promise.all(zip(payload.messages, payload.signatures).map(([message, signature]) => {
+        const {
+          dataType,
+          timestamp,
+          symbol,
+          price
+        } = decodeMessage(message, web3)
 
-    if ([...new Set(sourceAddresses)].length !== 1) {
-      throw new Error(`Invalid source addresses, got: ${JSON.stringify(sourceAddresses)}`);
-    }
-    const sourceAddress = sourceAddresses[0]; // We proved they all match this single address
+        return {
+          message,
+          signature,
+          dataType,
+          timestamp,
+          symbol: symbol.toUpperCase(),
+          price: Number(price)
+        };
+      }).filter(({message, signature, symbol}) => {
+        return supportedAssets.includes(symbol.toUpperCase());
+      }).map(async (feedItem) => {
+        const source = await getSourceAddress(dataAddress, feedItem.message, feedItem.signature, web3);
+        const prev = await getPreviousPrice(source, feedItem.symbol, dataAddress, web3);
 
-    return await Object.entries(payload.prices).reduce<Promise<OpenPriceFeedPayload>>(async (accP, [asset, priceRaw]: [string, string], index: number) => {
-      let acc = await accP;
-      let price = Number(priceRaw);
-
-      if (supportedAssets.includes(asset.toUpperCase())) {
-        const prevPrice = await getPreviousPrice(sourceAddress, asset, dataAddress, web3);
-
-        console.debug(`Previous Price Data: asset=${asset}, prev_price=${prevPrice}, new_price=${price}`);
-
-        // Update price only if new price is different by more than delta % from the previous price
-        if (!inDeltaRange(delta, price, prevPrice)) {
-          console.log(`Setting Price: asset=${asset}, price=${price}, prev_price=${prevPrice}`);
-
-          return {
-            prices: {
-              ...acc.prices,
-              [asset]: priceRaw
-            },
-            messages: [...acc.messages, payload.messages[index]],
-            signatures: [...acc.signatures, payload.signatures[index]]
-          };
-        } else {
-          return acc;
-        }
-      } else {
-        // Post only prices for supported assets, skip prices for unregistered assets
-        console.debug(`Skipping ${asset} as not part of supported assets: ${JSON.stringify(supportedAssets)}`);
-
-        return acc;
-      }
-    }, Promise.resolve({ prices: {}, messages: [], signatures: [] }));
+        return {
+          ...feedItem,
+          source,
+          prev: Number(prev) / 1e6
+        };
+      })).then((feedItems) => {
+        return feedItems.filter(({message, signature, symbol, price, prev}) => {
+          return !inDeltaRange(delta, price, prev);
+        });
+      });
   }));
 
-  return filteredPayloads.filter(payload => payload.messages.length > 0);
+  let feedItems = filteredFeedItems.flat();
+
+  feedItems
+    .forEach(({source, symbol, price, prev}) => {
+      console.log(`Setting Price: source=${source}, symbol=${symbol}, price=${price}, prev_price=${prev}`);
+    });
+
+  return feedItems;
 }
 
 // Checks if new price is less than delta percent different form the old price
@@ -106,13 +104,13 @@ export function inDeltaRange(delta: number, price: number, prevPrice: number) {
   };
 
   const minDifference = new BN(prevPrice).multipliedBy(delta).dividedBy(100);
-  const difference = new BN(prevPrice).minus(new BN(price).multipliedBy(1e6)).abs();
+  const difference = new BN(prevPrice).minus(new BN(price)).abs();
 
   return difference.isLessThanOrEqualTo(minDifference);
 }
 
 export async function fetchPayloads(sources: string[], fetchFn=fetch): Promise<OpenPriceFeedPayload[]> {
-  let promises = await Promise.allSettled(sources.map(async (sourceRaw) => {
+  return await allSuccesses(sources.map(async (sourceRaw) => {
     let source = sourceRaw.includes('{') ? JSON.parse(sourceRaw) : sourceRaw;
 
     try {
@@ -131,10 +129,6 @@ export async function fetchPayloads(sources: string[], fetchFn=fetch): Promise<O
       throw e;
     }
   }, []));
-
-  return promises
-    .filter((promise) => promise.status === 'fulfilled')
-    .map((promise => (<PromiseFulfilledResult<OpenPriceFeedPayload>>promise).value));
 }
 
 export async function fetchGasPrice(fetchFn = fetch): Promise<number> {
@@ -148,15 +142,13 @@ export async function fetchGasPrice(fetchFn = fetch): Promise<number> {
   }
 }
 
-export function buildTrxData(payloads: OpenPriceFeedPayload[], functionSig: string): string {
-  let messages = payloads.reduce((a: string[], x) => [...a , ...x.messages], []);
-  let signatures = payloads.reduce((a: string[], x) => [...a, ...x.signatures], []);
-  let priceKeys = payloads.map(x => Object.keys(x.prices));
-  let symbols = new Set(priceKeys.reduce((acc, val) => [...acc, ...val]));
-  let upperCaseDeDuped = [...symbols].map((x) => x.toUpperCase());
+export function buildTrxData(feedItems: OpenPriceFeedItem[], functionSig: string): string {  
+  const messages = feedItems.map(({message}) => message);
+  const signatures = feedItems.map(({signature}) => signature);
+  const symbols = [...new Set(feedItems.map(({symbol}) => symbol.toUpperCase()))];
 
   return encode(
     functionSig,
-    [messages, signatures, [...upperCaseDeDuped]]
+    [messages, signatures, symbols]
   );
 }

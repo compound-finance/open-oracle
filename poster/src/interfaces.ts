@@ -14,9 +14,27 @@
 
 interface OpenPriceFeedPayload {
   // ABI-encoded values to be written to the open oracle data contract.
-  messages: string[],
+  messages: string[]
   // The signature of the attestor to these values. The values in `message`
   // will be stored in a mapping under this signer's public address.
-  signatures: string[],
+  signatures: string[]
   prices: {[symbol: string]: string }
+};
+
+interface DecodedMessage {
+  dataType: string
+  timestamp: number
+  symbol: string
+  price: number
+}
+
+interface OpenPriceFeedItem {
+  message: string
+  signature: string
+  dataType: string
+  timestamp: number
+  symbol: string
+  price: number
+  source: string
+  prev: number
 };

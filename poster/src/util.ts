@@ -2,6 +2,23 @@ import AbiCoder from 'web3-eth-abi';
 import Web3 from 'web3';
 import { TransactionConfig } from 'web3-core';
 
+export function decodeMessage(message: string, web3: Web3): DecodedMessage {
+  // TODO: Consider using `decode` from `reporter.ts`
+  let {
+    '0': dataType,
+    '1': timestamp,
+    '2': symbol,
+    '3': price
+  } = web3.eth.abi.decodeParameters(['string', 'uint64', 'string', 'uint64'], message);
+
+  return {
+    dataType,
+    timestamp,
+    symbol,
+    price: price / 1e6
+  };
+}
+
 function encodeFull(sig: string, args: any[]): [string[], string] {
   const types = findTypes(sig);
 
@@ -68,4 +85,28 @@ export function findTypes(functionSig: string): string[] {
   }
 
   return parseSignature(functionSig).args;
+}
+
+export function zip<T,U>(arr1: T[], arr2: U[]): [T, U][] {
+  return arr1.map((k, i) => [k, arr2[i]])
+}
+
+export async function asyncFilter<T>(arr: T[], f: ((T) => Promise<boolean>)): Promise<T[]> {
+  let tests: boolean[] = await Promise.all(arr.map(f));
+
+  return tests.reduce<T[]>((acc, el, i) => {
+    if (el) {
+      return [...acc, arr[i]];
+    } else {
+      return acc;
+    }
+  }, []);
+}
+
+export async function allSuccesses<T>(promises: Promise<T>[]): Promise<T[]> {
+  let settled = await Promise.allSettled(promises);
+
+  return settled
+    .filter((promise) => promise.status === 'fulfilled')
+    .map((promise => (<PromiseFulfilledResult<T>>promise).value));
 }
