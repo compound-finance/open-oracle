@@ -36,7 +36,7 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The minimum amount of time required for the old uniswap price accumulator to be replaced
     uint public immutable anchorPeriod;
 
-    /// @notice Official prices by symbol hash
+    /// @notice Official prices by symbol word
     mapping(bytes32 => uint) public prices;
 
     /// @notice Circuit breaker for using anchor price oracle directly, ignoring reporter
@@ -62,9 +62,6 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The event emitted when anchor price is updated
     event AnchorPriceUpdate(address indexed uniswapMarket, uint anchorPrice, uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp);
 
-    bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
-    bytes32 constant rotateHash = keccak256(abi.encodePacked("rotate"));
-
     /**
      * @notice Construct a uniswap anchored view for a set of token configurations
      * @param reporter_ The reporter whose prices are to be used
@@ -75,7 +72,7 @@ contract UniswapAnchoredView is UniswapConfig {
                 address reporter_,
                 uint anchorToleranceMantissa_,
                 uint anchorPeriod_,
-                TokenConfig[] memory configs) UniswapConfig(configs) public {
+                TokenConfigInput[] memory inputs) UniswapConfig(inputs) public {
         priceData = priceData_;
         reporter = reporter_;
         anchorPeriod = anchorPeriod_;
@@ -84,12 +81,12 @@ contract UniswapAnchoredView is UniswapConfig {
         upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
 
-        for (uint i = 0; i < configs.length; i++) {
-            TokenConfig memory config = configs[i];
-            address uniswapMarket = config.uniswapMarket;
-            if (config.priceSource == PriceSource.REPORTER) {
+        for (uint i = 0; i < inputs.length; i++) {
+            TokenConfigInput memory input = inputs[i];
+            address uniswapMarket = input.uniswapMarket;
+            if (input.priceSource == PriceSource.REPORTER) {
                 require(uniswapMarket != address(0), "reported prices must have an anchor");
-                uint cumulativePrice = currentCumulativePrice(config);
+                uint cumulativePrice = currentCumulativePrice(uniswapMarket, input.isUniswapReversed);
                 oldObservations[uniswapMarket].timestamp = block.timestamp;
                 newObservations[uniswapMarket].timestamp = block.timestamp;
                 oldObservations[uniswapMarket].acc = cumulativePrice;
@@ -111,10 +108,10 @@ contract UniswapAnchoredView is UniswapConfig {
     }
 
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
-        if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash];
+        if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolWord];
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
-            uint usdPerEth = prices[ethHash];
+            uint usdPerEth = prices[symbolToWord("ETH")];
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
             return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
         }
@@ -154,21 +151,21 @@ contract UniswapAnchoredView is UniswapConfig {
         for (uint i = 0; i < symbols.length; i++) {
             TokenConfig memory config = getTokenConfigBySymbol(symbols[i]);
             string memory symbol = symbols[i];
-            bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+            bytes32 symbolWord = symbolToWord(symbol);
 
             uint reporterPrice = priceData.getPrice(reporter, symbol);
             uint anchorPrice;
-            if (symbolHash == ethHash) {
+            if (symbolWord == symbolToWord("ETH")) {
                 anchorPrice = ethPrice;
             } else {
                 anchorPrice = fetchAnchorPrice(config, ethPrice);
             }
 
             if (reporterInvalidated == true) {
-                prices[symbolHash] = anchorPrice;
+                prices[symbolWord] = anchorPrice;
                 emit PriceUpdated(symbol, anchorPrice);
             } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
-                prices[symbolHash] = reporterPrice;
+                prices[symbolWord] = reporterPrice;
                 emit PriceUpdated(symbol, reporterPrice);
             } else {
                 emit PriceGuarded(symbol, reporterPrice, anchorPrice);
@@ -187,9 +184,9 @@ contract UniswapAnchoredView is UniswapConfig {
     /**
      * @dev Fetches the current token/eth price accumulator from uniswap.
      */
-    function currentCumulativePrice(TokenConfig memory config) internal view returns (uint) {
-        (uint cumulativePrice0, uint cumulativePrice1,) = UniswapV2OracleLibrary.currentCumulativePrices(config.uniswapMarket);
-        if (config.isUniswapReversed) {
+    function currentCumulativePrice(address uniswapMarket, bool isUniswapReversed) internal view returns (uint) {
+        (uint cumulativePrice0, uint cumulativePrice1,) = UniswapV2OracleLibrary.currentCumulativePrices(uniswapMarket);
+        if (isUniswapReversed) {
             return cumulativePrice1;
         } else {
             return cumulativePrice0;
@@ -201,7 +198,7 @@ contract UniswapAnchoredView is UniswapConfig {
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
     function fetchEthPrice() internal returns (uint) {
-        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
+        return fetchAnchorPrice(getTokenConfigBySymbol("ETH"), ethBaseUnit);
     }
 
     /**
@@ -240,7 +237,7 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function pokeWindowValues(TokenConfig memory config) internal returns (uint, uint, uint) {
         address uniswapMarket = config.uniswapMarket;
-        uint cumulativePrice = currentCumulativePrice(config);
+        uint cumulativePrice = currentCumulativePrice(uniswapMarket, config.isUniswapReversed);
 
         Observation memory newObservation = newObservations[uniswapMarket];
 
@@ -266,6 +263,7 @@ contract UniswapAnchoredView is UniswapConfig {
      */
     function invalidateReporter(bytes memory message, bytes memory signature) external {
         (string memory decoded_message, ) = abi.decode(message, (string, address));
+        bytes32 rotateHash = keccak256(abi.encodePacked("rotate"));
         require(keccak256(abi.encodePacked(decoded_message)) == rotateHash, "invalid message must be 'rotate'");
         require(source(message, signature) == reporter, "invalidation message must come from the reporter");
         reporterInvalidated = true;

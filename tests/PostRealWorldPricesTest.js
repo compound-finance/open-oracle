@@ -2,7 +2,7 @@
 // @notice UniswapAnchoredView `postPrices` test
 // Based on data from Coinbase oracle https://api.pro.coinbase.com/oracle and Uniswap token pairs at July 2nd 2020.
 const BN = require("bignumber.js");
-const { sendRPC, address, uint, keccak256, numToHex } = require('./Helpers');
+const { sendRPC, address, uint, numToHex } = require('./Helpers');
 
 // Cut all digits after decimal point
 BN.set({ DECIMAL_PLACES: 0, ROUNDING_MODE: 3 })
@@ -117,15 +117,15 @@ async function setupUniswapAnchoredView(pairs) {
   const anchorPeriod = 30 * 60;
 
   const tokenConfigs = [
-    {cToken: address(1), underlying: address(1), symbolHash: keccak256("ETH"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.USDC_ETH._address, isUniswapReversed: true},
-    {cToken: address(2), underlying: address(2), symbolHash: keccak256("DAI"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.DAI_ETH._address, isUniswapReversed: false},
-    {cToken: address(3), underlying: address(3), symbolHash: keccak256("REP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.REP_ETH._address, isUniswapReversed: false},
-    {cToken: address(4), underlying: address(4), symbolHash: keccak256("BAT"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BAT_ETH._address, isUniswapReversed: false},
-    {cToken: address(5), underlying: address(5), symbolHash: keccak256("ZRX"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH_ZRX._address, isUniswapReversed: true},
-    {cToken: address(6), underlying: address(6), symbolHash: keccak256("BTC"), baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.WBTC_ETH._address, isUniswapReversed: false},
-    {cToken: address(7), underlying: address(7), symbolHash: keccak256("COMP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.COMP_ETH._address, isUniswapReversed: false},
-    {cToken: address(8), underlying: address(8), symbolHash: keccak256("KNC"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH_KNC._address, isUniswapReversed: true},
-    {cToken: address(9), underlying: address(9), symbolHash: keccak256("LINK"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.LINK_ETH._address, isUniswapReversed: false},
+    {cToken: address(1), underlying: address(1), symbol: "ETH", baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.USDC_ETH._address, isUniswapReversed: true},
+    {cToken: address(2), underlying: address(2), symbol: "DAI", baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.DAI_ETH._address, isUniswapReversed: false},
+    {cToken: address(3), underlying: address(3), symbol: "REP", baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.REP_ETH._address, isUniswapReversed: false},
+    {cToken: address(4), underlying: address(4), symbol: "BAT", baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BAT_ETH._address, isUniswapReversed: false},
+    {cToken: address(5), underlying: address(5), symbol: "ZRX", baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH_ZRX._address, isUniswapReversed: true},
+    {cToken: address(6), underlying: address(6), symbol: "BTC", baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.WBTC_ETH._address, isUniswapReversed: false},
+    {cToken: address(7), underlying: address(7), symbol: "COMP", baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.COMP_ETH._address, isUniswapReversed: false},
+    {cToken: address(8), underlying: address(8), symbol: "KNC", baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH_KNC._address, isUniswapReversed: true},
+    {cToken: address(9), underlying: address(9), symbol: "LINK", baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.LINK_ETH._address, isUniswapReversed: false},
   ];
 
   return deploy("UniswapAnchoredView", [priceData._address, reporter, anchorMantissa, anchorPeriod, tokenConfigs]);
