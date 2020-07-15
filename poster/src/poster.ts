@@ -37,6 +37,9 @@ export async function main(
       gas: gas
     };
 
+    console.log(`Posting...`);
+    console.log(feedItems);
+
     return await postWithRetries(trx, senderKey, web3);
   }
 }

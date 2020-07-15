@@ -42,7 +42,7 @@ To run as standalone from this project's root, simply invoke the start script.
 You may pass sources in as JSON-encoded objects for complex sources, like Coinbase:
 
 ```sh
- yarn run start --web3-provider=https://kovan-eth.compound.finance/ --view-address=0x5265ed1e3055de9B77f007CEaBFC277F2539710A --poster-key="$(cat ~/.ethereum/kovan)" --sources="{\"source\": \"coinbase\", \"endpoint\": \"https://api.pro.coinbase.com/oracle\", \"api_key_id\": \"$COINBASE_API_KEY\", \"api_secret\": \"$COINBASE_API_SECRET\", \"api_passphrase\": \"$COINBASE_API_PASSPHRASE\"}"
+ yarn prepare && yarn run start --web3-provider=https://kovan-eth.compound.finance/ --view-address=0x60F1FFB2FE2bFE6CFFA0A66e258B623f06E1949F --poster-key="$(cat ~/.ethereum/kovan)" --sources="{\"source\": \"coinbase\", \"endpoint\": \"https://api.pro.coinbase.com/oracle\", \"api_key_id\": \"$COINBASE_API_KEY\", \"api_secret\": \"$COINBASE_API_SECRET\", \"api_passphrase\": \"$COINBASE_API_PASSPHRASE\"}"
 ```
 
 Otherwise, you can include the Open Price Feed poster in an app for configuration:

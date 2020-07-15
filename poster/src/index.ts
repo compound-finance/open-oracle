@@ -14,7 +14,7 @@ async function run() {
     .option('timeout', {alias: 't', description: 'how many seconds to wait before retrying with more gas', type: 'number', default: 180})
     .option('gas-limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
     .option('price-delta', {alias: 'd', description: 'the min required difference between new and previous asset price for price update on blockchain', type: 'number', default: 1})
-    .option('assets', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
+    .option('asset', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
     .help()
     .alias('help', 'h')
     .demandOption(['poster-key', 'sources', 'view-function', 'web3-provider', 'view-address'], 'Provide all the arguments')
@@ -28,7 +28,7 @@ async function run() {
   const timeout = parsed['timeout'];
   const gas_limit = parsed['gas-limit'];
   const price_delta = parsed['price-delta'];
-  const assets = <string[]>parsed['assets'];
+  const assets = <string[]>parsed['asset'];
 
   // posting promise will reject and retry once with higher gas after this timeout
   const web3 = await new Web3(web3_provider);

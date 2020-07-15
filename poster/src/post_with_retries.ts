@@ -29,7 +29,6 @@ const GAS_ADJUSTMENT = 1.2; // Increase gas by this percentage each retry
 
 async function postWithRetries(transaction: TransactionConfig, signerKey: string, web3: Web3, retries: number = RETRIES, attempt: number = 0) {
   console.log(`Running Open Price Feed Poster${attempt > 0 ? ` [attempt ${attempt}]` : ''}...`);
-  console.log(transaction); // TODO: Format this?
 
   signerKey = ensureHex(signerKey, 'private key');
 
@@ -40,11 +39,11 @@ async function postWithRetries(transaction: TransactionConfig, signerKey: string
   // TODO: Why manual nonce management?
   let nonce = await web3.eth.getTransactionCount(pubKey.address)
   transaction.nonce = nonce
-  console.log(transaction)
 
   try {
     return await signAndSend(transaction, signerKey, web3);
   } catch (e) {
+    console.debug({transaction});
     console.warn('Failed to post Open Price Feed:');
     console.warn(e);
     // If higher gas price will help, try again. Otherwise, really throw.
