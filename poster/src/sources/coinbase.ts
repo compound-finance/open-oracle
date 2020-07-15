@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 
-interface CoinbaseConfig {
+export interface CoinbaseConfig {
   source: string
   endpoint: string
   api_key_id: string

@@ -8,8 +8,8 @@ import {
   getSourceAddress
 } from './prev_price';
 import { BigNumber as BN } from 'bignumber.js';
-import { readCoinbasePayload } from './sources/coinbase';
-import { allSuccesses, decodeMessage, encode, zip } from './util';
+import { CoinbaseConfig, readCoinbasePayload } from './sources/coinbase';
+import { decodeMessage, encode, zip } from './util';
 
 const GAS_PRICE_API = 'https://api.compound.finance/api/gas_prices/get_gas_price';
 const DEFAULT_GAS_PRICE = 3_000_000_000; // use 3 gwei if api is unreachable for some reason
@@ -110,25 +110,42 @@ export function inDeltaRange(delta: number, price: number, prevPrice: number) {
 }
 
 export async function fetchPayloads(sources: string[], fetchFn=fetch): Promise<OpenPriceFeedPayload[]> {
-  return await allSuccesses(sources.map(async (sourceRaw) => {
-    let source = sourceRaw.includes('{') ? JSON.parse(sourceRaw) : sourceRaw;
+  function parse(json): object {
+    let result;
+    try {
+      result = JSON.parse(json);
+    } catch (e) {
+      console.error(`Error parsing source input: ${json}`);
+      throw e;
+    }
+    if (!result['source']) {
+      throw new Error(`Source must include \`source\` field for ${json}`);
+    }
+    return result;
+  }
+
+  return await Promise.all(sources.map(async (sourceRaw) => {
+    let source = sourceRaw.includes('{') ? parse(sourceRaw) : sourceRaw;
+    let response;
 
     try {
-      let response;
       if (typeof(source) === 'string') {
         response = await fetchFn(source);
-      } else if (source.source === 'coinbase') {
-        response = readCoinbasePayload(source, fetchFn);
+      } else if (source['source'] === 'coinbase') {
+        response = await readCoinbasePayload(<CoinbaseConfig>source, fetchFn);
       }
 
-      return response.json();
+      return await response.json();
     } catch (e) {
       // This is now just for some extra debugging messages
-      console.error("Error Fetching Payload for ${source}")
+      console.error(`Error Fetching Payload for ${JSON.stringify(source)}`);
+      if (response) {
+        console.debug({response});
+      }
       console.error(e);
       throw e;
     }
-  }, []));
+  }));
 }
 
 export async function fetchGasPrice(fetchFn = fetch): Promise<number> {

@@ -14,7 +14,7 @@ export async function getPreviousPrice(sourceAddress: string, asset: string, dat
 export async function getDataAddress(viewAddress: string, web3: Web3) {
   return await read(
     viewAddress,
-    'data()',
+    'priceData()',
     [],
     'address',
     web3

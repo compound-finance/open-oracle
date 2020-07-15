@@ -44,9 +44,14 @@ export async function read(address: string, sig: string, args: any[], returns: s
     to: address
   };
 
-  const result = await web3.eth.call(call);
+  try {
+    const result = await web3.eth.call(call);
 
-  return (<any>AbiCoder).decodeParameter(returns, result);
+    return (<any>AbiCoder).decodeParameter(returns, result);
+  } catch (e) {
+    console.error(`Error reading ${sig}:${args} at ${address}: ${e.toString()}`);
+    throw e;
+  }
 }
 
 // TODO: Swap with ether's own implementation of this
