@@ -42,10 +42,11 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice Circuit breaker for using anchor price oracle directly, ignoring reporter
     bool public reporterInvalidated;
 
-    /// @notice The old observation for each uniswap market
-    mapping(address => Observation) public oldObservations;
-    /// @notice The new observation for each uniswap market
-    mapping(address => Observation) public newObservations;
+    /// @notice The old observation for each symbolHash
+    mapping(bytes32 => Observation) public oldObservations;
+
+    /// @notice The new observation for each symbolHash
+    mapping(bytes32 => Observation) public newObservations;
 
     /// @notice The event emitted when the stored price is updated
     event PriceUpdated(string symbol, uint price);
@@ -57,10 +58,10 @@ contract UniswapAnchoredView is UniswapConfig {
     event ReporterInvalidated(address reporter);
 
     /// @notice The event emitted when the uniswap window changes
-    event UniswapWindowUpdate(address indexed uniswapMarket, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
+    event UniswapWindowUpdate(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
 
     /// @notice The event emitted when anchor price is updated
-    event AnchorPriceUpdate(address indexed uniswapMarket, uint anchorPrice, uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp);
+    event AnchorPriceUpdate(bytes32 indexed symbolHash, uint anchorPrice, uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp);
 
     bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
     bytes32 constant rotateHash = keccak256(abi.encodePacked("rotate"));
@@ -89,11 +90,12 @@ contract UniswapAnchoredView is UniswapConfig {
             address uniswapMarket = config.uniswapMarket;
             if (config.priceSource == PriceSource.REPORTER) {
                 require(uniswapMarket != address(0), "reported prices must have an anchor");
+                bytes32 symbolHash = config.symbolHash;
                 uint cumulativePrice = currentCumulativePrice(config);
-                oldObservations[uniswapMarket].timestamp = block.timestamp;
-                newObservations[uniswapMarket].timestamp = block.timestamp;
-                oldObservations[uniswapMarket].acc = cumulativePrice;
-                newObservations[uniswapMarket].acc = cumulativePrice;
+                oldObservations[symbolHash].timestamp = block.timestamp;
+                newObservations[symbolHash].timestamp = block.timestamp;
+                oldObservations[symbolHash].acc = cumulativePrice;
+                newObservations[symbolHash].acc = cumulativePrice;
             } else {
                 require(uniswapMarket == address(0), "only reported prices utilize an anchor");
             }
@@ -229,7 +231,7 @@ contract UniswapAnchoredView is UniswapConfig {
             anchorPrice = mul(rawUniswapPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
         }
 
-        emit AnchorPriceUpdate(config.uniswapMarket, anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
+        emit AnchorPriceUpdate(config.symbolHash, anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
 
         return anchorPrice;
     }
@@ -239,22 +241,22 @@ contract UniswapAnchoredView is UniswapConfig {
      *  Update new and old observations of lagging window if period elapsed.
      */
     function pokeWindowValues(TokenConfig memory config) internal returns (uint, uint, uint) {
-        address uniswapMarket = config.uniswapMarket;
+        bytes32 symbolHash = config.symbolHash;
         uint cumulativePrice = currentCumulativePrice(config);
 
-        Observation memory newObservation = newObservations[uniswapMarket];
+        Observation memory newObservation = newObservations[symbolHash];
 
         // Update new and old observations if elapsed time is greater than or equal to anchor period
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= anchorPeriod) {
-            oldObservations[uniswapMarket].timestamp = newObservation.timestamp;
-            oldObservations[uniswapMarket].acc = newObservation.acc;
+            oldObservations[symbolHash].timestamp = newObservation.timestamp;
+            oldObservations[symbolHash].acc = newObservation.acc;
 
-            newObservations[uniswapMarket].timestamp = block.timestamp;
-            newObservations[uniswapMarket].acc = cumulativePrice;
-            emit UniswapWindowUpdate(uniswapMarket, newObservation.timestamp, block.timestamp, newObservation.acc, cumulativePrice);
+            newObservations[symbolHash].timestamp = block.timestamp;
+            newObservations[symbolHash].acc = cumulativePrice;
+            emit UniswapWindowUpdate(config.symbolHash, newObservation.timestamp, block.timestamp, newObservation.acc, cumulativePrice);
         }
-        return (cumulativePrice, oldObservations[uniswapMarket].acc, oldObservations[uniswapMarket].timestamp);
+        return (cumulativePrice, oldObservations[symbolHash].acc, oldObservations[symbolHash].timestamp);
     }
 
     /**
