@@ -14,11 +14,11 @@ async function setup(opts)  {
   await sendRPC(web3, 'evm_mine', [fixed(1.6e9)]);
 
   const mockPair = await deploy("MockUniswapTokenPair", [
-    "1865335786147",
-    "8202340665419053945756",
-    "1593755855",
-    "119785032308978310142960133641565753500432674230537",
-    "5820053774558372823476814618189",
+    fixed(1.8e12),
+    fixed(8.2e21),
+    fixed(1.6e9),
+    fixed(1.19e50),
+    fixed(5.8e30),
   ]);
 
   const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
@@ -227,10 +227,8 @@ describe('UniswapAnchoredView', () => {
     it('should not update window values if not enough time elapsed', async () => {
       const timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod - 3;
       await sendRPC(web3, 'evm_increaseTime', [anchorPeriod - 5]);
-      const tx = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
+      const tx = await postPrices(timestamp, [[['ETH', 227]]], ['ETH']);
       expect(tx.events.UniswapWindowUpdate).toBe(undefined);
-      expect(tx.events.PriceGuarded).not.toBe(undefined);
-
     });
 
     it('should update window values if enough time elapsed', async () => {
