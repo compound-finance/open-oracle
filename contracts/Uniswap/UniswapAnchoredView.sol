@@ -18,13 +18,13 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
-    /// @notice the number of wei in 1 ETH
+    /// @notice The number of wei in 1 ETH
     uint public constant ethBaseUnit = 1e18;
 
-    /// @notice a common scaling factor to maintain precision
+    /// @notice A common scaling factor to maintain precision
     uint public constant expScale = 1e18;
 
-    /// @notice the Open Oracle Reporter
+    /// @notice The Open Oracle Reporter
     address public immutable reporter;
 
     /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated

@@ -471,7 +471,7 @@ describe('AnchoredView', () => {
     it("sets fallback flag to true if passes", async () => {
       const rotationTarget = '0xAbcdef0123456789000000000000000000000005';
       let encoded = encodeRotationMessage(rotationTarget);
-
+      // sign rotation message with wrong key
       const [ signed ] = sign(encoded, source.privateKey);
       expect(await call(delfi, 'reporterBreaker', [])).toEqual(false);
       await send(delfi, 'invalidate', [encoded, signed.signature]);
