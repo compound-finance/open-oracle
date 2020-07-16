@@ -20,7 +20,7 @@ contract MockUniswapV2Factory {
             PairConfig memory config = configs[i];
             if (config.priceSource == PriceSource.REPORTER) {
                 // Init empty token pair
-                MockUniswapTokenPair pair = new MockUniswapTokenPair(0,0,0,0,0);
+                MockUniswapTokenPair pair = new MockUniswapTokenPair(1,1,1,1,1);
                 getPair[config.token0][config.token1] = address(pair);
                 getPair[config.token1][config.token0] = address(pair); // populate mapping in the reverse direction
             }
