@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.6.10;
+pragma experimental ABIEncoderV2;
 
-import "./MockUniswapTokenPair.sol"
+import "./MockUniswapTokenPair.sol";
 
 contract MockUniswapV2Factory {
-
+    enum PriceSource {FIXED_ETH, FIXED_USD, REPORTER}
     struct PairConfig {
         address token0;
         address token1;
@@ -13,21 +14,22 @@ contract MockUniswapV2Factory {
     }
 
     mapping(address => mapping(address => address)) public getPair;
-    address[] public allPairs;
 
     constructor(PairConfig[] memory configs) public {
         for (uint i = 0; i < configs.length; i++) {
-            if (config.priceSource ==  == PriceSource.REPORTER) {
-                PairConfig memory config = configs[i];
+            PairConfig memory config = configs[i];
+            if (config.priceSource == PriceSource.REPORTER) {
                 // Init empty token pair
                 MockUniswapTokenPair pair = new MockUniswapTokenPair(0,0,0,0,0);
-                getPair[token0][token1] = pair;
-                getPair[token1][token0] = pair; // populate mapping in the reverse direction
+                getPair[config.token0][config.token1] = address(pair);
+                getPair[config.token1][config.token0] = address(pair); // populate mapping in the reverse direction
             }
         }
     }
 
-    function createPair(address token0, address token1) external returns (address pair) {
-        require(getPair[token0][token1] != 0, "Pair is expected to be set in constructor");
+    function createPair(address token0, address token1) external view returns (address pair) {
+        address result = getPair[token0][token1];
+        require(result != address(0), "Pair is expected to be set in constructor");
+        return result;
     }
 }
