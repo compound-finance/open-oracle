@@ -115,3 +115,18 @@ export async function allSuccesses<T>(promises: Promise<T>[]): Promise<T[]> {
     .filter((promise) => promise.status === 'fulfilled')
     .map((promise => (<PromiseFulfilledResult<T>>promise).value));
 }
+
+export function root(val: bigint, k: bigint) {
+    let o=0n; // old approx value
+    let x = val;
+    let limit = 100n;
+
+    while(x**k!=k && x!=o && --limit) {
+      o=x;
+      x = ((k-1n)*x + val/x**(k-1n))/k;
+    }
+
+    return x;
+}
+
+export const sqrt = (x: bigint) => root(x, 2n);
