@@ -335,7 +335,7 @@ describe("UniswapAnchoredView", () => {
     });
   });
 
-  it("test anchor price events - AnchorPriceUpdate", async () => {
+  it("test anchor price events - AnchorPriceUpdated", async () => {
     await sendRPC(web3, "evm_increaseTime", [31 * 60]);
 
     const observations = {};
@@ -350,7 +350,7 @@ describe("UniswapAnchoredView", () => {
       symbols,
     ]);
 
-    const anchorEvents = postRes.events.AnchorPriceUpdate;
+    const anchorEvents = postRes.events.AnchorPriceUpdated;
 
     // Check anchor prices
     const block = await sendRPC(web3, "eth_getBlockByNumber", [ anchorEvents[0].blockNumber, false]);
@@ -460,7 +460,7 @@ describe("UniswapAnchoredView", () => {
       signatures,
       symbols,
     ]);
-    const uniswapWindowEvents1 = postRes1.events.UniswapWindowUpdate;
+    const uniswapWindowEvents1 = postRes1.events.UniswapWindowUpdated;
 
     uniswapWindowEvents1.forEach((windowUpdate) => {
       const elapsedTime =
@@ -476,7 +476,7 @@ describe("UniswapAnchoredView", () => {
       signatures2,
       symbols,
     ]);
-    const uniswapWindowEvents2 = postRes2.events.UniswapWindowUpdate;
+    const uniswapWindowEvents2 = postRes2.events.UniswapWindowUpdated;
 
     uniswapWindowEvents2.forEach((windowUpdate) => {
       const elapsedTime =
@@ -503,7 +503,7 @@ describe("UniswapAnchoredView", () => {
       symbols1,
     ]);
     const oldObservation1 = await call(uniswapAnchoredView, "oldObservations", [keccak256('ETH')]);
-    const anchorEvent1 = postRes1.events.AnchorPriceUpdate;
+    const anchorEvent1 = postRes1.events.AnchorPriceUpdated;
     const block1 = await sendRPC(web3, "eth_getBlockByNumber", [anchorEvent1.blockNumber, false]);
     const blockTimestamp1 = block1.result.timestamp;
 
@@ -525,7 +525,7 @@ describe("UniswapAnchoredView", () => {
       symbols2,
     ]);
     const oldObservation2 = await call(uniswapAnchoredView, "oldObservations", [keccak256('ETH')]);
-    const anchorEvent2 = postRes2.events.AnchorPriceUpdate;
+    const anchorEvent2 = postRes2.events.AnchorPriceUpdated;
     const block2 = await sendRPC(web3, "eth_getBlockByNumber", [anchorEvent2.blockNumber, false]);
     const blockTimestamp2 = block2.result.timestamp;
     const cumulativePrice_eth2 = await getCumulativePrice(pairs.ETH, blockTimestamp2, true);
