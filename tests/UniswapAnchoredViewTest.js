@@ -128,7 +128,7 @@ describe('UniswapAnchoredView', () => {
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(100e6);
     });
 
-    it('should update view if ERC20 price is below anchor bounds', async () => {
+    it('should not update view if ERC20 price is below anchor bounds', async () => {
       const timestamp = time() - 5;
       // anchorMantissa is 1e17, so 10% tolerance
       await send(uniswapAnchoredView, 'setAnchorPrice', ['REP', 15e6]);
@@ -153,7 +153,7 @@ describe('UniswapAnchoredView', () => {
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(100e6);
     });
 
-    it('should update view if ERC20 price is below anchor bounds', async () => {
+    it('should not update view if ERC20 price is above anchor bounds', async () => {
       const timestamp = time() - 5;
       // anchorMantissa is 1e17, so 10% tolerance
       await send(uniswapAnchoredView, 'setAnchorPrice', ['REP', 19e6]);
