@@ -99,6 +99,7 @@ contract UniswapAnchoredView is UniswapConfig {
                 newObservations[symbolHash].timestamp = block.timestamp;
                 oldObservations[symbolHash].acc = cumulativePrice;
                 newObservations[symbolHash].acc = cumulativePrice;
+                emit UniswapWindowUpdated(symbolHash, block.timestamp, block.timestamp, cumulativePrice, cumulativePrice);
             } else {
                 require(uniswapMarket == address(0), "only reported prices utilize an anchor");
             }
