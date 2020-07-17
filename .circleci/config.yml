@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   test_oracle:
     docker:
-      - image: circleci/node:11
+      - image: circleci/node:12
     working_directory: ~/repo
     steps:
       - setup_remote_docker:
@@ -51,7 +51,7 @@ jobs:
 
   test_poster:
     docker:
-      - image: circleci/node:11
+      - image: circleci/node:12
     working_directory: ~/repo/poster
     steps:
       - checkout:
