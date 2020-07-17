@@ -51,28 +51,31 @@ describe('swapToPrice', () => {
     }
   ].forEach(conf => {
     test.only(conf.name, async () => {
+
       let whit = await Whit.init({
         provider: 'ganache',
-        build: ['./.build/uniswap.json', '././build/erc20.json'],
+        build: ['./tests/.build/uniswap.json', './tests/.build/compound-test.json'],
         contracts: {
           uniswap: {
-            deploy: ['UniswapV2Factory', []]
+            deploy: ['UniswapV2Factory', ["0x871A9FF377eCf2632A0928950dCEb181557F2e17"]]
           },
           abacus: {
-            deploy: ['Erc20', []],
-          },
-          babylon: {
-            deploy: ['Erc20', []],
+            deploy: ['StandardToken', []]
           },
           pair: {
-            deploy: async ({uniswap, abacus, babylon}) => {
-              return await uniswap.methods.createPair(abacus, babylon);
+            deploy: async ({uniswap, abacus, babylon}, {ethers, build, provider}) => {
+              let pair = await uniswap.createPair(abacus, babylon);
+
+              return new ethers.Contract(pair, build['UniswapPair'].abi, provider);
             },
-            post: async (pair, refs) => {
+            postDeploy: async (pair, refs) => {
               await refs.abacus.methods.approve(refs.pair, -1);
               await refs.babylong.methods.approve(refs.pair, -1);
               await pair.addLiquidity(100, 200);
             }
+          },
+          babylon: {
+            deploy: ['StandardToken', []],
           }
         }
       });
