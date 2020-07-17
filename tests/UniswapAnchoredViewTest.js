@@ -320,6 +320,7 @@ describe('UniswapAnchoredView', () => {
 
       const anchorPriceUpdated = tx2.events.AnchorPriceUpdated.returnValues;
       expect(anchorPriceUpdated.symbol).toBe("ETH");
+      expect(anchorPriceUpdated.symbolHash).toBe(ethHash);
       expect(anchorPriceUpdated.newTimestamp).greaterThan(anchorPriceUpdated.oldTimestamp);
       expect(oldObs3.timestamp).toBe(anchorPriceUpdated.oldTimestamp);
     });

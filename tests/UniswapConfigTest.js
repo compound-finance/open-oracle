@@ -79,21 +79,21 @@ describe('UniswapConfig', () => {
     const cfg9 = await call(contract, 'getTokenConfig', [9]);
     const tx9 = await send(contract, 'getTokenConfig', [9]);
     expect(cfg9.underlying).toEqual(address(9));
-    expect(tx9.gasUsed).toEqual(22619);
+    expect(tx9.gasUsed).toEqual(22577);
 
     const cfg25 = await call(contract, 'getTokenConfig', [25]);
     const tx25 = await send(contract, 'getTokenConfig', [25]);
     expect(cfg25.underlying).toEqual(address(25));
-    expect(tx25.gasUsed).toEqual(23035);
+    expect(tx25.gasUsed).toEqual(22993);
 
     const cfgZ = await call(contract, 'getTokenConfigBySymbol', ['z']);
     const txZ = await send(contract, 'getTokenConfigBySymbol', ['z']);
     expect(cfgZ.underlying).toEqual(address(25));
-    expect(txZ.gasUsed).toEqual(25273);
+    expect(txZ.gasUsed).toEqual(25231);
 
     const cfgCT26 = await call(contract, 'getTokenConfigByCToken', [address(26)]);
     const txCT26 = await send(contract, 'getTokenConfigByCToken', [address(26)]);
     expect(cfgCT26.underlying).toEqual(address(25));
-    expect(txCT26.gasUsed).toEqual(25136);
+    expect(txCT26.gasUsed).toEqual(25094);
   });
 });

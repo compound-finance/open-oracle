@@ -49,13 +49,13 @@ contract UniswapAnchoredView is UniswapConfig {
     mapping(bytes32 => Observation) public newObservations;
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
-    event PriceGuarded(string symbol, uint reporter, uint anchor);
+    event PriceGuarded(bytes32 indexed symbolHash, string symbol, uint reporter, uint anchor);
 
     /// @notice The event emitted when the stored price is updated
-    event PriceUpdated(string symbol, uint price);
+    event PriceUpdated(bytes32 indexed symbolHash, string symbol, uint price);
 
     /// @notice The event emitted when anchor price is updated
-    event AnchorPriceUpdated(string symbol, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
+    event AnchorPriceUpdated(bytes32 indexed symbolHash, string symbol, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
 
     /// @notice The event emitted when the uniswap window changes
     event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
@@ -171,17 +171,17 @@ contract UniswapAnchoredView is UniswapConfig {
         if (symbolHash == ethHash) {
             anchorPrice = ethPrice;
         } else {
-            anchorPrice = fetchAnchorPrice(symbol, config, ethPrice);
+            anchorPrice = fetchAnchorPrice(symbol, symbolHash, config, ethPrice);
         }
 
         if (reporterInvalidated) {
             prices[symbolHash] = anchorPrice;
-            emit PriceUpdated(symbol, anchorPrice);
+            emit PriceUpdated(symbolHash, symbol, anchorPrice);
         } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
             prices[symbolHash] = reporterPrice;
-            emit PriceUpdated(symbol, reporterPrice);
+            emit PriceUpdated(symbolHash, symbol, reporterPrice);
         } else {
-            emit PriceGuarded(symbol, reporterPrice, anchorPrice);
+            emit PriceGuarded(symbolHash, symbol, reporterPrice, anchorPrice);
         }
     }
 
@@ -210,14 +210,14 @@ contract UniswapAnchoredView is UniswapConfig {
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
     function fetchEthPrice() internal returns (uint) {
-        return fetchAnchorPrice("ETH", getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
+        return fetchAnchorPrice("ETH", ethHash, getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
     /**
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
      * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
-    function fetchAnchorPrice(string memory symbol, TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
+    function fetchAnchorPrice(string memory symbol, bytes32 symbolHash, TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
 
         // This should be impossible, but better safe than sorry
@@ -239,7 +239,7 @@ contract UniswapAnchoredView is UniswapConfig {
             anchorPrice = mul(rawUniswapPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
         }
 
-        emit AnchorPriceUpdated(symbol, anchorPrice, oldTimestamp, block.timestamp);
+        emit AnchorPriceUpdated(symbolHash, symbol, anchorPrice, oldTimestamp, block.timestamp);
 
         return anchorPrice;
     }
