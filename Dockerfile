@@ -1,4 +1,4 @@
-FROM node:13.6.0-alpine3.10
+FROM node:14.5.0-alpine3.10
 WORKDIR /open-oracle
 RUN wget https://github.com/ethereum/solidity/releases/download/v0.6.10/solc-static-linux -O /usr/local/bin/solc && chmod +x /usr/local/bin/solc
 RUN apk update && apk add --no-cache --virtual .gyp \
@@ -10,9 +10,9 @@ RUN apk update && apk add --no-cache --virtual .gyp \
     git
 
 RUN yarn global add node-gyp npx
-COPY package.json /open-oracle/package.json
+COPY package.json yarn.lock /open-oracle/
 
-RUN yarn install
+RUN yarn install --frozen-lockfile
 
 ENV PROVIDER PROVIDER
 COPY contracts contracts

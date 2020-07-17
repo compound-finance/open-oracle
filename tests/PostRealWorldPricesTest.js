@@ -509,6 +509,7 @@ describe("UniswapAnchoredView", () => {
 
     const cumulativePrice_eth1 = await getCumulativePrice(pairs.ETH, blockTimestamp1, true);
     const ethPrice1 = calculateTWAP(cumulativePrice_eth1, oldObservation1.acc, blockTimestamp1, oldObservation1.timestamp).toFixed();
+    expect(anchorEvent1.returnValues.symbol).toBe("ETH");
     expect(anchorEvent1.returnValues.anchorPrice).toBe(ethPrice1);
 
     // Emulate timeElapsed for ETH token pair, so that timestamps are set up correctly
@@ -531,6 +532,7 @@ describe("UniswapAnchoredView", () => {
     const cumulativePrice_eth2 = await getCumulativePrice(pairs.ETH, blockTimestamp2, true);
     const ethPrice2 = calculateTWAP(cumulativePrice_eth2, oldObservation2.acc, blockTimestamp2, oldObservation2.timestamp).toFixed();
 
+    expect(anchorEvent2.returnValues.symbol).toBe("ETH");
     expect(anchorEvent2.returnValues.anchorPrice).toBe(ethPrice2);
   });
 

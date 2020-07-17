@@ -101,6 +101,7 @@ describe('UniswapAnchoredView', () => {
 
       expect(tx.events.PriceGuarded).toBe(undefined);
       expect(tx.events.PriceUpdated.returnValues.price).numEquals(91e6);
+      expect(tx.events.PriceUpdated.returnValues.symbol).toBe('ETH');
       expect(await call(uniswapAnchoredView, 'prices', [keccak256('ETH')])).numEquals(91e6);
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(91e6);
     });
@@ -112,6 +113,7 @@ describe('UniswapAnchoredView', () => {
 
       expect(tx.events.PriceGuarded).toBe(undefined);
       expect(tx.events.PriceUpdated.returnValues.price).numEquals(17e6);
+      expect(tx.events.PriceUpdated.returnValues.symbol).toBe('REP');
       expect(await call(uniswapAnchoredView, 'prices', [keccak256('REP')])).numEquals(17e6);
       expect(await call(priceData, 'getPrice', [reporter.address, 'REP'])).numEquals(17e6);
     });
@@ -122,6 +124,7 @@ describe('UniswapAnchoredView', () => {
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 89.9e6]);
       const tx = await postPrices(timestamp, [[['ETH', 100]]], ['ETH']);
 
+      expect(tx.events.PriceGuarded.returnValues.symbol).toBe('ETH');
       expect(tx.events.PriceGuarded.returnValues.reporter).numEquals(100e6);
       expect(tx.events.PriceGuarded.returnValues.anchor).numEquals(89.9e6);
       expect(tx.events.PriceUpdated).toBe(undefined);
@@ -286,7 +289,7 @@ describe('UniswapAnchoredView', () => {
 
       const tx1 = await postPrices(timestamp, [[['ETH', 227]]], ['ETH']);
       const updateEvent = tx1.events.AnchorPriceUpdated.returnValues;
-      expect(updateEvent.nowCumulativePrice).greaterThan(updateEvent.oldCumulativePrice);
+      expect(updateEvent.newTimestamp).greaterThan(updateEvent.oldTimestamp);
       expect(tx1.events.PriceGuarded).toBe(undefined);
 
       // on the first update, we expect the new observation to change
@@ -315,9 +318,10 @@ describe('UniswapAnchoredView', () => {
       expect(oldObs3.acc).numEquals(newObs2.acc);
       expect(oldObs3.timestamp).numEquals(newObs2.timestamp);
 
-      const anchorPriceUpdate = tx2.events.AnchorPriceUpdated.returnValues;
-      expect(oldObs3.timestamp).toBe(anchorPriceUpdate.oldTimestamp);
-      expect(oldObs3.acc).toBe(anchorPriceUpdate.oldCumulativePrice);
+      const anchorPriceUpdated = tx2.events.AnchorPriceUpdated.returnValues;
+      expect(anchorPriceUpdated.symbol).toBe("ETH");
+      expect(anchorPriceUpdated.newTimestamp).greaterThan(anchorPriceUpdated.oldTimestamp);
+      expect(oldObs3.timestamp).toBe(anchorPriceUpdated.oldTimestamp);
     });
   })
 
