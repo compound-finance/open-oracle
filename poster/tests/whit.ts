@@ -2,6 +2,30 @@ import Ganache from 'ganache-core';
 import { ethers } from 'ethers';
 import { promises as fs } from 'fs';
 
+function deepMerge<T extends object>(a: T, b: T): T {
+  return Object.entries(a).reduce<T>((acc, [k, v]) => {
+    if (acc[k] && typeof(acc[k]) === 'object') {
+      return {
+        ...acc,
+        [k]: deepMerge(acc[k], v)
+      };
+    } else if (acc[k] && Array.isArray(acc[k])) {
+      return {
+        ...acc,
+        [k]: [...acc[k], ...v]
+      };
+    } else {
+      return {
+        ...acc,
+        [k]: {
+          ...acc[k],
+          ...v
+        }
+      };
+    }
+  }, b);
+}
+
 class RefMissingError extends Error {
   ref: string
   contract: string
@@ -35,12 +59,14 @@ type Refs = { [ref: string]: Contract }
 interface WhitInfo {
   ethers: any
   provider : ethers.providers.Provider
-  build: object
+  signer : ethers.Signer
+  build: object,
+  contract: (address: Address, contractName: string) => ethers.Contract
 }
 
 interface ContractReq {
   deploy: [string, any[]] | ((refs: any, whitInfo: WhitInfo) => Promise<ethers.Contract>)
-  postDeploy?: (contract: ethers.Contract, refs: any) => Promise<any>
+  postDeploy?: (refs: any, whitInfo: WhitInfo) => Promise<any>
 }
 
 interface WhitSettings {
@@ -49,19 +75,23 @@ interface WhitSettings {
   contracts: { [name: string]: ContractReq }
 }
 
-type Build = {[contract: string] : {
-  bin: string
-}};
+type Build = {[contract: string]: ContractBuild};
+type ContractBuild = {
+  bin: string,
+  abi: ethers.ContractInterface
+}
 
 export class Whit {
   refs: Refs;
   provider : ethers.providers.Provider
   build: object
+  signer: ethers.Signer
 
-  private constructor(provider: ethers.providers.Provider, build: object, refs: Refs) {
+  private constructor(provider: ethers.providers.Provider, signer: ethers.Signer, build: object, refs: Refs) {
     this.provider = provider;
     this.build = build;
     this.refs = refs;
+    this.signer = signer;
   }
 
   static async getProvider(provider: string | ethers.providers.Provider): Promise<ethers.providers.Provider> {
@@ -78,6 +108,15 @@ export class Whit {
     }
   }
 
+  getContractBuild(contractName: string): ContractBuild {
+    let contractBuild = this.build[contractName];
+    if (contractBuild === undefined) { throw new Error(`Cannot find contract ${contractName} in given builds`); }
+    if (contractBuild['abi'] === undefined) { throw new Error(`Contract ${contractName} build does not have ABI key`); }
+    if (contractBuild['bin'] === undefined) { throw new Error(`Contract ${contractName} build does not have \`bin\` key`); }
+
+    return contractBuild;
+  }
+
   static async loadBuild(build: string): Promise<Build> {
     let jsonFile = await tryTo(() => fs.readFile(build, 'utf8'), `Error reading build file: ${build}`);
     let json = await tryTo(() => JSON.parse(jsonFile), `Error parsing build file: ${build}`);
@@ -86,18 +125,45 @@ export class Whit {
     }
     let contracts = json['contracts'];
 
-    return <Build>
-      Object.fromEntries(
-        Object.entries(contracts).map(([k, v]) => [k.split(':')[1], v])
-      );
+    return Object.fromEntries(
+      Object.entries(contracts).map(([k, v]) => {
+        let {
+          abi,
+          bin,
+          metadata
+        } = <any>v;
+
+        let build = {
+          ...<object>v,
+          abi: typeof(abi) === 'string' ? JSON.parse(abi) : abi,
+          bin,
+          metadata: typeof(metadata) === 'string' ? JSON.parse(metadata) : metadata,
+        };
+
+        return [
+          k.split(':')[1],
+          build
+        ];
+      })
+    );
+  }
+
+  private whitInfo() {
+    return {
+      ethers,
+      build: this.build,
+      provider: this.provider,
+      signer: this.signer,
+      contract: (address, contractName) => {
+        let { abi } = this.getContractBuild(contractName);
+        return new ethers.Contract(address, abi, this.signer);
+      }
+    };
   }
 
   private async buildStep(contracts, refs, ref, conf): Promise<{type: 'not_found'} | {type: 'contract', contract: ethers.Contract}> {
     // Let's try and deploy this current contract and if it works, hooray!
-    console.log("a", contracts, refs);
     let refsThrow = Object.entries(contracts).reduce((refs, [contract, conf]) => {
-      console.log("aa", refs, contract);
-      console.log("aaa", refs[contract]);
       if (refs[contract] === undefined) {
         Object.defineProperty( // Apparently cloning the object here causes the all of the keys to be evaluated
           refs,
@@ -117,8 +183,7 @@ export class Whit {
 
     if (typeof(conf.deploy) === 'function') {
       try {
-        let contract = await conf.deploy(refsThrow, {ethers, build: this.build, provider: this.provider});
-        console.log({contract})
+        let contract = await conf.deploy(refsThrow, this.whitInfo());
         if (!(contract instanceof ethers.Contract)) {
           throw new Error(`Ref #${ref} returned invalid object from deploy. Expecting ethers.Contract, got: ${typeof(contract)} ${JSON.stringify(contract)}`);
         }
@@ -127,20 +192,20 @@ export class Whit {
         if (e instanceof RefMissingError) {
           return { type: 'not_found' };
         } else {
-          console.log("eeeeeeeee", e);
+          console.error("Error deploying " + ref);
           throw e;
         }
       }
     } else if (Array.isArray(conf.deploy) && conf.deploy.length === 2) {
-      let [contract, args] = conf.deploy;
-      let build = this.build[contract];
-      let signer = (<any>this.provider).getSigner(0);
-      let factory = new ethers.ContractFactory(build.abi, build.bin, signer); // TODO: Wallet
-      console.log({factory, args});
+      let [contractName, args] = conf.deploy;
+      let { abi, bin } = this.getContractBuild(contractName);
+      let factory = new ethers.ContractFactory(abi, bin, this.signer);
+      let contract = await factory.deploy(...args);
+      await contract.deployTransaction.wait();
       // TODO: we'll need smart args here
       return {
         type: 'contract',
-        contract: await factory.deploy(...args)
+        contract: contract
       };
     } else {
       throw new Error(`Invalid deploy function for ${ref}, got \`${conf.deploy}\``)
@@ -159,15 +224,16 @@ export class Whit {
         return refs;
       } else {
         let { contract } = result;
-        Object.defineProperty(refs, ref, contract); // Cannot immutably set here
-        console.log({refs});
+        refs = Object.assign(
+          refs,
+          { [ref]: contract }
+        ); // Cannot immutably set here
         if (typeof(conf.postDeploy) === 'function') {
-          await conf.postDeploy(contract, refs);
+          await conf.postDeploy(refs, this.whitInfo());
         }
-        console.log({refs});
         return refs;
       }
-    }, Promise.resolve(refsPre));
+    }, Promise.resolve({...refsPre}));
 
     let missingContractsPre = Object.entries(contracts).filter(([k, v]) => refsPre[k] === undefined);
     let missingContractsPost = Object.entries(contracts).filter(([k, v]) => refsPost[k] === undefined);
@@ -184,13 +250,14 @@ export class Whit {
     }
 
     // We're done, let's pack it up
-    return new Whit(this.provider, this.build, refsPost);
+    return new Whit(this.provider, this.signer, this.build, refsPost);
   }
 
   static async init(settings: WhitSettings): Promise<Whit> {
     let provider = await Whit.getProvider(settings.provider);
-    let build = (await Promise.all(asArray(settings.build).map(Whit.loadBuild))).reduce(Object.assign);
-    let whit = new Whit(provider, build, {});
+    let build = (await Promise.all(asArray(settings.build).map(Whit.loadBuild))).reduce(deepMerge);
+    let signer = await (<any>provider).getSigner(0); // TODO: Is this right?
+    let whit = new Whit(provider, signer, build, {});
 
     return await whit.buildContracts(settings.contracts);
   }

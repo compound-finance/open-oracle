@@ -54,31 +54,54 @@ describe('swapToPrice', () => {
 
       let whit = await Whit.init({
         provider: 'ganache',
-        build: ['./tests/.build/uniswap.json', './tests/.build/compound-test.json'],
+        build: [
+          './tests/.build/uniswap.json',
+          './tests/.build/uniswap-pair.json',
+          './tests/.build/compound-test.json'
+        ],
         contracts: {
           uniswap: {
             deploy: ['UniswapV2Factory', ["0x871A9FF377eCf2632A0928950dCEb181557F2e17"]]
           },
           abacus: {
-            deploy: ['StandardToken', []]
+            deploy: ['NonStandardToken', [e(100, 18), "Abacus", 18 ,"ABBA"]]
           },
           pair: {
-            deploy: async ({uniswap, abacus, babylon}, {ethers, build, provider}) => {
-              let pair = await uniswap.createPair(abacus, babylon);
+            deploy: async ({uniswap, abacus, babylon}, {ethers, contract}) => {
+              let pair = await uniswap.callStatic.createPair(abacus.address, babylon.address);
+              await uniswap.createPair(abacus.address, babylon.address);
 
-              return new ethers.Contract(pair, build['UniswapPair'].abi, provider);
+              return contract(pair, 'UniswapV2Pair');
             },
-            postDeploy: async (pair, refs) => {
-              await refs.abacus.methods.approve(refs.pair, -1);
-              await refs.babylong.methods.approve(refs.pair, -1);
-              await pair.addLiquidity(100, 200);
+            postDeploy: async (refs, {provider}) => {
+              console.log("z");
+              console.log("abacus: ", refs.abacus);
+              console.log("pair: ", refs.pair);
+              console.log("pair address: ", refs.pair.address, 1);
+              await refs.abacus.approve(refs.pair.address, 1);
+              console.log("z1");
+              await refs.babylon.approve(refs.pair.address, 1);
+              console.log("z2");
+              // Instead of approve, let's transfer
+              console.log(await refs.abacus.transfer(refs.pair.address, 100));
+              console.log(await refs.babylon.transfer(refs.pair.address, 100));
+              let signer = (<any>provider).getSigner(0);
+              console.log({signer});
+              let account = await signer.getAddress();
+              console.log({account});
+              console.log("reservesPre", await refs.pair.getReserves());
+              let tx = await refs.pair.mint(account);
+              console.log("reservesPost", await refs.pair.getReserves());
+              console.log("z3", tx);
             }
           },
           babylon: {
-            deploy: ['StandardToken', []],
+            deploy: ['NonStandardToken', [e(100, 18), "Babylon", 18 ,"BABY"]]
           }
         }
       });
+
+      throw "abc";
 
       // TODO: Whit?
       // deploy TokenA();
