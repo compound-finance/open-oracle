@@ -37,8 +37,9 @@ async function postWithRetries(transaction: TransactionConfig, signerKey: string
   console.log(`Posting from account: ${pubKey.address}`);
 
   // TODO: Why manual nonce management?
-  let nonce = await web3.eth.getTransactionCount(pubKey.address)
-  transaction.nonce = nonce
+  // Actually is really unsafe here
+  // let nonce = await web3.eth.getTransactionCount(pubKey.address)
+  // transaction.nonce = nonce
 
   try {
     return await signAndSend(transaction, signerKey, web3);
