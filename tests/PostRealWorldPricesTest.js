@@ -463,11 +463,12 @@ describe("UniswapAnchoredView", () => {
     const uniswapWindowEvents1 = postRes1.events.UniswapWindowUpdated;
 
     uniswapWindowEvents1.forEach((windowUpdate) => {
+      const tolSeconds = 30;
       const elapsedTime =
             windowUpdate.returnValues.newTimestamp -
             windowUpdate.returnValues.oldTimestamp;
-      // Give an extra 5 seconds safety delay, but time difference should be around 31 minutes + 0/1 second
-      expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + 5).toBe(true);
+      // but time difference should be around 31 minutes + 0/1 second
+      expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + tolSeconds).toBe(true);
     });
 
     await sendRPC(web3, "evm_increaseTime", [31 * 60]);
