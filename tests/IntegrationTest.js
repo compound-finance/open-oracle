@@ -48,7 +48,7 @@ describe('Integration', () => {
       const reporter = `${projectName}_reporter-1_1`;
 
       await compose.upAll(composeOptions);
-      await waitForLogs({deployer: "Deployed DelFiPrice", poster: "main completed", "reporter-1": "Reporter listening", ganache: "Listening on 0.0.0.0:8545"});
+      await waitForLogs({deployer: "Deployed DelFiPrice", poster: "Poster run completed successfully", "reporter-1": "Reporter listening", ganache: "Listening on 0.0.0.0:8545"});
 
       await execute(`docker cp "${deployer}:/build" ".dockerbuild_cp"`);
 
