@@ -2,6 +2,8 @@
 
 pragma solidity ^0.6.10;
 
+// Based on code from https://github.com/Uniswap/uniswap-v2-periphery
+
 // a library for handling binary fixed point numbers (https://en.wikipedia.org/wiki/Q_(number_format))
 library FixedPoint {
     // range: [0, 2**112 - 1]
@@ -24,7 +26,7 @@ library FixedPoint {
         //  (x * 1e18) >> 112
         // without risk of overflowing, e.g.:
         //  (x) / 2 ** (112 - lg(1e18))
-        return uint(self._x) / 5192296858534816;
+        return uint(self._x) / 5192296858534827;
     }
 }
 

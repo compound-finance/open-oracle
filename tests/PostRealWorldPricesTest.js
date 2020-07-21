@@ -335,7 +335,7 @@ describe("UniswapAnchoredView", () => {
     });
   });
 
-  it("test anchor price events - AnchorPriceUpdate", async () => {
+  it("test anchor price events - AnchorPriceUpdated", async () => {
     await sendRPC(web3, "evm_increaseTime", [31 * 60]);
 
     const observations = {};
@@ -350,7 +350,7 @@ describe("UniswapAnchoredView", () => {
       symbols,
     ]);
 
-    const anchorEvents = postRes.events.AnchorPriceUpdate;
+    const anchorEvents = postRes.events.AnchorPriceUpdated;
 
     // Check anchor prices
     const block = await sendRPC(web3, "eth_getBlockByNumber", [ anchorEvents[0].blockNumber, false]);
@@ -460,14 +460,15 @@ describe("UniswapAnchoredView", () => {
       signatures,
       symbols,
     ]);
-    const uniswapWindowEvents1 = postRes1.events.UniswapWindowUpdate;
+    const uniswapWindowEvents1 = postRes1.events.UniswapWindowUpdated;
 
     uniswapWindowEvents1.forEach((windowUpdate) => {
+      const tolSeconds = 30;
       const elapsedTime =
             windowUpdate.returnValues.newTimestamp -
             windowUpdate.returnValues.oldTimestamp;
-      // Give an extra 5 seconds safety delay, but time difference should be around 31 minutes + 0/1 second
-      expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + 5).toBe(true);
+      // but time difference should be around 31 minutes + 0/1 second
+      expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + tolSeconds).toBe(true);
     });
 
     await sendRPC(web3, "evm_increaseTime", [31 * 60]);
@@ -476,7 +477,7 @@ describe("UniswapAnchoredView", () => {
       signatures2,
       symbols,
     ]);
-    const uniswapWindowEvents2 = postRes2.events.UniswapWindowUpdate;
+    const uniswapWindowEvents2 = postRes2.events.UniswapWindowUpdated;
 
     uniswapWindowEvents2.forEach((windowUpdate) => {
       const elapsedTime =
@@ -503,12 +504,13 @@ describe("UniswapAnchoredView", () => {
       symbols1,
     ]);
     const oldObservation1 = await call(uniswapAnchoredView, "oldObservations", [keccak256('ETH')]);
-    const anchorEvent1 = postRes1.events.AnchorPriceUpdate;
+    const anchorEvent1 = postRes1.events.AnchorPriceUpdated;
     const block1 = await sendRPC(web3, "eth_getBlockByNumber", [anchorEvent1.blockNumber, false]);
     const blockTimestamp1 = block1.result.timestamp;
 
     const cumulativePrice_eth1 = await getCumulativePrice(pairs.ETH, blockTimestamp1, true);
     const ethPrice1 = calculateTWAP(cumulativePrice_eth1, oldObservation1.acc, blockTimestamp1, oldObservation1.timestamp).toFixed();
+    expect(anchorEvent1.returnValues.symbol).toBe("ETH");
     expect(anchorEvent1.returnValues.anchorPrice).toBe(ethPrice1);
 
     // Emulate timeElapsed for ETH token pair, so that timestamps are set up correctly
@@ -525,12 +527,13 @@ describe("UniswapAnchoredView", () => {
       symbols2,
     ]);
     const oldObservation2 = await call(uniswapAnchoredView, "oldObservations", [keccak256('ETH')]);
-    const anchorEvent2 = postRes2.events.AnchorPriceUpdate;
+    const anchorEvent2 = postRes2.events.AnchorPriceUpdated;
     const block2 = await sendRPC(web3, "eth_getBlockByNumber", [anchorEvent2.blockNumber, false]);
     const blockTimestamp2 = block2.result.timestamp;
     const cumulativePrice_eth2 = await getCumulativePrice(pairs.ETH, blockTimestamp2, true);
     const ethPrice2 = calculateTWAP(cumulativePrice_eth2, oldObservation2.acc, blockTimestamp2, oldObservation2.timestamp).toFixed();
 
+    expect(anchorEvent2.returnValues.symbol).toBe("ETH");
     expect(anchorEvent2.returnValues.anchorPrice).toBe(ethPrice2);
   });
 
