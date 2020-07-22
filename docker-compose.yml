@@ -61,10 +61,12 @@ services:
       while ! grep -q DelFiPrice /build/development.json; do echo waiting for /build/development.json; sleep 1; done;
       cat /build/development.json;
       npm run start --
-      --poster_key $$POSTER_KEY
-      --sources http://anchor-reporter:3000/prices.json,http://reporter-1:3000/prices.json,http://reporter-2:3000/prices.json
-      --view_address $$(cat /build/development.json | jq -r .DelFiPrice)
-      --web3_provider http://ganache:8545
+      --poster-key $$POSTER_KEY
+      --sources http://anchor-reporter:3000/prices.json
+      --sources http://reporter-1:3000/prices.json
+      --sources http://reporter-2:3000/prices.json
+      --view-address $$(cat /build/development.json | jq -r .DelFiPrice)
+      --web3-provider http://ganache:8545
     '"
     depends_on:
       - deployer

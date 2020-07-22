@@ -59,4 +59,6 @@ The poster is a simple application that reads from a given feed (or set of feeds
 
 ## Contributing
 
-Note: the code in this repository is held under the MIT license. Any contributors must agree to release contributed code under this same license. Please submit an issue (or create a pull request) for any issues or contributions to the project.
+Note: all code contributed to this repository must be licensed under each of 1. MIT, 2. BSD-3, and 3. GPLv3. By contributing code to this repository, you accept that your code is allowed to be released under any or all of these licenses or licenses in substantially similar form to these listed above.
+
+Please submit an issue (or create a pull request) for any issues or contributions to the project. Make sure that all test cases pass, including the integration tests in the root of this project.

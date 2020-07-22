@@ -53,14 +53,14 @@ contract DelFiPrice is OpenOracleView {
 
         // Save the prices
         for (uint i = 0; i < messages.length; i++) {
-            OpenOraclePriceData(address(data)).put(messages[i], signatures[i]);
+            OpenOraclePriceData(address(priceData)).put(messages[i], signatures[i]);
         }
 
         // Try to update the median
         for (uint i = 0; i < symbols.length; i++) {
             string memory symbol = symbols[i];
             uint64 medianPrice = medianPrice(symbol, sources);
-            uint64 anchorPrice = OpenOraclePriceData(address(data)).getPrice(anchor, symbol);
+            uint64 anchorPrice = OpenOraclePriceData(address(priceData)).getPrice(anchor, symbol);
             if (anchorPrice == 0) {
                 emit PriceGuarded(symbol, medianPrice, anchorPrice);
             } else {
@@ -91,7 +91,7 @@ contract DelFiPrice is OpenOracleView {
         uint N = sources_.length;
         uint64[] memory postedPrices = new uint64[](N);
         for (uint i = 0; i < N; i++) {
-            postedPrices[i] = OpenOraclePriceData(address(data)).getPrice(sources_[i], symbol);
+            postedPrices[i] = OpenOraclePriceData(address(priceData)).getPrice(sources_[i], symbol);
         }
 
         uint64[] memory sortedPrices = sort(postedPrices);
