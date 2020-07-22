@@ -53,15 +53,16 @@ function asArray<T>(val: T | T[]): T[] {
 }
 
 type Address = string
-type Contract = unknown
-type Refs = { [ref: string]: Contract }
+type Refs = { [ref: string]: ethers.Contract }
 
 interface WhitInfo {
   ethers: any
-  provider : ethers.providers.Provider
-  signer : ethers.Signer
+  provider: ethers.providers.Provider
+  signer: ethers.Signer
+  account: Address
   build: object,
   contract: (address: Address, contractName: string) => ethers.Contract
+  wait: (trxRespPromise: Promise<ethers.providers.TransactionResponse>, confirmations?: number) => Promise<ethers.providers.TransactionResponse>
 }
 
 interface ContractReq {
@@ -69,8 +70,11 @@ interface ContractReq {
   postDeploy?: (refs: any, whitInfo: WhitInfo) => Promise<any>
 }
 
+type WhitSettingsProvider = string | { http: string } | { ganache: object } | ethers.providers.Provider
+type WhitSettingsSigner = { account: number } | { file: string }
 interface WhitSettings {
-  provider: string | ethers.providers.Provider
+  provider: WhitSettingsProvider
+  signer?: WhitSettingsSigner
   build: string | string[]
   contracts: { [name: string]: ContractReq }
 }
@@ -86,25 +90,65 @@ export class Whit {
   provider : ethers.providers.Provider
   build: object
   signer: ethers.Signer
+  account: Address
+  settings: WhitSettings
 
-  private constructor(provider: ethers.providers.Provider, signer: ethers.Signer, build: object, refs: Refs) {
+  private constructor(provider: ethers.providers.Provider, signer: ethers.Signer, account: Address, build: object, settings: WhitSettings, refs: Refs) {
     this.provider = provider;
     this.build = build;
     this.refs = refs;
     this.signer = signer;
+    this.account = account;
+    this.settings = settings;
   }
 
-  static async getProvider(provider: string | ethers.providers.Provider): Promise<ethers.providers.Provider> {
+  static async getProvider(provider: WhitSettingsProvider): Promise<ethers.providers.Provider> {
     if (typeof(provider) === 'string') {
-      if (provider === 'ganache') {
-        return new ethers.providers.Web3Provider(<any>Ganache.provider({}));
-      } else if (provider.startsWith('http')) {
-        return new ethers.providers.JsonRpcProvider(provider);
-      } else {
-        throw new Error(`Unknown provider: ${provider}`);
-      }
+      return new ethers.providers.JsonRpcProvider(provider);
     } else {
-      return provider;
+      if (provider['ganache']) {
+        return new ethers.providers.Web3Provider(<any>Ganache.provider((<any>provider).ganache));
+      } else if (provider['http']) {
+        return new ethers.providers.JsonRpcProvider(provider['http']);
+      } else if (provider['_isProvider']) {
+        return <ethers.providers.Provider>provider;
+      } else {
+        throw new Error(`Unknown provider: ${JSON.stringify(provider)}`)
+      }
+    }
+  }
+
+  getWeb3Provider(): any {
+    let providerSettings = this.settings.provider;
+
+    if (typeof(providerSettings) === 'string') {
+      return providerSettings;
+    } else {
+      if (providerSettings['ganache']) {
+        return (<any>this.provider).provider;
+      } else if (providerSettings['http']) {
+        return providerSettings['http'];
+      } else if (providerSettings['_isProvider']) {
+        throw new Error(`Unable to use Ethers provider: ${JSON.stringify(providerSettings)}`)
+      } else {
+        throw new Error(`Unknown provider: ${JSON.stringify(providerSettings)}`)
+      }
+    }
+  }
+
+  static async getSigner(signer: WhitSettingsSigner | undefined, provider: ethers.providers.Provider): Promise<ethers.Signer> {
+    signer = signer === undefined ? { account: 0 } : signer;
+    let account = signer['account'];
+    let file = signer['file'];
+
+    if (account !== undefined) {
+      return (<any>provider).getSigner(account); // TODO: Is this right?
+    } else if (file !== undefined) {
+      let key = (await tryTo(() => fs.readFile(file, 'utf8'), `Error reading signer file: ${signer['file']}`)).trim();
+      let keyCleaned = key.startsWith('0x') ? key : `0x${key}`;
+      return new ethers.Wallet(keyCleaned, provider);
+    } else {
+      throw new Error(`Unknown or invalid signer: ${JSON.stringify(signer)}`);
     }
   }
 
@@ -125,27 +169,46 @@ export class Whit {
     }
     let contracts = json['contracts'];
 
-    return Object.fromEntries(
-      Object.entries(contracts).map(([k, v]) => {
-        let {
-          abi,
-          bin,
-          metadata
-        } = <any>v;
+    return Object.entries(contracts).reduce<Build>((acc, [k, v]) => {
+      let {
+        abi,
+        bin,
+        metadata
+      } = <any>v;
 
-        let build = {
-          ...<object>v,
-          abi: typeof(abi) === 'string' ? JSON.parse(abi) : abi,
-          bin,
-          metadata: typeof(metadata) === 'string' ? JSON.parse(metadata) : metadata,
-        };
+      let build = {
+        ...<object>v,
+        abi: typeof(abi) === 'string' ? JSON.parse(abi) : abi,
+        bin,
+        metadata: typeof(metadata) === 'string' ? JSON.parse(metadata) : metadata,
+      };
 
-        return [
-          k.split(':')[1],
-          build
-        ];
-      })
-    );
+      let simpleKey = k.split(':')[1];
+
+      return {
+        ...acc,
+        [simpleKey]: build,
+        [k]: build
+      };
+    }, {});
+  }
+
+  getAddress(ref: string): Address {
+    let contract = this.refs[ref];
+    if (contract === undefined) {
+      throw new Error(`Whit: Cannot find ref #${ref} [refs: ${Object.keys(this.refs).join(', ')}]`);
+    }
+    let address = contract.address;
+    if (address === undefined) {
+      throw new Error(`Whit: Ref #${ref} has no address [ref: ${JSON.stringify(ref)}]`);
+    }
+    return address;
+  }
+
+  static async wait(trxRespPromise: Promise<ethers.providers.TransactionResponse>, confirmations: number = 1): Promise<ethers.providers.TransactionResponse> {
+    let trxResp = await trxRespPromise;
+    await trxResp.wait(confirmations);
+    return trxResp;
   }
 
   private whitInfo() {
@@ -154,6 +217,8 @@ export class Whit {
       build: this.build,
       provider: this.provider,
       signer: this.signer,
+      account: this.account,
+      wait: Whit.wait,
       contract: (address, contractName) => {
         let { abi } = this.getContractBuild(contractName);
         return new ethers.Contract(address, abi, this.signer);
@@ -197,12 +262,24 @@ export class Whit {
         }
       }
     } else if (Array.isArray(conf.deploy) && conf.deploy.length === 2) {
-      let [contractName, args] = conf.deploy;
+      let [contractName, argsRaw] = conf.deploy;
+      let args = argsRaw.map((arg) => {
+        if (typeof(arg) === 'object' && arg.hasOwnProperty('ref')) {
+          return refsThrow[arg.ref].address;
+        } else if (typeof(arg) === 'object' && arg.hasOwnProperty('account')) {
+          if (arg.account === 0) {
+            return this.account;
+          } else {
+            throw new Error(`Account arg must be zero, got: ${arg.account}`);
+          }
+        } else {
+          return arg;
+        }
+      });
       let { abi, bin } = this.getContractBuild(contractName);
       let factory = new ethers.ContractFactory(abi, bin, this.signer);
       let contract = await factory.deploy(...args);
-      await contract.deployTransaction.wait();
-      // TODO: we'll need smart args here
+      await contract.deployed();
       return {
         type: 'contract',
         contract: contract
@@ -250,14 +327,15 @@ export class Whit {
     }
 
     // We're done, let's pack it up
-    return new Whit(this.provider, this.signer, this.build, refsPost);
+    return new Whit(this.provider, this.signer, this.account, this.build, this.settings, refsPost);
   }
 
   static async init(settings: WhitSettings): Promise<Whit> {
     let provider = await Whit.getProvider(settings.provider);
     let build = (await Promise.all(asArray(settings.build).map(Whit.loadBuild))).reduce(deepMerge);
-    let signer = await (<any>provider).getSigner(0); // TODO: Is this right?
-    let whit = new Whit(provider, signer, build, {});
+    let signer = await Whit.getSigner(settings.signer, provider);
+    let account = await signer.getAddress();
+    let whit = new Whit(provider, signer, account, build, settings, {});
 
     return await whit.buildContracts(settings.contracts);
   }

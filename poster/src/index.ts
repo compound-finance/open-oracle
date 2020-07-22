@@ -1,5 +1,6 @@
 #! /usr/bin/env node
 import { main } from './poster';
+import { matchPrices } from './uniswap';
 import Web3 from 'web3';
 import yargs from 'yargs';
 
@@ -15,6 +16,10 @@ async function run() {
     .option('gas-limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
     .option('price-delta', {alias: 'd', description: 'the min required difference between new and previous asset price for price update on blockchain', type: 'number', default: 1})
     .option('asset', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
+    .option('uniswap', {alias: 'u', description: '(Test only) Attempt to match Uniswap pools prices to given', type: 'boolean'})
+    .option('uniswap-router', {description: '(Test only) Router address to use for Uniswap price matching', type: 'string', default: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'})
+    .option('uniswap-key', {description: '(Test only) Private key to use for Uniswap price matching (defaults to poster key)', type: 'string'})
+    .option('uniswap-source', {description: '(Test only) Source to use for Uniswap price matching (defaults to first source)', type: 'string'})
     .help()
     .alias('help', 'h')
     .demandOption(['poster-key', 'sources', 'view-function', 'web3-provider', 'view-address'], 'Provide all the arguments')
@@ -29,6 +34,10 @@ async function run() {
   const gas_limit = parsed['gas-limit'];
   const price_delta = parsed['price-delta'];
   const assets = <string[]>parsed['asset'];
+  const uniswap = parsed['uniswap'];
+  const uniswap_router = parsed['uniswap-router'];
+  const uniswap_key = parsed['uniswap-key'];
+  const uniswap_source = parsed['uniswap-source'];
 
   // posting promise will reject and retry once with higher gas after this timeout
   const web3 = await new Web3(web3_provider);
@@ -41,6 +50,18 @@ async function run() {
     web3.eth.transactionConfirmationBlocks = 1
   } else {
     web3.eth.transactionConfirmationBlocks = 10;
+  }
+
+  if (uniswap) {
+    console.log("Matching Uniswap prices...");
+
+    await matchPrices(
+      view_address,
+      uniswap_router,
+      uniswap_key || poster_key,
+      uniswap_source || sources[0]!,
+      web3
+    );
   }
 
   try {

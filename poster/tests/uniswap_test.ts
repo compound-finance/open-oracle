@@ -4,6 +4,22 @@ import {
   swapToPrice
 } from '../src/uniswap';
 import { Whit } from './whit';
+import Web3 from 'web3';
+import {
+  bnToBigInt,
+  maxUint
+} from '../src/util';
+import { toBeNear } from './matcher';
+
+declare global {
+  namespace jest {
+    interface Matchers<R> {
+      toBeNear(expected: number, delta: number): CustomMatcherResult
+    }
+  }
+}
+
+expect.extend({toBeNear});
 
 function e(n: number | bigint, exp: number | bigint) {
   return BigInt(n) * 10n ** BigInt(exp);
@@ -39,101 +55,163 @@ describe('computeProfitMaximizingTrade', () => {
 });
 
 describe('swapToPrice', () => {
+  beforeEach(async () => {
+    jest.setTimeout(300000);
+  });
+
   [
+    // {
+    //   name: "simple",
+    //   decimalsA: 18n,
+    //   decimalsB: 18n,
+    //   reserveA: e(10, 18),
+    //   reserveB: e(10, 18),
+    //   priceA: e(100, 6),
+    //   priceB: e(200, 6)
+    // },
     {
-      name: "simple",
+      name: "decimals",
+      decimalsA: 18n,
+      decimalsB: 10n,
       reserveA: e(10, 18),
-      reserveB: e(10, 18),
+      reserveB: e(10, 10),
       priceA: e(100, 6),
-      priceB: e(200, 6),
-      maxSpendA: e(100, 18),
-      maxSpendB: e(100, 18)
+      priceB: e(200, 6)
     }
   ].forEach(conf => {
     test.only(conf.name, async () => {
-
       let whit = await Whit.init({
-        provider: 'ganache',
+        provider: {
+          ganache: {}
+          // http: 'https://kovan-eth.compound.finance' /* Kovan */
+        },
+        signer: {
+          account: 0
+          // file: '/Users/geoff/.ethereum/kovan' /* Kovan */
+        },
         build: [
           './tests/.build/uniswap.json',
           './tests/.build/uniswap-pair.json',
+          './tests/.build/uniswap-router.json',
           './tests/.build/compound-test.json'
         ],
         contracts: {
           uniswap: {
-            deploy: ['UniswapV2Factory', ["0x871A9FF377eCf2632A0928950dCEb181557F2e17"]]
+            deploy: ['UniswapV2Factory', [{account: 0}]]
           },
           abacus: {
-            deploy: ['NonStandardToken', [e(100, 18), "Abacus", 18 ,"ABBA"]]
+            deploy: [
+              'tests/Contracts/ERC20.sol:StandardToken',
+              [e(100_000_000n, conf.decimalsA), "Abacus", conf.decimalsA, "ABBA"]
+            ]
           },
           pair: {
-            deploy: async ({uniswap, abacus, babylon}, {ethers, contract}) => {
-              let pair = await uniswap.callStatic.createPair(abacus.address, babylon.address);
-              await uniswap.createPair(abacus.address, babylon.address);
+            deploy: async ({uniswap, abacus, babylon}, {ethers, contract, wait}) => {
+              await wait(uniswap.createPair(abacus.address, babylon.address));
+              let pair = await uniswap.getPair(abacus.address, babylon.address);
 
               return contract(pair, 'UniswapV2Pair');
             },
-            postDeploy: async (refs, {provider}) => {
-              console.log("z");
-              console.log("abacus: ", refs.abacus);
-              console.log("pair: ", refs.pair);
-              console.log("pair address: ", refs.pair.address, 1);
-              await refs.abacus.approve(refs.pair.address, 1);
-              console.log("z1");
-              await refs.babylon.approve(refs.pair.address, 1);
-              console.log("z2");
-              // Instead of approve, let's transfer
-              console.log(await refs.abacus.transfer(refs.pair.address, 100));
-              console.log(await refs.babylon.transfer(refs.pair.address, 100));
-              let signer = (<any>provider).getSigner(0);
-              console.log({signer});
-              let account = await signer.getAddress();
-              console.log({account});
-              console.log("reservesPre", await refs.pair.getReserves());
-              let tx = await refs.pair.mint(account);
-              console.log("reservesPost", await refs.pair.getReserves());
-              console.log("z3", tx);
+            postDeploy: async (refs, {account, provider, wait}) => {
+              await wait(refs.abacus.approve(refs.router.address, conf.reserveA));
+              await wait(refs.babylon.approve(refs.router.address, conf.reserveB));
+              await wait(refs.router.addLiquidity(
+                refs.abacus.address,
+                refs.babylon.address,
+                conf.reserveA,
+                conf.reserveB,
+                conf.reserveA,
+                conf.reserveB,
+                account,
+                maxUint,
+                { gasLimit: 1_000_000 }
+              ));
             }
           },
           babylon: {
-            deploy: ['NonStandardToken', [e(100, 18), "Babylon", 18 ,"BABY"]]
+            deploy: [
+              'tests/Contracts/ERC20.sol:StandardToken',
+              [e(100_000_000n, conf.decimalsB), "Babylon", conf.decimalsB, "BABY"]
+            ]
+          },
+          router: {
+            deploy: [
+              'UniswapV2Router02',
+              [{ref: 'uniswap'}, {ref: 'abacus'}]
+            ]
           }
         }
       });
 
-      throw "abc";
-
-      // TODO: Whit?
-      // deploy TokenA();
-      // deploy TokenB();
-      // deploy Uniswap();
-      // create Pair
-      // Seed Pair
       let tokenSymbolA = "Abacus";
       let tokenSymbolB = "Babylon";
-      let tokenA = "0x";
-      let tokenB = "0x";
-      let factory = "0x";
-      let to = "0x"; // ?
+      let tokenA = whit.getAddress('abacus');
+      let tokenB = whit.getAddress('babylon');
+      let factory = whit.getAddress('uniswap');
+      let router = whit.getAddress('router');
+
+      let maxSpendA = bnToBigInt(await whit.refs.abacus.balanceOf(whit.account));
+      let maxSpendB = bnToBigInt(await whit.refs.babylon.balanceOf(whit.account));
+
+      // Build web3 with possible signing account
+      let web3 = new Web3(whit.getWeb3Provider());
+      if (whit.signer.hasOwnProperty('_signingKey')) {
+        web3.eth.accounts.wallet.add((<any>whit.signer)._signingKey().privateKey);
+      }
+
+      let truePriceTokenA =
+        conf.priceA * ( 10n ** ( 18n - conf.decimalsA ) );
+
+      let truePriceTokenB =
+        conf.priceB * ( 10n ** ( 18n - conf.decimalsB ) );
 
       await swapToPrice(
         tokenSymbolA,
         tokenA,
+        conf.decimalsA,
         tokenSymbolB,
         tokenB,
-        conf.priceA,
-        conf.priceB,
-        conf.maxSpendA,
-        conf.maxSpendB,
+        conf.decimalsB,
+        truePriceTokenA,
+        truePriceTokenB,
+        maxSpendA,
+        maxSpendB,
         factory,
-        to,
-        <any>null // web3
+        router,
+        whit.account,
+        web3
       );
 
-      let [reserveA, reserveB] = await getReserves(factory, tokenA, tokenB, <any>null /* web3 */);
+      let [reserveA, reserveB] = await getReserves(factory, tokenA, tokenB, web3);
+      
+      let reserveRatio = Number(reserveA) / Number(reserveB);
+      let priceRatio = Number(conf.priceA) / Number(conf.priceB)
 
-      // TODO: Is this the right expectation?
-      expect(reserveA / reserveB).toEqual(conf.priceA / conf.priceB);
+      console.debug({
+          reserveA,
+          reserveB,
+          reserveRatio,
+
+          priceA: conf.priceA,
+          priceB: conf.priceB,
+          priceRatio
+        });
+
+      try {
+        expect(reserveRatio).toBeNear(priceRatio, 0.01);
+      } catch (e) {
+        console.debug({
+          reserveA,
+          reserveB,
+          reserveRatio,
+
+          priceA: conf.priceA,
+          priceB: conf.priceB,
+          priceRatio
+        });
+
+        throw e;
+      }
     });
   });
 });

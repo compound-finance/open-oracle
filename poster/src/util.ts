@@ -21,10 +21,18 @@ export function decodeMessage(message: string, web3: Web3): DecodedMessage {
 
 function encodeFull(sig: string, args: any[]): [string[], string] {
   const types = findTypes(sig);
+  let argsEncoded = args.map((arg) => {
+    return typeof(arg) === 'bigint' ? arg.toString() : arg;
+  });
+
+  let abi = {
+    name: sig.split('(')[0],
+    type: 'function',
+    inputs: types.map((type) => ({ name: '', type }))
+  };
 
   const callData =
-    <string>(<any>AbiCoder).encodeFunctionSignature(sig) +
-    <string>(<any>AbiCoder).encodeParameters(types, args).slice(2);
+    (<any>AbiCoder).encodeFunctionCall(abi, argsEncoded).slice(2);
 
   return [types, callData];
 }
@@ -35,7 +43,7 @@ export function encode(sig: string, args: any[]): string {
   return callData;
 }
 
-export async function read(address: string, sig: string, args: any[], returns: string, web3: Web3): Promise<any> {
+export async function read(address: string, sig: string, args: any[], returns: string | string[], web3: Web3): Promise<any> {
   let [types, callData] = encodeFull(sig, args);
 
   const call = <TransactionConfig>{
@@ -47,9 +55,48 @@ export async function read(address: string, sig: string, args: any[], returns: s
   try {
     const result = await web3.eth.call(call);
 
-    return (<any>AbiCoder).decodeParameter(returns, result);
+    if (Array.isArray(returns)) {
+      return (<any>AbiCoder).decodeParameters(returns, result);
+    } else {
+      return (<any>AbiCoder).decodeParameter(returns, result);
+    }
   } catch (e) {
     console.error(`Error reading ${sig}:${args} at ${address}: ${e.toString()}`);
+    throw e;
+  }
+}
+
+export async function write(address: string, sig: string, args: any[], from: string, web3: Web3): Promise<any> {
+  let [types, callData] = encodeFull(sig, args);
+
+  const call = <TransactionConfig>{
+    data: callData,
+    // Price open oracle data
+    to: address,
+    from
+  };
+
+  try {
+    const gasPrice = await web3.eth.getGasPrice();
+    let gasEstimate;
+    try {
+      gasEstimate = Math.floor(await web3.eth.estimateGas(call) * 1.5);
+    } catch (e) {
+      console.error(`Error estimating gas: ${e.toString()}`);
+      if (process.env['ALLOW_ERRORS']) {
+        gasEstimate = 500_000; // TODO: Default gas limit?
+      } else {
+        throw e;
+      }
+    }
+
+    return await web3.eth.sendTransaction({
+      ...call,
+      gasPrice,
+      gas: gasEstimate
+    });
+  } catch (e) {
+    console.error(`Error writing ${sig}:${args} at ${address}: ${e.toString()}`);
     throw e;
   }
 }
@@ -117,16 +164,22 @@ export async function allSuccesses<T>(promises: Promise<T>[]): Promise<T[]> {
 }
 
 export function root(val: bigint, k: bigint) {
-    let o=0n; // old approx value
+    let o = 0n; // old approx value
     let x = val;
     let limit = 100n;
 
-    while(x**k!=k && x!=o && --limit) {
-      o=x;
-      x = ((k-1n)*x + val/x**(k-1n))/k;
+    while (x ** k != k && x != o && --limit) {
+      o = x;
+      x = ( (k - 1n) * x + val / x ** (k - 1n) ) / k;
     }
 
     return x;
 }
 
 export const sqrt = (x: bigint) => root(x, 2n);
+
+export function bnToBigInt(val: any): bigint {
+  return BigInt(val.toString());
+}
+
+export const maxUint = 115792089237316195423570985008687907853269984665640564039457584007913129639935n;

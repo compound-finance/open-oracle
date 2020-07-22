@@ -32,6 +32,10 @@ The poster is a simple CLI to post prices. The following options are available:
 | `--view-address` | Address of open oracle view to post through |
 | `--timeout`, `-t` | how many seconds to wait before retrying with more gas, defaults to 180 |
 | `--asset`, `-a` | List of assets to post prices for. Pass multiple times to specify multiple assets. |
+| `--uniswap` | (Test only) Try to match uniswap prices |
+| `--uniswap-router` | (Test only) Router for Uniswap price matching (default: `0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D`) |
+| `--uniswap-key` | (Test only) Key to use for Uniswap (defaults to poster key) |
+| `--uniswap-source` | (Test only) Source to pull prices from for Uniswap (defaults to first source) |
 
 ### Sources
 
@@ -71,6 +75,20 @@ let viewFunction: string = 'postPrices(bytes[],bytes[],string[])' /* ...view fun
 let provider = new Web3();
 
 await poster.main(sources, posterKey, viewAddress, viewFunction, provider);
+```
+
+## Uniswap on Test-net
+
+You can include a `--uniswap` key to attempt to even out the Uniswap markets prior to posting prices. This should help to allow posting as the Uniswap markets should be closer to market prices. Note: there are limits to this as there are assets that are not fully controlled by Compound on test-net (such as Kovan DAI). This key should be a JSON-structure containing:
+
+```bash
+yarn prepare && yarn run start --web3-provider=https://kovan-eth.compound.finance/ --view-address=0x60F1FFB2FE2bFE6CFFA0A66e258B623f06E1949F --poster-key="$(cat ~/.ethereum/kovan)" --sources="https://prices.compound.finance/coinbase" --uniswap
+```
+
+or fully specified:
+
+```bash
+yarn prepare && yarn run start --web3-provider=https://kovan-eth.compound.finance/ --view-address=0x60F1FFB2FE2bFE6CFFA0A66e258B623f06E1949F --poster-key="$(cat ~/.ethereum/kovan)" --sources="https://prices.compound.finance/coinbase" --uniswap --uniswap-router=0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D --uniswap-key="$(~/.ethereum/kovan)" --uniswap-price-source="https://prices.compound.finance/coinbase"
 ```
 
 ## Testing
