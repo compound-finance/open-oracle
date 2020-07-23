@@ -4,7 +4,7 @@ expect.extend({
   numEquals(actual, expected) {
     return {
       pass: actual.toString() == expected.toString(),
-      message: () => `expected ${JSON.stringify(actual)} (${actual.toString()}) == ${JSON.stringify(expected)} (${expected.toString()})`
+      message: () => `expected (${actual.toString()}) == (${expected.toString()})`
     }
   }
 });
@@ -12,8 +12,8 @@ expect.extend({
 expect.extend({
   greaterThan(actual, expected) {
     return {
-      pass: (new BigNumber (actual)).gt(new BigNumber(expected)),
-      message: () => `expected ${JSON.stringify(actual)} to be greater than ${JSON.stringify(expected)}`
+      pass: (new BigNumber(actual)).gt(new BigNumber(expected)),
+      message: () => `expected ${actual.toString()} to be greater than ${expected.toString()}`
     }
   }
 });
