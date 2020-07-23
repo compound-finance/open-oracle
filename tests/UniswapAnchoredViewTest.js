@@ -2,6 +2,8 @@ const { encode, sign, encodeRotationMessage } = require('../sdk/javascript/.tsbu
 const { uint, keccak256, time, numToHex, address, sendRPC, currentBlockTimestamp, fixed } = require('./Helpers');
 const BigNumber = require('bignumber.js');
 
+const PriceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
+
 async function setup(opts)  {
   ({isMockedView} = opts);
   const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
@@ -12,24 +14,33 @@ async function setup(opts)  {
   const FIXED_ETH_AMOUNT = 0.005e18;
 
   await sendRPC(web3, 'evm_mine', [fixed(1.6e9)]);
+
   const mockPair = await deploy("MockUniswapTokenPair", [
-    fixed(1.5e23),
-    fixed(1e22),
-    fixed(1.6e9),//timestamp
-    fixed(8e38),
-    fixed(2e41)// acc
+    fixed(1.8e12),
+    fixed(8.2e21),
+    fixed(1.6e9),
+    fixed(1.19e50),
+    fixed(5.8e30),
   ]);
 
-  const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
+    // Initialize REP pair with values from mainnet
+  const mockRepPair = await deploy("MockUniswapTokenPair", [
+    fixed(4e22),
+    fixed(3e21),
+    fixed(1.6e9),
+    fixed(1.32e39),
+    fixed(3.15e41),
+  ]);
+
   const cToken = {ETH: address(1), DAI: address(2), REP: address(3), USDT: address(4), SAI: address(5), WBTC: address(6)};
   const dummyAddress = address(0);
   const tokenConfigs = [
-    {cToken: cToken.ETH, underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: true},
-    {cToken: cToken.DAI, underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
-    {cToken: cToken.REP, underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
-    {cToken: cToken.USDT, underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e6), priceSource: priceSource.FIXED_USD, fixedPrice: uint(1e6), uniswapMarket: address(0), isUniswapReversed: false},
-    {cToken: cToken.SAI, underlying: dummyAddress, symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_ETH, fixedPrice: uint(FIXED_ETH_AMOUNT), uniswapMarket: address(0), isUniswapReversed: false},
-    {cToken: cToken.WBTC, underlying: dummyAddress, symbolHash: keccak256('WBTC'), baseUnit: uint(1e8), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
+    {cToken: cToken.ETH, underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: true},
+    {cToken: cToken.DAI, underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
+    {cToken: cToken.REP, underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockRepPair._address, isUniswapReversed: false},
+    {cToken: cToken.USDT, underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e6), priceSource: PriceSource.FIXED_USD, fixedPrice: uint(1e6), uniswapMarket: address(0), isUniswapReversed: false},
+    {cToken: cToken.SAI, underlying: dummyAddress, symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_ETH, fixedPrice: uint(FIXED_ETH_AMOUNT), uniswapMarket: address(0), isUniswapReversed: false},
+    {cToken: cToken.WBTC, underlying: dummyAddress, symbolHash: keccak256('BTC'), baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
   ];
 
   let uniswapAnchoredView;
@@ -89,11 +100,22 @@ describe('UniswapAnchoredView', () => {
       const tx = await postPrices(timestamp, [[['ETH', 91]]], ['ETH']);
 
       expect(tx.events.PriceGuarded).toBe(undefined);
-      expect(tx.events.PriceUpdated).not.toBe(undefined);
-      expect(tx.events.PriceUpdated.returnValues.symbol).toBe('ETH');
       expect(tx.events.PriceUpdated.returnValues.price).numEquals(91e6);
+      expect(tx.events.PriceUpdated.returnValues.symbol).toBe('ETH');
       expect(await call(uniswapAnchoredView, 'prices', [keccak256('ETH')])).numEquals(91e6);
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(91e6);
+    });
+
+    it('should update view if ERC20 price is within anchor bounds', async () => {
+      const timestamp = time() - 5;
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['REP', 17e6]);
+      const tx = await postPrices(timestamp, [[['REP', 17]]], ['REP']);
+
+      expect(tx.events.PriceGuarded).toBe(undefined);
+      expect(tx.events.PriceUpdated.returnValues.price).numEquals(17e6);
+      expect(tx.events.PriceUpdated.returnValues.symbol).toBe('REP');
+      expect(await call(uniswapAnchoredView, 'prices', [keccak256('REP')])).numEquals(17e6);
+      expect(await call(priceData, 'getPrice', [reporter.address, 'REP'])).numEquals(17e6);
     });
 
     it('should not update view if ETH price is below anchor bounds', async () => {
@@ -102,7 +124,6 @@ describe('UniswapAnchoredView', () => {
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 89.9e6]);
       const tx = await postPrices(timestamp, [[['ETH', 100]]], ['ETH']);
 
-      expect(tx.events.PriceGuarded).not.toBe(undefined);
       expect(tx.events.PriceGuarded.returnValues.symbol).toBe('ETH');
       expect(tx.events.PriceGuarded.returnValues.reporter).numEquals(100e6);
       expect(tx.events.PriceGuarded.returnValues.anchor).numEquals(89.9e6);
@@ -111,19 +132,41 @@ describe('UniswapAnchoredView', () => {
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(100e6);
     });
 
+    it('should not update view if ERC20 price is below anchor bounds', async () => {
+      const timestamp = time() - 5;
+      // anchorMantissa is 1e17, so 10% tolerance
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['REP', 15e6]);
+      const tx = await postPrices(timestamp, [[['REP', 17]]], ['REP']);
+
+      expect(tx.events.PriceGuarded.returnValues.reporter).numEquals(17e6);
+      expect(tx.events.PriceGuarded.returnValues.anchor).numEquals(15e6);
+      expect(await call(uniswapAnchoredView, 'prices', [keccak256('REP')])).numEquals(0);
+      expect(await call(priceData, 'getPrice', [reporter.address, 'REP'])).numEquals(17e6);
+    });
+
     it('should not update view if ETH price is above anchor bounds', async () => {
       // anchorMantissa is 1e17, so 10% tolerance
       const timestamp = time() - 5;
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 110.1e6]);
       const tx = await postPrices(timestamp, [[['ETH', 100]]], ['ETH']);
 
-      expect(tx.events.PriceGuarded).not.toBe(undefined);
-      expect(tx.events.PriceGuarded.returnValues.symbol).toBe('ETH');
       expect(tx.events.PriceGuarded.returnValues.reporter).numEquals(100e6);
       expect(tx.events.PriceGuarded.returnValues.anchor).numEquals(110.1e6);
       expect(tx.events.PriceUpdated).toBe(undefined);
       expect(await call(uniswapAnchoredView, 'prices', [keccak256('ETH')])).numEquals(0);
       expect(await call(priceData, 'getPrice', [reporter.address, 'ETH'])).numEquals(100e6);
+    });
+
+    it('should not update view if ERC20 price is above anchor bounds', async () => {
+      const timestamp = time() - 5;
+      // anchorMantissa is 1e17, so 10% tolerance
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['REP', 19e6]);
+      const tx = await postPrices(timestamp, [[['REP', 17]]], ['REP']);
+
+      expect(tx.events.PriceGuarded.returnValues.reporter).numEquals(17e6);
+      expect(tx.events.PriceGuarded.returnValues.anchor).numEquals(19e6);
+      expect(await call(uniswapAnchoredView, 'prices', [keccak256('REP')])).numEquals(0);
+      expect(await call(priceData, 'getPrice', [reporter.address, 'REP'])).numEquals(17e6);
     });
 
     it('should revert on posting arrays of messages and signatures with different lengths', async () => {
@@ -170,8 +213,6 @@ describe('UniswapAnchoredView', () => {
       ).rejects.toRevert("revert token config not found");
     });
 
-    it.todo('test anchor with non-eth prices')
-
   });
 
   describe('getUnderlyingPrice', () => {
@@ -209,12 +250,12 @@ describe('UniswapAnchoredView', () => {
     it('should return reported WBTC price', async () => {
       const timestamp = time() - 5;
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
-      await send(uniswapAnchoredView, 'setAnchorPrice', ['WBTC', 10000e6]);
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['BTC', 10000e6]);
 
-      const tx = await postPrices(timestamp, [[['ETH', 200], ['WBTC', 10000]]], ['ETH', 'WBTC']);
-      const wbtcPrice  = await call(uniswapAnchoredView, 'prices', [keccak256('WBTC')]);
+      const tx = await postPrices(timestamp, [[['ETH', 200], ['BTC', 10000]]], ['ETH', 'BTC']);
+      const btcPrice  = await call(uniswapAnchoredView, 'prices', [keccak256('BTC')]);
 
-      expect(wbtcPrice).numEquals(10000e6);
+      expect(btcPrice).numEquals(10000e6);
       // priceInternal:      returns 10000e6
       // getUnderlyingPrice: 1e30 * 10000e6 / 1e8 = 1e32
       let expected = new BigNumber('1e32');
@@ -232,25 +273,28 @@ describe('UniswapAnchoredView', () => {
     it('should not update window values if not enough time elapsed', async () => {
       const timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod - 3;
       await sendRPC(web3, 'evm_increaseTime', [anchorPeriod - 5]);
-      const tx = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
-      expect(tx.events.UniswapWindowUpdate).toBe(undefined);
+      const tx = await postPrices(timestamp, [[['ETH', 227]]], ['ETH']);
+      expect(tx.events.UniswapWindowUpdated).toBe(undefined);
     });
 
     it('should update window values if enough time elapsed', async () => {
+      const ethHash = keccak256('ETH');
       let timestamp;
       const mkt = mockPair._address;// ETH's mock market
-      const newObs1 = await call(uniswapAnchoredView, 'newObservations', [mkt]);
-      const oldObs1 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
+      const newObs1 = await call(uniswapAnchoredView, 'newObservations', [ethHash]);
+      const oldObs1 = await call(uniswapAnchoredView, 'oldObservations', [ethHash]);
 
       timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod;
       await sendRPC(web3, 'evm_increaseTime', [anchorPeriod]);
 
-      const tx1 = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
-      expect(tx1.events.UniswapWindowUpdate).not.toBe(undefined);
+      const tx1 = await postPrices(timestamp, [[['ETH', 227]]], ['ETH']);
+      const updateEvent = tx1.events.AnchorPriceUpdated.returnValues;
+      expect(updateEvent.newTimestamp).greaterThan(updateEvent.oldTimestamp);
+      expect(tx1.events.PriceGuarded).toBe(undefined);
 
       // on the first update, we expect the new observation to change
-      const newObs2 = await call(uniswapAnchoredView, 'newObservations', [mkt]);
-      const oldObs2 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
+      const newObs2 = await call(uniswapAnchoredView, 'newObservations', [ethHash]);
+      const oldObs2 = await call(uniswapAnchoredView, 'oldObservations', [ethHash]);
       expect(newObs2.acc).greaterThan(newObs1.acc);
       expect(newObs2.timestamp).greaterThan(newObs1.timestamp);
       expect(oldObs2.acc).numEquals(oldObs1.acc);
@@ -260,23 +304,24 @@ describe('UniswapAnchoredView', () => {
       await sendRPC(web3, 'evm_mine', [timestamp]);
       const tx2 = await postPrices(timestamp, [[['ETH', 201]]], ['ETH']);
 
-      const windowUpdate = tx2.events.UniswapWindowUpdate.returnValues;
-      expect(windowUpdate.uniswapMarket).toEqual(mkt);
+      const windowUpdate = tx2.events.UniswapWindowUpdated.returnValues;
+      expect(windowUpdate.symbolHash).toEqual(ethHash);
       expect(timestamp).greaterThan(windowUpdate.oldTimestamp);
       expect(windowUpdate.newPrice).greaterThan(windowUpdate.oldPrice);// accumulator should always go up
 
       // this time, both should change
-      const newObs3 = await call(uniswapAnchoredView, 'newObservations', [mkt]);
-      const oldObs3 = await call(uniswapAnchoredView, 'oldObservations', [mkt]);
+      const newObs3 = await call(uniswapAnchoredView, 'newObservations', [ethHash]);
+      const oldObs3 = await call(uniswapAnchoredView, 'oldObservations', [ethHash]);
       expect(newObs3.acc).greaterThan(newObs2.acc);
       expect(newObs3.acc).greaterThan(newObs2.timestamp);
       // old becomes last new
       expect(oldObs3.acc).numEquals(newObs2.acc);
       expect(oldObs3.timestamp).numEquals(newObs2.timestamp);
 
-      const anchorPriceUpdate = tx2.events.AnchorPriceUpdate.returnValues;
-      expect(oldObs3.timestamp).toBe(anchorPriceUpdate.oldTimestamp);
-      expect(oldObs3.acc).toBe(anchorPriceUpdate.oldCumulativePrice);
+      const anchorPriceUpdated = tx2.events.AnchorPriceUpdated.returnValues;
+      expect(anchorPriceUpdated.symbol).toBe("ETH");
+      expect(anchorPriceUpdated.newTimestamp).greaterThan(anchorPriceUpdated.oldTimestamp);
+      expect(oldObs3.timestamp).toBe(anchorPriceUpdated.oldTimestamp);
     });
   })
 
@@ -291,18 +336,40 @@ describe('UniswapAnchoredView', () => {
       ).rejects.toRevert("revert anchor tolerance is too high");
     });
 
+    it('should fail if baseUnit == 0', async () => {
+      const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
+      const priceData = await deploy('OpenOraclePriceData', []);
+      const anchorMantissa = numToHex(1e17);
+
+      const dummyAddress = address(0);
+      const mockPair = await deploy("MockUniswapTokenPair", [
+        fixed(1.8e12),
+        fixed(8.2e21),
+        fixed(1.6e9),
+        fixed(1.19e50),
+        fixed(5.8e30),
+      ]);
+      const tokenConfigs = [
+        // Set dummy address as a uniswap market address
+        {cToken: address(1), underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: true},
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: 0, priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false},
+        {cToken: address(3), underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, isUniswapReversed: false}];
+      await expect(
+        deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, tokenConfigs])
+      ).rejects.toRevert("revert baseUnit must be greater than zero");
+    });
+
     it('should fail if uniswap market is not defined', async () => {
       const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
       const priceData = await deploy('OpenOraclePriceData', []);
       const anchorMantissa = numToHex(1e17);
 
       const dummyAddress = address(0);
-      const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
       const tokenConfigs = [
         // Set dummy address as a uniswap market address
-        {cToken: address(1), underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyAddress, isUniswapReversed: true},
-        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(4), isUniswapReversed: false},
-        {cToken: address(3), underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: priceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
+        {cToken: address(1), underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyAddress, isUniswapReversed: true},
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(4), isUniswapReversed: false},
+        {cToken: address(3), underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
       await expect(
         deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, tokenConfigs])
       ).rejects.toRevert("revert reported prices must have an anchor");
@@ -314,22 +381,20 @@ describe('UniswapAnchoredView', () => {
       const anchorMantissa = numToHex(1e17);
 
       const dummyAddress = address(0);
-      const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
       const tokenConfigs1 = [
-        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_USD, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_USD, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
       await expect(
         deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, tokenConfigs1])
       ).rejects.toRevert("revert only reported prices utilize an anchor");
 
       const tokenConfigs2 = [
-        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: priceSource.FIXED_ETH, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_ETH, fixedPrice: 0, uniswapMarket: address(5), isUniswapReversed: false}];
       await expect(
         deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, tokenConfigs2])
       ).rejects.toRevert("revert only reported prices utilize an anchor");
     });
 
-    it('basic scnario, successfully initialize observations initial state', async () => {
-      const priceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
+    it('basic scenario, successfully initialize observations initial state', async () => {
       ({reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, cToken, mockPair} = await setup({isMockedView: true}));
       expect(await call(uniswapAnchoredView, 'reporter')).toBe(reporter.address);
       expect(await call(uniswapAnchoredView, 'anchorPeriod')).numEquals(anchorPeriod);
@@ -341,7 +406,7 @@ describe('UniswapAnchoredView', () => {
         const newObservation = await call(uniswapAnchoredView, 'newObservations', [config.uniswapMarket]);
         expect(oldObservation.timestamp).numEquals(newObservation.timestamp);
         expect(oldObservation.acc).numEquals(newObservation.acc);
-        if (config.priceSource != priceSource.REPORTER) {
+        if (config.priceSource != PriceSource.REPORTER) {
           expect(oldObservation.acc).numEquals(0);
           expect(newObservation.acc).numEquals(0);
           expect(oldObservation.timestamp).numEquals(0);
@@ -399,12 +464,12 @@ describe('UniswapAnchoredView', () => {
     it("basic scenario, return anchor price after reporter is invalidated", async () => {
       const timestamp = time() - 5;
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
-      await send(uniswapAnchoredView, 'setAnchorPrice', ['WBTC', 10000e6]);
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['BTC', 10000e6]);
 
-      await postPrices(timestamp, [[['ETH', 201], ['WBTC', 10001]]], ['ETH', 'WBTC']);
+      await postPrices(timestamp, [[['ETH', 201], ['BTC', 10001]]], ['ETH', 'BTC']);
 
       // Check that prices = posted prices
-      const wbtcPrice1  = await call(uniswapAnchoredView, 'prices', [keccak256('WBTC')]);
+      const wbtcPrice1  = await call(uniswapAnchoredView, 'prices', [keccak256('BTC')]);
       const ethPrice1  = await call(uniswapAnchoredView, 'prices', [keccak256('ETH')]);
       expect(wbtcPrice1).numEquals(10001e6);
       expect(ethPrice1).numEquals(201e6);
@@ -415,10 +480,10 @@ describe('UniswapAnchoredView', () => {
       const [ signed ] = sign(encoded, reporter.privateKey);
 
       await send(uniswapAnchoredView, 'invalidateReporter', [encoded, signed.signature]);
-      await postPrices(timestamp, [[['ETH', 201], ['WBTC', 10001]]], ['ETH', 'WBTC']);
+      await postPrices(timestamp, [[['ETH', 201], ['BTC', 10001]]], ['ETH', 'BTC']);
 
       // Check that prices = anchor prices
-      const wbtcPrice2  = await call(uniswapAnchoredView, 'prices', [keccak256('WBTC')]);
+      const wbtcPrice2  = await call(uniswapAnchoredView, 'prices', [keccak256('BTC')]);
       const ethPrice2  = await call(uniswapAnchoredView, 'prices', [keccak256('ETH')]);
       expect(wbtcPrice2).numEquals(10000e6);
       expect(ethPrice2).numEquals(200e6);

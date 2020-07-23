@@ -12,7 +12,7 @@ contract OpenOracleView {
     /**
      * @notice The Oracle Data Contract backing this View
      */
-    OpenOracleData public data;
+    OpenOracleData public priceData;
 
     /**
      * @notice The static list of sources used by this View
@@ -29,7 +29,7 @@ contract OpenOracleView {
      */
     constructor(OpenOracleData data_, address[] memory sources_) public {
         require(sources_.length > 0, "Must initialize with sources");
-        data = data_;
+        priceData = data_;
         sources = sources_;
     }
 }
