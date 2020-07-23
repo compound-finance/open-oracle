@@ -38,16 +38,16 @@ async function run() {
   const mocked_world = parsed['testnet-world'];
   const testnet_pairs = <string[]>parsed['testnet-uniswap-pairs'];
   const mainnet_pairs = <string[]>parsed['mainnet-uniswap-pairs'];
+  const pairs = {testnet: {}, mainnet: {}};
   if (mocked_world) {
     if (testnet_pairs.length != mainnet_pairs.length || testnet_pairs.length != assets.length) {
       throw new TypeError("For each asset mainnet and testnet pairs should be provided, all lengths should match")
     }
+    assets.forEach((asset, index) => {
+      pairs['testnet'][asset] = testnet_pairs[index];
+      pairs['mainnet'][asset] = mainnet_pairs[index];
+    });
   }
-  const pairs = {testnet: {}, mainnet: {}};
-  assets.forEach((asset, index) => {
-    pairs['testnet'][asset] = testnet_pairs[index];
-    pairs['mainnet'][asset] = mainnet_pairs[index];
-  });
 
   // posting promise will reject and retry once with higher gas after this timeout
   const web3 = await new Web3(web3_provider);
