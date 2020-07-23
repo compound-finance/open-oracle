@@ -23,6 +23,8 @@ export async function main(
     gas: number,
     delta: number,
     assets: string[],
+    mocked_world: boolean,
+    pairs,
     web3: Web3) {
 
   const payloads = await fetchPayloads(sources);
@@ -32,7 +34,9 @@ export async function main(
     const gasPrice = await fetchGasPrice();
 
     // mock uniswap mainnet pairs price
-    await mockUniswapTokenPairs(assets, senderKey, gas, gasPrice, web3);
+    if (mocked_world) {
+      await mockUniswapTokenPairs(assets, senderKey, pairs,gas, gasPrice, web3);
+    }
 
     const trxData = buildTrxData(feedItems, functionSig);
     const trx = <TransactionConfig>{
