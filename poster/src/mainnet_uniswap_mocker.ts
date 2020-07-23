@@ -60,10 +60,8 @@ async function mockUniswapTokenPair(symbol: string, senderKey: string, pairs, ga
   const trx = {
       data: trxData,
       to: testnetPair,
-      gasPrice: 312000000000,
-      gas: 195000
-      // gasPrice: gasPrice,
-      // gas: gas
+      gasPrice: gasPrice,
+      gas: gas
   };
 
   return await postWithRetries(trx, senderKey, web3);
