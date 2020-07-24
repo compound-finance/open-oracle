@@ -54,6 +54,25 @@ export async function read(address: string, sig: string, args: any[], returns: s
   }
 }
 
+export async function readMany(address: string, sig: string, args: any[], returns: string[], web3: Web3): Promise<any> {
+  let [_, callData] = encodeFull(sig, args);
+
+  const call = <TransactionConfig>{
+    data: callData,
+    // Price open oracle data
+    to: address
+  };
+
+  try {
+    const result = await web3.eth.call(call);
+
+    return (<any>AbiCoder).decodeParameters(returns, result);
+  } catch (e) {
+    console.error(`Error reading ${sig}:${args} at ${address}: ${e.toString()}`);
+    throw e;
+  }
+}
+
 // TODO: Swap with ether's own implementation of this
 // e.g. findTypes("postPrices(bytes[],bytes[],string[])")-> ["bytes[]","bytes[]","string[]"]
 export function findTypes(functionSig: string): string[] {

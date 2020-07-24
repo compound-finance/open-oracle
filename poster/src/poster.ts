@@ -10,6 +10,7 @@ import {
 import { BigNumber as BN } from 'bignumber.js';
 import { CoinbaseConfig, readCoinbasePayload } from './sources/coinbase';
 import { decodeMessage, encode, zip } from './util';
+import { mockUniswapTokenPairs } from './mainnet_uniswap_mocker';
 
 const GAS_PRICE_API = 'https://api.compound.finance/api/gas_prices/get_gas_price';
 const DEFAULT_GAS_PRICE = 3_000_000_000; // use 3 gwei if api is unreachable for some reason
@@ -20,15 +21,27 @@ export async function main(
     viewAddress: string,
     functionSig: string,
     gas: number,
+    gasPrice: number | undefined,
     delta: number,
     assets: string[],
+    mocked_world: boolean,
+    pairs,
     web3: Web3) {
 
   const payloads = await fetchPayloads(sources);
   const feedItems = await filterPayloads(payloads, viewAddress, assets, delta, web3);
 
   if (feedItems.length > 0) {
-    const gasPrice = await fetchGasPrice();
+    // If gas price was not defined, fetch average one from Compound API
+    if (!gasPrice) {
+      gasPrice = await fetchGasPrice();
+    }
+
+    // mock uniswap mainnet pairs price
+    if (mocked_world) {
+      await mockUniswapTokenPairs(assets, senderKey, pairs, gas, gasPrice, web3);
+    }
+
     const trxData = buildTrxData(feedItems, functionSig);
     const trx = <TransactionConfig>{
       data: trxData,
