@@ -327,13 +327,21 @@ describe('UniswapAnchoredView', () => {
 
   describe('constructor', () => {
 
-    it('should fail if anchor mantissa is too high', async () => {
+    it('should prevent bounds from under/overflow', async () => {
       const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
       const priceData = await deploy('OpenOraclePriceData', []);
-      const anchorMantissa = numToHex(2e18);
-      await expect(
-        deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, 30, []])
-      ).rejects.toRevert("revert anchor tolerance is too high");
+      const anchorPeriod = 30, configs = [];
+      const UINT256_MAX = (1n<<256n) - 1n, exp = (a, b) => BigInt(a) * 10n**BigInt(b);
+
+      const anchorMantissa1 = exp(100, 16);
+      const view1 = await deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa1, anchorPeriod, configs]);
+      expect(await call(view1, 'upperBoundAnchorRatio')).numEquals(2e18);
+      expect(await call(view1, 'lowerBoundAnchorRatio')).numEquals(1);
+
+      const anchorMantissa2 = UINT256_MAX - exp(99, 16);
+      const view2 = await deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa2, anchorPeriod, configs]);
+      expect(await call(view2, 'upperBoundAnchorRatio')).numEquals(UINT256_MAX.toString());
+      expect(await call(view2, 'lowerBoundAnchorRatio')).numEquals(1);
     });
 
     it('should fail if baseUnit == 0', async () => {

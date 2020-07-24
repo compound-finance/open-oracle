@@ -13,7 +13,6 @@
     "yargs": "^15.0.2"
   },
   "devDependencies": {
-    "docker-compose": "^0.23.1",
     "jest": "^24.9.0",
     "jest-cli": "^24.9.0",
     "jest-junit": "^10.0.0"

@@ -83,9 +83,9 @@ contract UniswapAnchoredView is UniswapConfig {
         reporter = reporter_;
         anchorPeriod = anchorPeriod_;
 
-        require(anchorToleranceMantissa_ < 100e16, "anchor tolerance is too high");
-        upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
-        lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
+        // Allow the tolerance to be whatever the deployer chooses, but prevent under/overflow (and prices from being 0)
+        upperBoundAnchorRatio = anchorToleranceMantissa_ > uint(-1) - 100e16 ? uint(-1) : 100e16 + anchorToleranceMantissa_;
+        lowerBoundAnchorRatio = anchorToleranceMantissa_ < 100e16 ? 100e16 - anchorToleranceMantissa_ : 1;
 
         for (uint i = 0; i < configs.length; i++) {
             TokenConfig memory config = configs[i];
