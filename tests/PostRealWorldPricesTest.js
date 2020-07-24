@@ -461,14 +461,14 @@ describe("UniswapAnchoredView", () => {
       symbols,
     ]);
     const uniswapWindowEvents1 = postRes1.events.UniswapWindowUpdated;
+    const tolSeconds = 30;
 
     uniswapWindowEvents1.forEach((windowUpdate) => {
-      const tolSeconds = 30;
       const elapsedTime =
             windowUpdate.returnValues.newTimestamp -
             windowUpdate.returnValues.oldTimestamp;
       // but time difference should be around 31 minutes + 0/1 second
-      expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + tolSeconds).toBe(true);
+      expect(elapsedTime).toBeWithinRange(31 * 60, 31 * 60 + tolSeconds);
     });
 
     await sendRPC(web3, "evm_increaseTime", [31 * 60]);
@@ -483,8 +483,8 @@ describe("UniswapAnchoredView", () => {
       const elapsedTime =
             windowUpdate.returnValues.newTimestamp -
             windowUpdate.returnValues.oldTimestamp;
-      // Give an extra 5 seconds safety delay, but time difference should be around 31 minutes + 0/1 second
-      expect(elapsedTime >= 31 * 60 && elapsedTime < 31 * 60 + 5).toBe(true);
+      // Give an extra 30 seconds safety delay, but time difference should be around 31 minutes + 0/1 second
+      expect(elapsedTime).toBeWithinRange(31 * 60, 31 * 60 + tolSeconds);
     });
   });
 

@@ -2,18 +2,28 @@ const { encode, sign, encodeRotationMessage } = require('../sdk/javascript/.tsbu
 const { uint, keccak256, time, numToHex, address, sendRPC, currentBlockTimestamp, fixed } = require('./Helpers');
 const BigNumber = require('bignumber.js');
 
-const PriceSource = {FIXED_ETH: 0, FIXED_USD: 1, REPORTER: 2};
+const PriceSource = {
+  FIXED_ETH: 0,
+  FIXED_USD: 1,
+  REPORTER: 2
+};
+const reporterPrivateKey = '0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10';
+const FIXED_ETH_AMOUNT = 0.005e18;
 
-async function setup(opts)  {
-  ({isMockedView} = opts);
-  const reporter = web3.eth.accounts.privateKeyToAccount('0x177ee777e72b8c042e05ef41d1db0f17f1fcb0e8150b37cfad6993e4373bdf10');
+async function setup({isMockedView, freeze}) {
+  const reporter =
+    web3.eth.accounts.privateKeyToAccount(reporterPrivateKey);
   const anchorMantissa = numToHex(1e17);
   const priceData = await deploy('OpenOraclePriceData', []);
   const anchorPeriod = 60;
+  const timestamp = 1600000000;
 
-  const FIXED_ETH_AMOUNT = 0.005e18;
 
-  await sendRPC(web3, 'evm_mine', [fixed(1.6e9)]);
+  if (freeze) {
+    await sendRPC(web3, 'evm_freezeTime', [timestamp]);
+  } else {
+    await sendRPC(web3, 'evm_mine', [timestamp]);
+  }
 
   const mockPair = await deploy("MockUniswapTokenPair", [
     fixed(1.8e12),
@@ -50,37 +60,67 @@ async function setup(opts)  {
     uniswapAnchoredView = await deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, anchorPeriod, tokenConfigs]);
   }
 
-  async function postPrices(timestamp, prices2dArr, symbols, signer = reporter) {
-      const messages = [],
-            signatures = [];
+  async function postPrices(timestamp, prices2dArr, symbols, signer=reporter) {
+    let {
+      messages,
+      signatures
+    } = prices2dArr.reduce(({messages, signatures}, prices, i) => {
+      const signedMessages = sign(
+        encode(
+          'prices',
+          timestamp,
+          prices
+        ),
+        signer.privateKey
+      );
 
-      prices2dArr.forEach((prices, i) => {
-        const signed = sign(
-          encode(
-            'prices',
-            timestamp,
-            prices
-          ),
-          signer.privateKey
-        );
-        for (let { message, signature } of signed) {
-          messages.push(message);
-          signatures.push(signature);
-        }
-      });
-      return send(uniswapAnchoredView, 'postPrices', [messages, signatures, symbols]);
+      return signedMessages.reduce(({messages, signatures}, {message, signature}) => {
+        return {
+          messages: [...messages, message],
+          signatures: [...signatures, signature],
+        };
+      }, {messages, signatures});
+    }, { messages: [], signatures: [] });
+
+    return send(uniswapAnchoredView, 'postPrices', [messages, signatures, symbols]);
   }
-  return {reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, cToken, mockPair};
+
+  return {
+    anchorMantissa,
+    anchorPeriod,
+    cToken,
+    mockPair,
+    postPrices,
+    priceData,
+    reporter,
+    timestamp,
+    tokenConfigs,
+    uniswapAnchoredView,
+  };
 }
 
 describe('UniswapAnchoredView', () => {
-  let cToken, reporter, anchorMantissa, priceData, anchorPeriod, uniswapAnchoredView, tokenConfigs, postPrices, mockPair;
+  let cToken;
+  let reporter;
+  let anchorMantissa;
+  let priceData;
+  let anchorPeriod;
+  let uniswapAnchoredView;
+  let tokenConfigs;
+  let postPrices;
+  let mockPair;
+  let timestamp;
 
   describe('postPrices', () => {
-    beforeEach(async done => {
-      ({reporter, anchorMantissa, priceData, uniswapAnchoredView, postPrices} = await setup({isMockedView: true}));
-      done();
-    })
+    beforeEach(async () => {
+      ({
+        anchorMantissa,
+        postPrices,
+        priceData,
+        reporter,
+        uniswapAnchoredView,
+      } = await setup({isMockedView: true}));
+    });
 
     it('should not update view if sender is not reporter', async () => {
       const timestamp = time() - 5;
@@ -218,10 +258,13 @@ describe('UniswapAnchoredView', () => {
   describe('getUnderlyingPrice', () => {
     // everything must return 1e36 - underlying units
 
-    beforeEach(async done => {
-      ({cToken, uniswapAnchoredView, postPrices} = await setup({isMockedView: true}));
-      done();
-    })
+    beforeEach(async () => {
+      ({
+        cToken,
+        postPrices,
+        uniswapAnchoredView,
+      } = await setup({isMockedView: true}));
+    });
 
     it('should work correctly for USDT fixed USD price source', async () => {
       // 1 * (1e(36 - 6)) = 1e30
@@ -265,29 +308,33 @@ describe('UniswapAnchoredView', () => {
   });
 
   describe('pokeWindowValues', () => {
-    beforeEach(async done => {
-      ({mockPair, anchorPeriod, uniswapAnchoredView, postPrices, tokenConfigs} = await setup({isMockedView: false}));
-      done();
+    beforeEach(async () => {
+      ({
+        mockPair,
+        anchorPeriod,
+        uniswapAnchoredView,
+        postPrices,
+        tokenConfigs,
+        timestamp
+      } = await setup({isMockedView: false, freeze: true}));
     });
 
     it('should not update window values if not enough time elapsed', async () => {
-      const timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod - 3;
-      await sendRPC(web3, 'evm_increaseTime', [anchorPeriod - 5]);
+      await sendRPC(web3, 'evm_freezeTime', [timestamp + anchorPeriod - 5]);
       const tx = await postPrices(timestamp, [[['ETH', 227]]], ['ETH']);
       expect(tx.events.UniswapWindowUpdated).toBe(undefined);
     });
 
     it('should update window values if enough time elapsed', async () => {
       const ethHash = keccak256('ETH');
-      let timestamp;
       const mkt = mockPair._address;// ETH's mock market
       const newObs1 = await call(uniswapAnchoredView, 'newObservations', [ethHash]);
       const oldObs1 = await call(uniswapAnchoredView, 'oldObservations', [ethHash]);
 
-      timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod;
-      await sendRPC(web3, 'evm_increaseTime', [anchorPeriod]);
+      let timestampLater = timestamp + anchorPeriod;
+      await sendRPC(web3, 'evm_freezeTime', [timestampLater]);
 
-      const tx1 = await postPrices(timestamp, [[['ETH', 227]]], ['ETH']);
+      const tx1 = await postPrices(timestampLater, [[['ETH', 227]]], ['ETH']);
       const updateEvent = tx1.events.AnchorPriceUpdated.returnValues;
       expect(updateEvent.newTimestamp).greaterThan(updateEvent.oldTimestamp);
       expect(tx1.events.PriceGuarded).toBe(undefined);
@@ -300,13 +347,13 @@ describe('UniswapAnchoredView', () => {
       expect(oldObs2.acc).numEquals(oldObs1.acc);
       expect(oldObs2.timestamp).numEquals(oldObs1.timestamp);
 
-      timestamp = Number(await currentBlockTimestamp(web3)) + anchorPeriod;
-      await sendRPC(web3, 'evm_mine', [timestamp]);
-      const tx2 = await postPrices(timestamp, [[['ETH', 201]]], ['ETH']);
+      let timestampEvenLater = timestampLater + anchorPeriod;
+      await sendRPC(web3, 'evm_freezeTime', [timestampEvenLater]);
+      const tx2 = await postPrices(timestampEvenLater, [[['ETH', 201]]], ['ETH']);
 
       const windowUpdate = tx2.events.UniswapWindowUpdated.returnValues;
       expect(windowUpdate.symbolHash).toEqual(ethHash);
-      expect(timestamp).greaterThan(windowUpdate.oldTimestamp);
+      expect(timestampEvenLater).greaterThan(windowUpdate.oldTimestamp);
       expect(windowUpdate.newPrice).greaterThan(windowUpdate.oldPrice);// accumulator should always go up
 
       // this time, both should change

@@ -1,0 +1,31 @@
+#!/bin/bash
+
+set -eo pipefail
+
+dir=`dirname $0`
+reporter_sdk_dir=$(cd "$dir/../sdk/javascript" && pwd)
+coverage_root="$dir/../coverage"
+
+if [ ! -f "$reporter_sdk_dir/.tsbuilt/reporter.js" ]; then
+  echo "Compiling Reporter SDK..."
+  (
+    cd $reporter_sdk_dir &&
+    yarn install --ignore-optional &&
+    yarn prepare
+  ) && echo "Reporter Compiled" || (echo "Compilation failed" && exit 1)
+fi
+
+echo "Compiling contracts with trace..."
+npx saddle compile --trace
+
+rm -rf "$coverage_root"
+
+echo "Running coverage..."
+npx saddle coverage $@
+coverage_code=$?
+
+npx istanbul report --root="$coverage_root" lcov json
+
+echo "Coverage generated. Report at $(cd $coverage_root && pwd)/lcov-report/index.html"
+
+exit $coverage_code
