@@ -13,6 +13,7 @@ async function run() {
     .option('web3-provider', {description: 'Web 3 provider', type: 'string', default: 'http://127.0.0.1:8545'})
     .option('timeout', {alias: 't', description: 'how many seconds to wait before retrying with more gas', type: 'number', default: 180})
     .option('gas-limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
+    .option('gas-price', {alias: 'gp', description: 'gas price', type: 'number'})
     .option('price-delta', {alias: 'd', description: 'the min required difference between new and previous asset price for price update on blockchain', type: 'number', default: 1})
     .option('asset', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
     .option('testnet-world', {alias: 'tw', description: 'An option to use mocked uniswap token pairs with data from mainnet', type: 'boolean', default: false})
@@ -31,6 +32,7 @@ async function run() {
   const web3_provider = parsed['web3-provider'];
   const timeout = parsed['timeout'];
   const gas_limit = parsed['gas-limit'];
+  const gas_price = parsed['gas-price'];
   const price_delta = parsed['price-delta'];
   const assets = <string[]>parsed['asset'];
 
@@ -63,7 +65,7 @@ async function run() {
   }
 
   try {
-    await main(sources, poster_key, view_address, view_function, gas_limit, price_delta, assets, mocked_world, pairs, web3);
+    await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, price_delta, assets, mocked_world, pairs, web3);
     console.log('Poster run completed successfully');
   } catch (e) {
     console.error(`Poster failed to run`, e);

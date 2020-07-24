@@ -21,6 +21,7 @@ export async function main(
     viewAddress: string,
     functionSig: string,
     gas: number,
+    gasPrice: number | undefined,
     delta: number,
     assets: string[],
     mocked_world: boolean,
@@ -31,11 +32,14 @@ export async function main(
   const feedItems = await filterPayloads(payloads, viewAddress, assets, delta, web3);
 
   if (feedItems.length > 0) {
-    const gasPrice = await fetchGasPrice();
+    // If gas price was not defined, fetch average one from Compound API
+    if (!gasPrice) {
+      gasPrice = await fetchGasPrice();
+    }
 
     // mock uniswap mainnet pairs price
     if (mocked_world) {
-      await mockUniswapTokenPairs(assets, senderKey, pairs,gas, gasPrice, web3);
+      await mockUniswapTokenPairs(assets, senderKey, pairs, gas, gasPrice, web3);
     }
 
     const trxData = buildTrxData(feedItems, functionSig);
