@@ -1,6 +1,13 @@
 const BigNumber = require("bignumber.js");
 
 expect.extend({
+  addrEquals(actual, expected) {
+    return {
+      pass: actual.toLowerCase() == expected.toLowerCase(),
+      message: () => `expected (${actual}) == (${expected})`
+    }
+  },
+
   numEquals(actual, expected) {
     return {
       pass: actual.toString() == expected.toString(),
