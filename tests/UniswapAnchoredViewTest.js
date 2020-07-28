@@ -213,7 +213,18 @@ describe('UniswapAnchoredView', () => {
       ).rejects.toRevert("revert token config not found");
     });
 
-  });
+    it("should revert on posting FIXED_USD prices", async () => {
+      await expect(
+        postPrices(time() - 5, [[['USDT', 1]]], ['USDT'])
+      ).rejects.toRevert("revert only reporter prices get posted");
+    });
+
+    it("should revert on posting FIXED_ETH prices", async () => {
+      await expect(
+        postPrices(time() - 5, [[['SAI', 1]]], ['SAI'])
+      ).rejects.toRevert("revert only reporter prices get posted");
+    });
+});
 
   describe('getUnderlyingPrice', () => {
     // everything must return 1e36 - underlying units
