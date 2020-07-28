@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -eo pipefail
+
+dir=`dirname $0`
+reporter_sdk_dir=$(cd "$dir/../sdk/javascript" && pwd)
+
+if [ ! -f "$reporter_sdk_dir/.tsbuilt/reporter.js" ]; then
+  echo "Compiling Reporter SDK..."
+  (
+    cd $reporter_sdk_dir &&
+    yarn install --ignore-optional &&
+    yarn prepare
+  ) && echo "Reporter Compiled" || (echo "Compilation failed" && exit 1)
+fi
+
+echo "Compiling contracts..."
+npx saddle compile
+
+echo "Running tests..."
+npx saddle test $@

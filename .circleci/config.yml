@@ -1,13 +1,14 @@
 version: 2.1
 
+orbs:
+  codecov: codecov/codecov@1.0.3
+
 jobs:
   test_oracle:
     docker:
-      - image: circleci/node:11
+      - image: circleci/node:12
     working_directory: ~/repo
     steps:
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
         |
           sudo wget https://github.com/ethereum/solidity/releases/download/v0.6.10/solc-static-linux -O /usr/local/bin/solc
@@ -41,17 +42,71 @@ jobs:
             - sdk/javascript/node_modules
           key: v1-sdk-dependencies-{{ checksum "sdk/javascript/package.json" }}
       - run: mkdir ~/junit-oracle
-      - run: npx saddle compile
-      - run: docker-compose -p open-oracle build
-      - run: JEST_JUNIT_OUTPUT=~/junit-oracle/test-results.xml npx saddle test tests/*Test.js -- --ci --reporters=default --reporters=jest-junit
+      - run: JEST_JUNIT_OUTPUT=~/junit-oracle/test-results.xml script/test tests/*Test.js -- --ci --reporters=default --reporters=jest-junit
       - store_test_results:
           path: ~/junit-oracle
       - store_artifacts:
           path: ~/junit-oracle
 
+  test_coverage:
+    docker:
+      - image: circleci/node:13
+    working_directory: ~/repo
+    steps:
+      - run:
+        |
+          sudo wget https://github.com/ethereum/solidity/releases/download/v0.6.10/solc-static-linux -O /usr/local/bin/solc
+          sudo chmod +x /usr/local/bin/solc
+      - checkout
+      - restore_cache:
+          keys:
+          - cov-v1-dependencies-{{ checksum "package.json" }}
+          - cov-v1-dependencies-
+      - restore_cache:
+          keys:
+          - cov-v1-poster-dependencies-{{ checksum "poster/package.json" }}
+          - cov-v1-poster-dependencies-
+      - restore_cache:
+          keys:
+          - cov-v1-sdk-dependencies-{{ checksum "sdk/javascript/package.json" }}
+          - cov-v1-sdk-dependencies-
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: cov-v1-dependencies-{{ checksum "package.json" }}
+      - run: cd poster && yarn install && yarn prepare
+      - save_cache:
+          paths:
+            - poster/node_modules
+          key: cov-v1-poster-dependencies-{{ checksum "poster/package.json" }}
+      - run: cd sdk/javascript && yarn install && yarn prepare
+      - save_cache:
+          paths:
+            - sdk/javascript/node_modules
+          key: cov-v1-sdk-dependencies-{{ checksum "sdk/javascript/package.json" }}
+      - run: mkdir ~/junit-oracle
+      - run:
+          shell: /bin/bash -eox pipefail -O globstar
+          name: yarn coverage
+          no_output_timeout: 30m
+          command: JEST_JUNIT_OUTPUT_DIR=~/junit-oracle JEST_JUNIT_OUTPUT_NAME=test-results.xml script/coverage $(circleci tests glob 'tests/**/**Test.js' | circleci tests split --split-by=timings) -- --maxWorkers=4
+      - store_test_results:
+          path: ~/junit-oracle
+      - store_artifacts:
+          path: ~/repo/coverage/coverage-final.json
+          destination: coverage-final.json
+      - store_artifacts:
+          path: ~/repo/coverage/lcov-report
+          destination: coverage
+      - codecov/upload:
+          file: ~/repo/coverage/coverage-final.json
+    parallelism: 3
+    resource_class: xlarge
+
   test_poster:
     docker:
-      - image: circleci/node:11
+      - image: circleci/node:12
     working_directory: ~/repo/poster
     steps:
       - checkout:
@@ -74,7 +129,7 @@ jobs:
 
   test_reporter_javascript:
     docker:
-      - image: circleci/node:11
+      - image: circleci/node:12
     working_directory: ~/repo/sdk/javascript
     steps:
       - checkout:
@@ -100,5 +155,6 @@ workflows:
   test:
     jobs:
       - test_oracle
+      - test_coverage
       - test_poster
       - test_reporter_javascript

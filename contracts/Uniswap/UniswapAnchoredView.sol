@@ -18,16 +18,22 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
-    /// @notice the Open Oracle Reporter
+    /// @notice The number of wei in 1 ETH
+    uint public constant ethBaseUnit = 1e18;
+
+    /// @notice A common scaling factor to maintain precision
+    uint public constant expScale = 1e18;
+
+    /// @notice The Open Oracle Reporter
     address public immutable reporter;
 
-    /// @notice The highest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    /// @notice The highest ratio of the new price to the anchor price that will still trigger the price to be updated
     uint public immutable upperBoundAnchorRatio;
 
-    /// @notice The lowest ratio of the new median price to the anchor price that will still trigger the median price to be updated
+    /// @notice The lowest ratio of the new price to the anchor price that will still trigger the price to be updated
     uint public immutable lowerBoundAnchorRatio;
 
-    /// @notice The minimum amount of time required for the old uniswap price accumulator to be replaced
+    /// @notice The minimum amount of time in seconds required for the old uniswap price accumulator to be replaced
     uint public immutable anchorPeriod;
 
     /// @notice Official prices by symbol hash
@@ -36,34 +42,37 @@ contract UniswapAnchoredView is UniswapConfig {
     /// @notice Circuit breaker for using anchor price oracle directly, ignoring reporter
     bool public reporterInvalidated;
 
-    /// @notice The old observation for each uniswap market
-    mapping(address => Observation) public oldObservations;
-    /// @notice The new observation for each uniswap market
-    mapping(address => Observation) public newObservations;
+    /// @notice The old observation for each symbolHash
+    mapping(bytes32 => Observation) public oldObservations;
 
-    /// @notice The event emitted when the stored price is updated
-    event PriceUpdated(string symbol, uint price);
+    /// @notice The new observation for each symbolHash
+    mapping(bytes32 => Observation) public newObservations;
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
     event PriceGuarded(string symbol, uint reporter, uint anchor);
 
-    /// @notice The event emitted when reporter invalidates itself
-    event ReporterInvalidated(address reporter);
-
-    /// @notice The event emitted when the uniswap window changes
-    event UniswapWindowUpdate(address indexed uniswapMarket, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
+    /// @notice The event emitted when the stored price is updated
+    event PriceUpdated(string symbol, uint price);
 
     /// @notice The event emitted when anchor price is updated
-    event AnchorPriceUpdate(address indexed uniswapMarket, uint anchorPrice, uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp);
+    event AnchorPriceUpdated(string symbol, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
+
+    /// @notice The event emitted when the uniswap window changes
+    event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
+
+    /// @notice The event emitted when reporter invalidates itself
+    event ReporterInvalidated(address reporter);
 
     bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
     bytes32 constant rotateHash = keccak256(abi.encodePacked("rotate"));
 
     /**
      * @notice Construct a uniswap anchored view for a set of token configurations
+     * @dev Note that to avoid immature TWAPs, the system must run for at least a single anchorPeriod before using.
      * @param reporter_ The reporter whose prices are to be used
      * @param anchorToleranceMantissa_ The percentage tolerance that the reporter may deviate from the uniswap anchor
      * @param anchorPeriod_ The minimum amount of time required for the old uniswap price accumulator to be replaced
+     * @param configs The static token configurations which define what prices are supported and how
      */
     constructor(OpenOraclePriceData priceData_,
                 address reporter_,
@@ -74,20 +83,23 @@ contract UniswapAnchoredView is UniswapConfig {
         reporter = reporter_;
         anchorPeriod = anchorPeriod_;
 
-        require(anchorToleranceMantissa_ < 100e16, "anchor tolerance is too high");
-        upperBoundAnchorRatio = 100e16 + anchorToleranceMantissa_;
-        lowerBoundAnchorRatio = 100e16 - anchorToleranceMantissa_;
+        // Allow the tolerance to be whatever the deployer chooses, but prevent under/overflow (and prices from being 0)
+        upperBoundAnchorRatio = anchorToleranceMantissa_ > uint(-1) - 100e16 ? uint(-1) : 100e16 + anchorToleranceMantissa_;
+        lowerBoundAnchorRatio = anchorToleranceMantissa_ < 100e16 ? 100e16 - anchorToleranceMantissa_ : 1;
 
         for (uint i = 0; i < configs.length; i++) {
             TokenConfig memory config = configs[i];
+            require(config.baseUnit > 0, "baseUnit must be greater than zero");
             address uniswapMarket = config.uniswapMarket;
             if (config.priceSource == PriceSource.REPORTER) {
                 require(uniswapMarket != address(0), "reported prices must have an anchor");
+                bytes32 symbolHash = config.symbolHash;
                 uint cumulativePrice = currentCumulativePrice(config);
-                oldObservations[uniswapMarket].timestamp = block.timestamp;
-                newObservations[uniswapMarket].timestamp = block.timestamp;
-                oldObservations[uniswapMarket].acc = cumulativePrice;
-                newObservations[uniswapMarket].acc = cumulativePrice;
+                oldObservations[symbolHash].timestamp = block.timestamp;
+                newObservations[symbolHash].timestamp = block.timestamp;
+                oldObservations[symbolHash].acc = cumulativePrice;
+                newObservations[symbolHash].acc = cumulativePrice;
+                emit UniswapWindowUpdated(symbolHash, block.timestamp, block.timestamp, cumulativePrice, cumulativePrice);
             } else {
                 require(uniswapMarket == address(0), "only reported prices utilize an anchor");
             }
@@ -99,7 +111,7 @@ contract UniswapAnchoredView is UniswapConfig {
      * @param symbol The symbol to fetch the price of
      * @return Price denominated in USD, with 6 decimals
      */
-    function price(string memory symbol) public view returns (uint) {
+    function price(string memory symbol) external view returns (uint) {
         TokenConfig memory config = getTokenConfigBySymbol(symbol);
         return priceInternal(config);
     }
@@ -110,7 +122,7 @@ contract UniswapAnchoredView is UniswapConfig {
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash];
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-            return mul(usdPerEth, config.fixedPrice) / config.baseUnit;
+            return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
         }
     }
 
@@ -118,10 +130,12 @@ contract UniswapAnchoredView is UniswapConfig {
      * @notice Get the underlying price of a cToken
      * @dev Implements the PriceOracle interface for Compound v2.
      * @param cToken The cToken address for price retrieval
-     * @return The price for the given cToken address
+     * @return Price denominated in USD, with 18 decimals, for the given cToken address
      */
-    function getUnderlyingPrice(address cToken) public view returns (uint) {
+    function getUnderlyingPrice(address cToken) external view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
+         // Comptroller needs prices in the format: ${raw price} * 1e(36 - baseUnit)
+         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6 - baseUnit)
         return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
@@ -144,28 +158,31 @@ contract UniswapAnchoredView is UniswapConfig {
 
         // Try to update the view storage
         for (uint i = 0; i < symbols.length; i++) {
-            TokenConfig memory config = getTokenConfigBySymbol(symbols[i]);
-            string memory symbol = symbols[i];
-            bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-            if (source(messages[i], signatures[i]) != reporter) continue;
+            postPriceInternal(symbols[i], ethPrice);
+        }
+    }
 
-            uint reporterPrice = priceData.getPrice(reporter, symbol);
-            uint anchorPrice;
-            if (symbolHash == ethHash) {
-                anchorPrice = ethPrice;
-            } else {
-                anchorPrice = fetchAnchorPrice(config, ethPrice);
-            }
+    function postPriceInternal(string memory symbol, uint ethPrice) internal {
+        TokenConfig memory config = getTokenConfigBySymbol(symbol);
+        require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
 
-            if (reporterInvalidated == true) {
-                prices[symbolHash] = anchorPrice;
-                emit PriceUpdated(symbol, anchorPrice);
-            } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
-                prices[symbolHash] = reporterPrice;
-                emit PriceUpdated(symbol, reporterPrice);
-            } else {
-                emit PriceGuarded(symbol, reporterPrice, anchorPrice);
-            }
+        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+        uint reporterPrice = priceData.getPrice(reporter, symbol);
+        uint anchorPrice;
+        if (symbolHash == ethHash) {
+            anchorPrice = ethPrice;
+        } else {
+            anchorPrice = fetchAnchorPrice(symbol, config, ethPrice);
+        }
+
+        if (reporterInvalidated) {
+            prices[symbolHash] = anchorPrice;
+            emit PriceUpdated(symbol, anchorPrice);
+        } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
+            prices[symbolHash] = reporterPrice;
+            emit PriceUpdated(symbol, reporterPrice);
+        } else {
+            emit PriceGuarded(symbol, reporterPrice, anchorPrice);
         }
     }
 
@@ -190,17 +207,18 @@ contract UniswapAnchoredView is UniswapConfig {
     }
 
     /**
-     * @dev Fetches the current eth/usd price from unsiwap, with 6 decimals of precision.
+     * @dev Fetches the current eth/usd price from uniswap, with 6 decimals of precision.
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
     function fetchEthPrice() internal returns (uint) {
-        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), 1e18);
+        return fetchAnchorPrice("ETH", getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
     /**
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
+     * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
-    function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
+    function fetchAnchorPrice(string memory symbol, TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
 
         // This should be impossible, but better safe than sorry
@@ -208,18 +226,22 @@ contract UniswapAnchoredView is UniswapConfig {
         uint timeElapsed = block.timestamp - oldTimestamp;
 
         // Calculate uniswap time-weighted average price
+        // Underflow is a property of the accumulators: https://uniswap.org/audit.html#orgc9b3190
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-        uint anchorPriceUnscaled = mul(priceAverage.decode112with18(), conversionFactor);
+        uint rawUniswapPriceMantissa = priceAverage.decode112with18();
+        uint unscaledPriceMantissa = mul(rawUniswapPriceMantissa, conversionFactor);
         uint anchorPrice;
 
-        // Adjust anchor price to val * 1e6 decimals format
+        // Adjust rawUniswapPrice according to the units of the non-ETH asset
+        // In the case of ETH, we would have to scale by 1e6 / USDC_UNITS, but since baseUnit2 is 1e6 (USDC), it cancels
         if (config.isUniswapReversed) {
-            anchorPrice = anchorPriceUnscaled / config.baseUnit;
+            // unscaledPriceMantissa * ethBaseUnit / config.baseUnit / expScale, but we simplify bc ethBaseUnit == expScale
+            anchorPrice = unscaledPriceMantissa / config.baseUnit;
         } else {
-            anchorPrice = mul(anchorPriceUnscaled, config.baseUnit) / 1e36;
+            anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
         }
 
-        emit AnchorPriceUpdate(config.uniswapMarket, anchorPrice, nowCumulativePrice, oldCumulativePrice, oldTimestamp);
+        emit AnchorPriceUpdated(symbol, anchorPrice, oldTimestamp, block.timestamp);
 
         return anchorPrice;
     }
@@ -229,23 +251,22 @@ contract UniswapAnchoredView is UniswapConfig {
      *  Update new and old observations of lagging window if period elapsed.
      */
     function pokeWindowValues(TokenConfig memory config) internal returns (uint, uint, uint) {
-        address uniswapMarket = config.uniswapMarket;
+        bytes32 symbolHash = config.symbolHash;
         uint cumulativePrice = currentCumulativePrice(config);
 
-        Observation storage newObservation = newObservations[uniswapMarket];
-        Observation storage oldObservation = oldObservations[uniswapMarket];
+        Observation memory newObservation = newObservations[symbolHash];
 
         // Update new and old observations if elapsed time is greater than or equal to anchor period
         uint timeElapsed = block.timestamp - newObservation.timestamp;
         if (timeElapsed >= anchorPeriod) {
-            emit UniswapWindowUpdate(uniswapMarket, oldObservation.timestamp, newObservation.timestamp, oldObservation.acc, newObservation.acc);
-            oldObservation.timestamp = newObservation.timestamp;
-            oldObservation.acc = newObservation.acc;
+            oldObservations[symbolHash].timestamp = newObservation.timestamp;
+            oldObservations[symbolHash].acc = newObservation.acc;
 
-            newObservation.timestamp = block.timestamp;
-            newObservation.acc = cumulativePrice;
+            newObservations[symbolHash].timestamp = block.timestamp;
+            newObservations[symbolHash].acc = cumulativePrice;
+            emit UniswapWindowUpdated(config.symbolHash, newObservation.timestamp, block.timestamp, newObservation.acc, cumulativePrice);
         }
-        return (cumulativePrice, oldObservation.acc, oldObservation.timestamp);
+        return (cumulativePrice, oldObservations[symbolHash].acc, oldObservations[symbolHash].timestamp);
     }
 
     /**
@@ -256,8 +277,8 @@ contract UniswapAnchoredView is UniswapConfig {
      * @param signature The fingerprint of the data + private key
      */
     function invalidateReporter(bytes memory message, bytes memory signature) external {
-        (string memory decoded_message, ) = abi.decode(message, (string, address));
-        require(keccak256(abi.encodePacked(decoded_message)) == rotateHash, "invalid message must be 'rotate'");
+        (string memory decodedMessage, ) = abi.decode(message, (string, address));
+        require(keccak256(abi.encodePacked(decodedMessage)) == rotateHash, "invalid message must be 'rotate'");
         require(source(message, signature) == reporter, "invalidation message must come from the reporter");
         reporterInvalidated = true;
         emit ReporterInvalidated(reporter);

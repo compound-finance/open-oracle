@@ -1,6 +1,11 @@
 const Web3 = require('web3');
+const BigNumber = require("bignumber.js");
 
 const web3 = new Web3(); // no provider, since we won't make any calls
+
+const fixed = num => {
+  return (new BigNumber(num).toFixed());
+};
 
 function uint(n) {
   return web3.utils.toBN(n).toString();
@@ -34,13 +39,19 @@ function time(){
 	return Math.floor(new Date() / 1000);
 }
 
-function sendRPC(web3, method, params) {
+async function currentBlockTimestamp(web3_) {
+  const blockNumber = await sendRPC(web3_, "eth_blockNumber", []);
+  const block = await sendRPC(web3_, "eth_getBlockByNumber", [ blockNumber.result, false]);
+  return block.result.timestamp;
+}
+
+function sendRPC(web3_, method, params) {
   return new Promise((resolve, reject) => {
-    if (!web3.currentProvider || typeof (web3.currentProvider) === 'string') {
-      return reject(`cannot send from currentProvider=${web3.currentProvider}`);
+    if (!web3_.currentProvider || typeof (web3_.currentProvider) === 'string') {
+      return reject(`cannot send from currentProvider=${web3_.currentProvider}`);
     }
 
-    web3.currentProvider.send(
+    web3_.currentProvider.send(
       {
         jsonrpc: '2.0',
         method: method,
@@ -59,13 +70,15 @@ function sendRPC(web3, method, params) {
 }
 
 module.exports = {
-  	sendRPC,
-	address,
-	bytes,
-	time,
-	numToBigNum,
-	numToHex,
-	uint256,
-	uint,
-	keccak256
+  sendRPC,
+  address,
+  bytes,
+  time,
+  numToBigNum,
+  numToHex,
+  uint256,
+  uint,
+  keccak256,
+  currentBlockTimestamp,
+  fixed
 };
