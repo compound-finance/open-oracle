@@ -164,8 +164,9 @@ contract UniswapAnchoredView is UniswapConfig {
 
     function postPriceInternal(string memory symbol, uint ethPrice) internal {
         TokenConfig memory config = getTokenConfigBySymbol(symbol);
-        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
+        require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
 
+        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
         uint reporterPrice = priceData.getPrice(reporter, symbol);
         uint anchorPrice;
         if (symbolHash == ethHash) {
@@ -227,16 +228,17 @@ contract UniswapAnchoredView is UniswapConfig {
         // Calculate uniswap time-weighted average price
         // Underflow is a property of the accumulators: https://uniswap.org/audit.html#orgc9b3190
         FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-        uint rawUniswapPriceMantissa = mul(priceAverage.decode112with18(), conversionFactor);
+        uint rawUniswapPriceMantissa = priceAverage.decode112with18();
+        uint unscaledPriceMantissa = mul(rawUniswapPriceMantissa, conversionFactor);
         uint anchorPrice;
 
         // Adjust rawUniswapPrice according to the units of the non-ETH asset
         // In the case of ETH, we would have to scale by 1e6 / USDC_UNITS, but since baseUnit2 is 1e6 (USDC), it cancels
         if (config.isUniswapReversed) {
-            // rawUniswapPriceMantissa * ethBaseUnit / config.baseUnit / expScale, but we simplify bc ethBaseUnit == expScale
-            anchorPrice = rawUniswapPriceMantissa / config.baseUnit;
+            // unscaledPriceMantissa * ethBaseUnit / config.baseUnit / expScale, but we simplify bc ethBaseUnit == expScale
+            anchorPrice = unscaledPriceMantissa / config.baseUnit;
         } else {
-            anchorPrice = mul(rawUniswapPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
+            anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
         }
 
         emit AnchorPriceUpdated(symbol, anchorPrice, oldTimestamp, block.timestamp);
