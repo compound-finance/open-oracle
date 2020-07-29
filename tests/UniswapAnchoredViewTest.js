@@ -468,8 +468,8 @@ describe('UniswapAnchoredView', () => {
       expect(await call(uniswapAnchoredView, 'lowerBoundAnchorRatio')).numEquals(new BigNumber(1e18).minus(anchorMantissa));
 
       await Promise.all(tokenConfigs.map(async config => {
-        const oldObservation = await call(uniswapAnchoredView, 'oldObservations', [config.uniswapMarket]);
-        const newObservation = await call(uniswapAnchoredView, 'newObservations', [config.uniswapMarket]);
+        const oldObservation = await call(uniswapAnchoredView, 'oldObservations', [config.symbolHash]);
+        const newObservation = await call(uniswapAnchoredView, 'newObservations', [config.symbolHash]);
         expect(oldObservation.timestamp).numEquals(newObservation.timestamp);
         expect(oldObservation.acc).numEquals(newObservation.acc);
         if (config.priceSource != PriceSource.REPORTER) {

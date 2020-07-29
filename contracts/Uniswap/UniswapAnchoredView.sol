@@ -3,9 +3,13 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-import "../OpenOraclePriceData.sol";
 import "./UniswapConfig.sol";
 import "./UniswapLib.sol";
+
+interface OpenOraclePriceData {
+    function put(bytes calldata, bytes calldata) external returns (string memory);
+    function getPrice(address, string calldata) external view returns (uint64);
+}
 
 struct Observation {
     uint timestamp;
