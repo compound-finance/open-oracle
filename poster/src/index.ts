@@ -55,8 +55,8 @@ async function run() {
   const assets = <string[]>parsed['asset'];
 
   let deltas = {};
-  // if submitted delta array length does not match assets, pick default deltas
-  // otherwise set delta for each asset
+  // if length of submitted deltas array does not match assets array length, pick default deltas
+  // otherwise set submitted delta for each asset
   if (price_deltas.length != assets.length) {
     deltas = defaultDeltas;
   } else {
