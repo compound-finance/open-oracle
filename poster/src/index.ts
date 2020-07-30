@@ -3,6 +3,19 @@ import { main } from './poster';
 import Web3 from 'web3';
 import yargs from 'yargs';
 
+// default price delta triggering an update for the supported asset in %
+const defaultDeltas = {
+  'ETH': 1,
+  'BTC': 1,
+  'DAI': 0.5,
+  'REP': 1.5,
+  'ZRX': 1.5,
+  'BAT': 1.5,
+  'KNC': 1.5,
+  'LINK': 1.5,
+  'COMP': 1.5
+}
+
 async function run() {
   const parsed = yargs
     .env('POSTER')
@@ -14,9 +27,14 @@ async function run() {
     .option('timeout', {alias: 't', description: 'how many seconds to wait before retrying with more gas', type: 'number', default: 180})
     .option('gas-limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
     .option('gas-price', {alias: 'gp', description: 'gas price', type: 'number'})
-    .option('price-delta', {alias: 'd', description: 'the min required difference between new and previous asset price for price update on blockchain', type: 'number', default: 1})
     .option('asset', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
+    // order of `asset` and `price-deltas` should match
+    .option('price-deltas', {
+      alias: 'd', description: 'the min required difference between new and previous asset price for the update on blockchain', type: 'array',
+      default: [defaultDeltas['BTC'], defaultDeltas['ETH'], defaultDeltas['DAI'], defaultDeltas['REP'], defaultDeltas['ZRX'], defaultDeltas['BAT'], defaultDeltas['KNC'], defaultDeltas['LINK'], defaultDeltas['COMP']]
+    })
     .option('testnet-world', {alias: 'tw', description: 'An option to use mocked uniswap token pairs with data from mainnet', type: 'boolean', default: false})
+    // order of `asset` and `testnet-uniswap-pairs` and `mainnet-uniswap-pairs` should match
     .option('testnet-uniswap-pairs', {alias: 'tup', description: 'A list of uniswap testnet pairs for all assets', type: 'array'})
     .option('mainnet-uniswap-pairs', {alias: 'mup', description: 'A list of uniswap mainnet pairs for all assets', type: 'array'})
 
@@ -33,8 +51,21 @@ async function run() {
   const timeout = parsed['timeout'];
   const gas_limit = parsed['gas-limit'];
   const gas_price = parsed['gas-price'];
-  const price_delta = parsed['price-delta'];
+  const price_deltas = <number[]>parsed['price-deltas'];
   const assets = <string[]>parsed['asset'];
+
+  let deltas = {};
+  // if submitted delta array length does not match assets, pick default deltas
+  // otherwise set delta for each asset
+  if (price_deltas.length != assets.length) {
+    deltas = defaultDeltas;
+  } else {
+    assets.forEach((asset, index) => {
+      deltas[asset] = price_deltas[index];
+    });
+  }
+  console.log(`Posting with price deltas = `, deltas);
+
 
   // parameters for testnets only
   const mocked_world = parsed['testnet-world'];
@@ -65,7 +96,7 @@ async function run() {
   }
 
   try {
-    await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, price_delta, assets, mocked_world, pairs, web3);
+    await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, deltas, assets, mocked_world, pairs, web3);
     console.log('Poster run completed successfully');
   } catch (e) {
     console.error(`Poster failed to run`, e);

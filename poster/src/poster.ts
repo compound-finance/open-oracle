@@ -22,14 +22,14 @@ export async function main(
     functionSig: string,
     gas: number,
     gasPrice: number | undefined,
-    delta: number,
+    deltas,
     assets: string[],
     mocked_world: boolean,
     pairs,
     web3: Web3) {
 
   const payloads = await fetchPayloads(sources);
-  const feedItems = await filterPayloads(payloads, viewAddress, assets, delta, web3);
+  const feedItems = await filterPayloads(payloads, viewAddress, assets, deltas, web3);
 
   if (feedItems.length > 0) {
     // If gas price was not defined, fetch average one from Compound API
@@ -39,7 +39,9 @@ export async function main(
 
     // mock uniswap mainnet pairs price
     if (mocked_world) {
-      await mockUniswapTokenPairs(assets, senderKey, pairs, gas, gasPrice, web3);
+      // Mock only pairs that will be updated
+      const updateAssets = feedItems.map(item => item.symbol)
+      await mockUniswapTokenPairs(updateAssets, senderKey, pairs, gas, gasPrice, web3);
     }
 
     const trxData = buildTrxData(feedItems, functionSig);
@@ -61,7 +63,7 @@ export async function filterPayloads(
     payloads: OpenPriceFeedPayload[],
     viewAddress: string,
     supportedAssets: string[],
-    delta: number,
+    deltas,
     web3: Web3): Promise<OpenPriceFeedItem[]> {
 
   const dataAddress = await getDataAddress(viewAddress, web3);
@@ -96,7 +98,7 @@ export async function filterPayloads(
         };
       })).then((feedItems) => {
         return feedItems.filter(({message, signature, symbol, price, prev}) => {
-          return !inDeltaRange(delta, price, prev);
+          return !inDeltaRange(deltas[symbol], price, prev);
         });
       });
   }));
