@@ -211,7 +211,7 @@ describe('filtering payloads', () => {
     mockMessages(transformPayloads(payloads));
     mockPrevPrices({ 'BTC': 9149090000, 'ETH': 229435000, 'DAI': 1003372, 'REP': 16884999, 'ZRX': 357704, 'BAT': 260992, 'KNC': 1156300, 'LINK': 4704680 });
 
-    const feedItems = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP'], 1, new Web3());
+    const feedItems = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP'], {BTC: 1, ETH: 1, DAI: 1, REP: 1, ZRX: 1, BAT: 1, KNC: 1, LINK: 1, COMP: 1}, new Web3());
     expect(feedItems).toEqual([
       {
         dataType: "type",
@@ -249,7 +249,7 @@ describe('filtering payloads', () => {
     ];
     mockMessages(transformPayloads(payloads));
 
-    const feedItems = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'BAT', 'KNC', 'LINK', 'COMP'], 1, new Web3());
+    const feedItems = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'BAT', 'KNC', 'LINK', 'COMP'], {BTC: 1, ETH: 1, DAI: 1, REP: 1, ZRX: 1, BAT: 1, KNC: 1, LINK: 1, COMP: 1}, new Web3());
     expect(feedItems).toEqual([
       {
         message: '0x1',
@@ -297,7 +297,7 @@ describe('filtering payloads', () => {
     ]
     mockMessages(transformPayloads(payloads));
 
-    const feedItems = await filterPayloads(payloads, '0x0', [], 1, new Web3());
+    const feedItems = await filterPayloads(payloads, '0x0', [], {}, new Web3());
     expect(feedItems).toEqual([]);
   })
 
@@ -324,7 +324,7 @@ describe('filtering payloads', () => {
     ];
     mockMessages(transformPayloads(payloads));
 
-    const feedItems = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP'], 0, new Web3());
+    const feedItems = await filterPayloads(payloads, '0x0', ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP'], {BTC: 0, ETH: 0, DAI: 0, REP: 0, ZRX: 0, BAT: 0, KNC: 0, LINK: 0, COMP: 0}, new Web3());
     expect(feedItems).toEqual([
       {
         message: '0x1',
