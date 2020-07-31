@@ -29,10 +29,7 @@ async function run() {
     .option('gas-price', {alias: 'gp', description: 'gas price', type: 'number'})
     .option('asset', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
     // order of `asset` and `price-deltas` should match
-    .option('price-deltas', {
-      alias: 'd', description: 'the min required difference between new and previous asset price for the update on blockchain', type: 'array',
-      default: [defaultDeltas['BTC'], defaultDeltas['ETH'], defaultDeltas['DAI'], defaultDeltas['REP'], defaultDeltas['ZRX'], defaultDeltas['BAT'], defaultDeltas['KNC'], defaultDeltas['LINK'], defaultDeltas['COMP']]
-    })
+    .option('price-deltas', {alias: 'd', description: 'the min required difference between new and previous asset price for the update on blockchain', type: 'string', default: defaultDeltas.toString()})
     .option('testnet-world', {alias: 'tw', description: 'An option to use mocked uniswap token pairs with data from mainnet', type: 'boolean', default: false})
     // order of `asset` and `testnet-uniswap-pairs` and `mainnet-uniswap-pairs` should match
     .option('testnet-uniswap-pairs', {alias: 'tup', description: 'A list of uniswap testnet pairs for all assets', type: 'array'})
@@ -51,21 +48,17 @@ async function run() {
   const timeout = parsed['timeout'];
   const gas_limit = parsed['gas-limit'];
   const gas_price = parsed['gas-price'];
-  const price_deltas = <number[]>parsed['price-deltas'];
+  const price_deltas = JSON.parse(parsed['price-deltas']);
   const assets = <string[]>parsed['asset'];
 
-  let deltas = {};
-  // if length of submitted deltas array does not match assets array length, pick default deltas
-  // otherwise set submitted delta for each asset
-  if (price_deltas.length != assets.length) {
-    deltas = defaultDeltas;
-  } else {
-    assets.forEach((asset, index) => {
-      deltas[asset] = price_deltas[index];
-    });
-  }
-  console.log(`Posting with price deltas = `, deltas);
+  // check that price deltas are set up for all assets, otherwise set default delta value
+  assets.forEach(asset => {
+    if (price_deltas[asset] == undefined) {
+      price_deltas[asset] = defaultDeltas[asset];
+    }
+  });
 
+  console.log(`Posting with price deltas = `, price_deltas);
 
   // parameters for testnets only
   const mocked_world = parsed['testnet-world'];
@@ -96,7 +89,7 @@ async function run() {
   }
 
   try {
-    await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, deltas, assets, mocked_world, pairs, web3);
+    await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, price_deltas, assets, mocked_world, pairs, web3);
     console.log('Poster run completed successfully');
   } catch (e) {
     console.error(`Poster failed to run`, e);
