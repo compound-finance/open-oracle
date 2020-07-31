@@ -65,7 +65,7 @@ async function run() {
   const pairs = {testnet: {}, mainnet: {}};
   if (mocked_world) {
     assets.forEach(asset => {
-      if (testnet_pairs[asset] == undefined || mainnet_pairs[asset] == undefined) {
+      if (!testnet_pairs[asset] || !mainnet_pairs[asset]) {
         throw new TypeError(`For each asset mainnet and testnet pairs should be provided, ${asset} asset is not properly configured`)
       }
       pairs['testnet'][asset] = testnet_pairs[asset];
