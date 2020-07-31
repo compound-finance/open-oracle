@@ -64,12 +64,37 @@ async function run() {
     web3.eth.transactionConfirmationBlocks = 10;
   }
 
-  try {
-    await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, price_delta, assets, mocked_world, pairs, web3);
-    console.log('Poster run completed successfully');
-  } catch (e) {
-    console.error(`Poster failed to run`, e);
-  }
+  await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, price_delta, assets, mocked_world, pairs, web3);
+
+  let success_log = {
+    message: "Price Feed Poster run completed successfully",
+    metric_name: 'PriceFeed-PosterHealth',
+    labels: {
+      price_feed_poster_healthy: 1
+    }
+  };
+
+  process.stderr.write(JSON.stringify(success_log) + "\n", () => {
+    process.exit(0);
+  });
 }
 
-run();
+run().catch((e) => {
+  console.error(`Error encountered: ${e}`);
+  console.error(e);
+  console.log(e.stack)
+  console.log
+
+  let error_log = {
+    message: "Price run failed",
+    metric_name: 'PriceFeed-PosterHealth',
+    labels: {
+      price_feed_poster_healthy: 0,
+      error: e.toString()
+    }
+  };
+
+  process.stderr.write(JSON.stringify(error_log) + "\n", () => {
+    process.exit(1);
+  })
+});
