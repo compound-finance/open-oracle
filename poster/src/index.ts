@@ -3,6 +3,19 @@ import { main } from './poster';
 import Web3 from 'web3';
 import yargs from 'yargs';
 
+// default price delta triggering an update for the supported asset in %
+const defaultDeltas = {
+  'ETH': 1,
+  'BTC': 1,
+  'DAI': 0.5,
+  'REP': 1.5,
+  'ZRX': 1.5,
+  'BAT': 1.5,
+  'KNC': 1.5,
+  'LINK': 1.5,
+  'COMP': 1.5
+}
+
 async function run() {
   const parsed = yargs
     .env('POSTER')
@@ -14,11 +27,11 @@ async function run() {
     .option('timeout', {alias: 't', description: 'how many seconds to wait before retrying with more gas', type: 'number', default: 180})
     .option('gas-limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
     .option('gas-price', {alias: 'gp', description: 'gas price', type: 'number'})
-    .option('price-delta', {alias: 'd', description: 'the min required difference between new and previous asset price for price update on blockchain', type: 'number', default: 1})
     .option('asset', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
+    .option('price-deltas', {alias: 'd', description: 'the min required difference between new and previous asset price for the update on blockchain', type: 'string', default: JSON.stringify(defaultDeltas)})
     .option('testnet-world', {alias: 'tw', description: 'An option to use mocked uniswap token pairs with data from mainnet', type: 'boolean', default: false})
-    .option('testnet-uniswap-pairs', {alias: 'tup', description: 'A list of uniswap testnet pairs for all assets', type: 'array'})
-    .option('mainnet-uniswap-pairs', {alias: 'mup', description: 'A list of uniswap mainnet pairs for all assets', type: 'array'})
+    .option('testnet-uniswap-pairs', {alias: 'tup', description: 'A list of uniswap testnet pairs for all assets', type: 'string'})
+    .option('mainnet-uniswap-pairs', {alias: 'mup', description: 'A list of uniswap mainnet pairs for all assets', type: 'string'})
 
     .help()
     .alias('help', 'h')
@@ -33,21 +46,31 @@ async function run() {
   const timeout = parsed['timeout'];
   const gas_limit = parsed['gas-limit'];
   const gas_price = parsed['gas-price'];
-  const price_delta = parsed['price-delta'];
+  const price_deltas = JSON.parse(parsed['price-deltas']);
   const assets = <string[]>parsed['asset'];
 
-  // parameters for testnets only
+  // check that price deltas are set up for all assets, otherwise set default delta value
+  assets.forEach(asset => {
+    if (price_deltas[asset] == undefined) {
+      price_deltas[asset] = defaultDeltas[asset];
+    }
+  });
+
+  console.log(`Posting with price deltas = `, price_deltas);
+
+  // parameters only for testnets that mock uniswap mainnet
   const mocked_world = parsed['testnet-world'];
-  const testnet_pairs = <string[]>parsed['testnet-uniswap-pairs'];
-  const mainnet_pairs = <string[]>parsed['mainnet-uniswap-pairs'];
+  const testnet_pairs = JSON.parse(parsed['testnet-uniswap-pairs'] || '{}');
+  const mainnet_pairs = JSON.parse(parsed['mainnet-uniswap-pairs'] || '{}');
+  console.log(`Configuring using testnet and mainnet uniswap pairs:`, testnet_pairs, mainnet_pairs);
   const pairs = {testnet: {}, mainnet: {}};
   if (mocked_world) {
-    if (testnet_pairs.length != mainnet_pairs.length || testnet_pairs.length != assets.length) {
-      throw new TypeError("For each asset mainnet and testnet pairs should be provided, all lengths should match")
-    }
-    assets.forEach((asset, index) => {
-      pairs['testnet'][asset] = testnet_pairs[index];
-      pairs['mainnet'][asset] = mainnet_pairs[index];
+    assets.forEach(asset => {
+      if (!testnet_pairs[asset] || !mainnet_pairs[asset]) {
+        throw new TypeError(`For each asset mainnet and testnet pairs should be provided, ${asset} asset is not properly configured`)
+      }
+      pairs['testnet'][asset] = testnet_pairs[asset];
+      pairs['mainnet'][asset] = mainnet_pairs[asset];
     });
   }
 
@@ -64,7 +87,7 @@ async function run() {
     web3.eth.transactionConfirmationBlocks = 10;
   }
 
-  await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, price_delta, assets, mocked_world, pairs, web3);
+  await main(sources, poster_key, view_address, view_function, gas_limit, gas_price, price_deltas, assets, mocked_world, pairs, web3);
 
   let success_log = {
     message: "Price Feed Poster run completed successfully",
