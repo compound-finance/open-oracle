@@ -28,12 +28,10 @@ async function run() {
     .option('gas-limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
     .option('gas-price', {alias: 'gp', description: 'gas price', type: 'number'})
     .option('asset', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
-    // order of `asset` and `price-deltas` should match
-    .option('price-deltas', {alias: 'd', description: 'the min required difference between new and previous asset price for the update on blockchain', type: 'string', default: defaultDeltas.toString()})
+    .option('price-deltas', {alias: 'd', description: 'the min required difference between new and previous asset price for the update on blockchain', type: 'string', default: JSON.stringify(defaultDeltas)})
     .option('testnet-world', {alias: 'tw', description: 'An option to use mocked uniswap token pairs with data from mainnet', type: 'boolean', default: false})
-    // order of `asset` and `testnet-uniswap-pairs` and `mainnet-uniswap-pairs` should match
-    .option('testnet-uniswap-pairs', {alias: 'tup', description: 'A list of uniswap testnet pairs for all assets', type: 'array'})
-    .option('mainnet-uniswap-pairs', {alias: 'mup', description: 'A list of uniswap mainnet pairs for all assets', type: 'array'})
+    .option('testnet-uniswap-pairs', {alias: 'tup', description: 'A list of uniswap testnet pairs for all assets', type: 'string'})
+    .option('mainnet-uniswap-pairs', {alias: 'mup', description: 'A list of uniswap mainnet pairs for all assets', type: 'string'})
 
     .help()
     .alias('help', 'h')
@@ -60,18 +58,18 @@ async function run() {
 
   console.log(`Posting with price deltas = `, price_deltas);
 
-  // parameters for testnets only
+  // parameters only for testnets that mock uniswap mainnet
   const mocked_world = parsed['testnet-world'];
-  const testnet_pairs = <string[]>parsed['testnet-uniswap-pairs'];
-  const mainnet_pairs = <string[]>parsed['mainnet-uniswap-pairs'];
+  const testnet_pairs = JSON.parse(parsed['testnet-uniswap-pairs'] || '{}');
+  const mainnet_pairs = JSON.parse(parsed['mainnet-uniswap-pairs'] || '{}');
   const pairs = {testnet: {}, mainnet: {}};
   if (mocked_world) {
-    if (testnet_pairs.length != mainnet_pairs.length || testnet_pairs.length != assets.length) {
-      throw new TypeError("For each asset mainnet and testnet pairs should be provided, all lengths should match")
-    }
-    assets.forEach((asset, index) => {
-      pairs['testnet'][asset] = testnet_pairs[index];
-      pairs['mainnet'][asset] = mainnet_pairs[index];
+    assets.forEach(asset => {
+      if (testnet_pairs[asset] == undefined || mainnet_pairs[asset] == undefined) {
+        throw new TypeError(`For each asset mainnet and testnet pairs should be provided, ${asset} asset is not properly configured`)
+      }
+      pairs['testnet'][asset] = testnet_pairs[asset];
+      pairs['mainnet'][asset] = mainnet_pairs[asset];
     });
   }
 
