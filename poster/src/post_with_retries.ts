@@ -23,6 +23,10 @@ function isTimeout(e) {
   return /Error: Timeout exceeded during the transaction confirmation process. Be aware the transaction could still get confirmed!/.test(e.error);
 }
 
+function maybeIsOutOfGas(e) {
+  return e.message.includes('Transaction has been reverted by the EVM');
+}
+
 const SLEEP_DURATION = 3000; // 3s
 const RETRIES = 3;
 const GAS_ADJUSTMENT = 1.2; // Increase gas by this percentage each retry
@@ -52,6 +56,14 @@ async function postWithRetries(transaction: TransactionConfig, signerKey: string
       transaction = {
         ...transaction,
         gasPrice: Math.floor(Number(transaction.gasPrice) * GAS_ADJUSTMENT)
+      };
+    }
+
+    if (maybeIsOutOfGas(e)) {
+      console.log('Transaction is possibly out of gas, increasing gas limit');
+      transaction = {
+        ...transaction,
+        gas: Math.floor(Number(transaction.gas) * GAS_ADJUSTMENT)
       };
     }
 
