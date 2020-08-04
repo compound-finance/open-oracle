@@ -45,12 +45,11 @@ export async function main(
     }
 
     const trxData = buildTrxData(feedItems, functionSig);
-    const gasEstimate = await web3.eth.estimateGas({data: trxData, to: viewAddress});
     const trx = <TransactionConfig>{
       data: trxData,
       to: viewAddress,
       gasPrice: gasPrice,
-      gas: gasEstimate
+      gas: gas
     };
 
     console.log(`Posting...`);
