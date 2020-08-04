@@ -24,7 +24,7 @@ function isTimeout(e) {
 }
 
 function maybeIsOutOfGas(e) {
-  return e.message.includes('Transaction has been reverted by the EVM');
+  return e.message && e.message.includes('Transaction has been reverted by the EVM');
 }
 
 const SLEEP_DURATION = 3000; // 3s
