@@ -29,7 +29,8 @@ function maybeIsOutOfGas(e) {
 
 const SLEEP_DURATION = 3000; // 3s
 const RETRIES = 3;
-const GAS_ADJUSTMENT = 1.2; // Increase gas by this percentage each retry
+const GAS_PRICE_ADJUSTMENT = 1.2; // Increase gas price by this percentage each retry
+const GAS_ADJUSTMENT = 1.5; // Increase gas limit by this percentage each retry
 
 async function postWithRetries(transaction: TransactionConfig, signerKey: string, web3: Web3, retries: number = RETRIES, attempt: number = 0) {
   console.log(`Running Open Price Feed Poster${attempt > 0 ? ` [attempt ${attempt}]` : ''}...`);
@@ -55,7 +56,7 @@ async function postWithRetries(transaction: TransactionConfig, signerKey: string
     if (isUnderpriced(e) || isTimeout(e)) {
       transaction = {
         ...transaction,
-        gasPrice: Math.floor(Number(transaction.gasPrice) * GAS_ADJUSTMENT)
+        gasPrice: Math.floor(Number(transaction.gasPrice) * GAS_PRICE_ADJUSTMENT)
       };
     }
 
