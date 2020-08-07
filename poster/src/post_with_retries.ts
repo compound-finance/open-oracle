@@ -41,7 +41,6 @@ async function postWithRetries(transaction: TransactionConfig, signerKey: string
 
   console.log(`Posting from account: ${pubKey.address}`);
 
-  // TODO: Why manual nonce management?
   let nonce = await web3.eth.getTransactionCount(pubKey.address)
   transaction.nonce = nonce
 
@@ -51,22 +50,13 @@ async function postWithRetries(transaction: TransactionConfig, signerKey: string
     console.debug({transaction});
     console.warn('Failed to post Open Price Feed:');
     console.warn(e);
-    // If higher gas price will help, try again. Otherwise, really throw.
 
-    if (isUnderpriced(e) || isTimeout(e)) {
-      transaction = {
-        ...transaction,
-        gasPrice: Math.floor(Number(transaction.gasPrice) * GAS_PRICE_ADJUSTMENT)
-      };
-    }
-
-    if (maybeIsOutOfGas(e)) {
-      console.log('Transaction is possibly out of gas, increasing gas limit');
-      transaction = {
-        ...transaction,
-        gas: Math.floor(Number(transaction.gas) * GAS_ADJUSTMENT)
-      };
-    }
+    // Try more gas and higher gas price, reverse engineering geth/parity errors is error-prone
+    transaction = {
+      ...transaction,
+      gas: Math.floor(Number(transaction.gas) * GAS_ADJUSTMENT),
+      gasPrice: Math.floor(Number(transaction.gasPrice) * GAS_PRICE_ADJUSTMENT)
+    };
 
     if (retries > 0) {
       // Sleep for some time before retrying
