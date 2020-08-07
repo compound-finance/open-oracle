@@ -86,7 +86,7 @@ module.exports = {
       providers: [
         { env: "PROVIDER" },
         { file: "~/.ethereum/rinkeby-url" },              // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
-        { http: "https://rinkeby.infura.io" }
+        { http: "https://rinkeby-eth.compound.finance" }
       ],
       web3: {
         gas: [
@@ -110,8 +110,8 @@ module.exports = {
     mainnet: {
       providers: [
         { env: "PROVIDER" },
-        { file: "~/.ethereum/rinkeby-url" },              // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
-        { http: "https://rinkeby.infura.io" }
+        { file: "~/.ethereum/mainnet-url" },              // Load from given file with contents as the URL (e.g. https://infura.io/api-key)
+        { http: "https://mainnet-eth.compound.finance" }
       ],
       web3: {
         gas: [
