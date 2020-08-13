@@ -1,0 +1,3 @@
+[submodule "compound-config"]
+	path = compound-config
+	url = https://github.com/compound-finance/compound-config.git
