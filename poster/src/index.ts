@@ -3,19 +3,6 @@ import { main } from './poster';
 import Web3 from 'web3';
 import yargs from 'yargs';
 
-// default price delta triggering an update for the supported asset in %
-const defaultDeltas = {
-  'ETH': 1,
-  'BTC': 1,
-  'DAI': 0.5,
-  'REP': 1.5,
-  'ZRX': 1.5,
-  'BAT': 1.5,
-  'KNC': 1.5,
-  'LINK': 1.5,
-  'COMP': 1.5
-}
-
 async function run() {
   const parsed = yargs
     .env('POSTER')
@@ -28,14 +15,14 @@ async function run() {
     .option('gas-limit', {alias: 'g', description: 'how much gas to send', type: 'number', default: 4000000})
     .option('gas-price', {alias: 'gp', description: 'gas price', type: 'number'})
     .option('asset', {alias: 'a', description: 'A list of supported token names for posting prices', type: 'array', default: ['BTC', 'ETH', 'DAI', 'REP', 'ZRX', 'BAT', 'KNC', 'LINK', 'COMP']})
-    .option('price-deltas', {alias: 'd', description: 'the min required difference between new and previous asset price for the update on blockchain', type: 'string', default: JSON.stringify(defaultDeltas)})
+    .option('price-deltas', {alias: 'd', description: 'the min required difference between new and previous asset price for the update on blockchain', type: 'string'})
     .option('testnet-world', {alias: 'tw', description: 'An option to use mocked uniswap token pairs with data from mainnet', type: 'boolean', default: false})
     .option('testnet-uniswap-pairs', {alias: 'tup', description: 'A list of uniswap testnet pairs for all assets', type: 'string'})
     .option('mainnet-uniswap-pairs', {alias: 'mup', description: 'A list of uniswap mainnet pairs for all assets', type: 'string'})
 
     .help()
     .alias('help', 'h')
-    .demandOption(['poster-key', 'sources', 'view-function', 'web3-provider', 'view-address'], 'Provide all the arguments')
+    .demandOption(['poster-key', 'sources', 'view-function', 'web3-provider', 'view-address', 'price-deltas'], 'Provide all the arguments')
     .argv;
 
   const sources = Array.isArray(parsed['sources']) ? parsed['sources'] : [ parsed['sources'] ];
@@ -49,10 +36,10 @@ async function run() {
   const price_deltas = JSON.parse(parsed['price-deltas']);
   const assets = <string[]>parsed['asset'];
 
-  // check that price deltas are set up for all assets, otherwise set default delta value
+  // check that price deltas are set up for all assets
   assets.forEach(asset => {
     if (price_deltas[asset] == undefined) {
-      price_deltas[asset] = defaultDeltas[asset];
+      throw new TypeError(`For each asset price delta should be provided, ${asset} asset is not properly configured`)
     }
   });
 
