@@ -38,7 +38,7 @@ async function run() {
 
   // check that price deltas are set up for all assets
   assets.forEach(asset => {
-    if (!price_deltas[asset]) {
+    if (price_deltas[asset] == undefined) {
       throw new TypeError(`For each asset price delta should be provided, ${asset} asset is not properly configured`)
     }
   });
