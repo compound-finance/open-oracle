@@ -126,7 +126,7 @@ jobs:
           path: ~/junit-poster
       - store_artifacts:
           path: ~/junit-poster
-
+    
   test_reporter_javascript:
     docker:
       - image: circleci/node:12
@@ -149,7 +149,29 @@ jobs:
           path: ~/junit-sdk-javascript
       - store_artifacts:
           path: ~/junit-sdk-javascript
-
+   
+   certora-test:
+    working_directory: ~/repo
+    docker:
+      - image: circleci/openjdk:11-jdk-node
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Certora dependencies
+          command: |
+            echo "export PATH=$PATH:~/.local/bin" >> $BASH_ENV
+            sudo apt-get update || sudo apt-get update
+            sudo apt-get install -y software-properties-common
+            sudo apt-get install python3-pip
+            pip3 install certora-cli==0.2.1
+            wget https://github.com/ethereum/solidity/releases/download/v0.6.10/solc-static-linux
+            chmod +x solc-static-linux
+            sudo mv solc-static-linux /usr/bin/solc
+      - run:
+          name: Build and run - Open Oracle With Uniswap Anchor
+          command: |
+            certoraRun specs/harnesses/OpenOraclePriceDataHarness.sol specs/harnesses/UniswapAnchoredViewHarness.sol --solc solc6.10 --verify UniswapAnchoredViewHarness:specs/harness.spec.spec --link UniswapAnchoredViewHarness:priceData=OpenOraclePriceDataHarness --settings -b=2,-assumeUnwindCond,-ruleSanityChecks --cache compoundUniswapAnchor
 workflows:
   version: 2
   test:
@@ -158,3 +180,4 @@ workflows:
       - test_coverage
       - test_poster
       - test_reporter_javascript
+      - certora-test
