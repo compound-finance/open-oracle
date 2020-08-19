@@ -171,7 +171,7 @@ jobs:
       - run:
           name: Build and run - Open Oracle With Uniswap Anchor
           command: |
-            certoraRun specs/harnesses/OpenOraclePriceDataHarness.sol specs/harnesses/UniswapAnchoredViewHarness.sol --solc solc6.10 --verify UniswapAnchoredViewHarness:specs/harness.spec.spec --link UniswapAnchoredViewHarness:priceData=OpenOraclePriceDataHarness --settings -b=2,-assumeUnwindCond,-ruleSanityChecks --cache compoundUniswapAnchor
+            certoraRun specs/harnesses/OpenOraclePriceDataHarness.sol specs/harnesses/UniswapAnchoredViewHarness.sol --verify UniswapAnchoredViewHarness:specs/harness.spec.spec --link UniswapAnchoredViewHarness:priceData=OpenOraclePriceDataHarness --settings -b=2,-assumeUnwindCond,-ruleSanityChecks --cache compoundUniswapAnchor
 workflows:
   version: 2
   test:
