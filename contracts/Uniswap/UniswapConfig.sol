@@ -555,7 +555,7 @@ contract UniswapConfig {
         });
     }
 
-    function getCTokenIndex(address cToken) internal view returns (uint) {
+    function getCTokenIndex(address cToken) internal virtual view returns (uint) { //CERTORA: added virtual for harness
         if (cToken == cToken00) return 0;
         if (cToken == cToken01) return 1;
         if (cToken == cToken02) return 2;
@@ -590,7 +590,7 @@ contract UniswapConfig {
         return uint(-1);
     }
 
-    function getUnderlyingIndex(address underlying) internal view returns (uint) {
+    function getUnderlyingIndex(address underlying) internal virtual view returns (uint) { //CERTORA: Added virtual for harness
         if (underlying == underlying00) return 0;
         if (underlying == underlying01) return 1;
         if (underlying == underlying02) return 2;
@@ -625,7 +625,7 @@ contract UniswapConfig {
         return uint(-1);
     }
 
-    function getSymbolHashIndex(bytes32 symbolHash) internal view returns (uint) {
+    function getSymbolHashIndex(bytes32 symbolHash) internal virtual view returns (uint) { //CERTORA: Added virtual for harness
         if (symbolHash == symbolHash00) return 0;
         if (symbolHash == symbolHash01) return 1;
         if (symbolHash == symbolHash02) return 2;
@@ -665,7 +665,7 @@ contract UniswapConfig {
      * @param i The index of the config to get
      * @return The config object
      */
-    function getTokenConfig(uint i) public view returns (TokenConfig memory) {
+    function getTokenConfig(uint i) public virtual view returns (TokenConfig memory) { //CERTORA: Added virtual for harness
         require(i < numTokens, "token config not found");
 
         if (i == 0) return TokenConfig({cToken: cToken00, underlying: underlying00, symbolHash: symbolHash00, baseUnit: baseUnit00, priceSource: priceSource00, fixedPrice: fixedPrice00, uniswapMarket: uniswapMarket00, isUniswapReversed: isUniswapReversed00});

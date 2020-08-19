@@ -146,7 +146,7 @@ contract UniswapAnchoredView is UniswapConfig {
      * @param signatures The signatures for the corresponding messages
      * @param symbols The symbols to compare to anchor for authoritative reading
      */
-    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
+    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) virtual external { //CERTORA: added virtual modifier for harness
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
 
         // Save the prices
@@ -197,7 +197,7 @@ contract UniswapAnchoredView is UniswapConfig {
     /**
      * @dev Fetches the current token/eth price accumulator from uniswap.
      */
-    function currentCumulativePrice(TokenConfig memory config) internal view returns (uint) {
+    function currentCumulativePrice(TokenConfig memory config) internal virtual view returns (uint) { //CERTORA: added virtual modifier for harness
         (uint cumulativePrice0, uint cumulativePrice1,) = UniswapV2OracleLibrary.currentCumulativePrices(config.uniswapMarket);
         if (config.isUniswapReversed) {
             return cumulativePrice1;
@@ -210,7 +210,7 @@ contract UniswapAnchoredView is UniswapConfig {
      * @dev Fetches the current eth/usd price from uniswap, with 6 decimals of precision.
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
-    function fetchEthPrice() internal returns (uint) {
+    function fetchEthPrice() internal virtual returns (uint) { //CERTORA: added virtual modifier for harness
         return fetchAnchorPrice("ETH", getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
