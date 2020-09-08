@@ -11,7 +11,6 @@ describe('UniswapAnchoredView', () => {
 
   describe('getUnderlyingPrice', () => {
     beforeEach(async () => {
-      console.log("Hi");
       ({
         cToken,
         token,
@@ -21,7 +20,7 @@ describe('UniswapAnchoredView', () => {
     });
 
     it('should return reported WBTC price', async () => {
-      let openOracleV1 = await deploy('OpenOracleV1', [uniswapAnchoredView._address]);
+      let openOracleV1 = await deploy('OpenOracleV1', [uniswapAnchoredView._address, token.WETH]);
       const timestamp = time() - 5;
       await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
       await send(uniswapAnchoredView, 'setAnchorPrice', ['BTC', 10000e6]);
