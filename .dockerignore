@@ -11,3 +11,6 @@ poster/.tsbuilt
 tests
 yarn-error.log
 junit.xml
+
+# Allow files and directories
+!tests/contracts
