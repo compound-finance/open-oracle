@@ -10,3 +10,10 @@
 yarn-error.log
 junit.xml
 coverage/*
+price-range-proof/out
+price-range-proof/out.ztf
+price-range-proof/proving.key
+price-range-proof/verification.key
+price-range-proof/witness
+price-range-proof/proof.json
+price-range-proof/abi.json

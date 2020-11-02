@@ -1,0 +1,4 @@
+def main(private field price, field min, field max) -> bool:
+  assert(price>min)
+  assert(price<max)
+  return true
