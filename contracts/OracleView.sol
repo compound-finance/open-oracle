@@ -9,13 +9,13 @@ struct Observation {
     uint acc;
 }
 
-struct proof {
+struct Proof {
     uint[2] a;
     uint[2][2] b;
     uint[2] c;
 }
 
-struct publicInput {
+struct PublicInput {
     uint[3] in;
 }
 
@@ -25,7 +25,24 @@ contract OracleView {
     /// @notice The Open Oracle Price Data contract
     OpenOraclePriceData public immutable priceData;
 
-    Verifier public immutable verifier;
+    /// @notice The number of wei in 1 ETH
+    uint public constant ethBaseUnit = 1e18;
+
+    /// @notice A common scaling factor to maintain precision
+    uint public constant expScale = 1e18;
+
+    /// @notice The Open Oracle Reporter
+    address public immutable reporter;
+
+    /// @notice The highest ratio of the new price to the anchor price that will still trigger the price to be updated
+    uint public immutable upperBoundAnchorRatio;
+
+    /// @notice The lowest ratio of the new price to the anchor price that will still trigger the price to be updated
+    uint public immutable lowerBoundAnchorRatio;
+
+    /// @notice The minimum amount of time in seconds required for the old uniswap price accumulator to be replaced
+    uint public immutable anchorPeriod;
+
     /// @notice Official prices by symbol hash
     mapping(bytes32 => uint) public prices;
 
@@ -37,6 +54,24 @@ contract OracleView {
 
     /// @notice The new observation for each symbolHash
     mapping(bytes32 => Observation) public newObservations;
+
+    /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
+    event PriceGuarded(string symbol, uint reporter, uint anchor);
+
+    /// @notice The event emitted when the stored price is updated
+    event PriceUpdated(string symbol, uint price);
+
+    /// @notice The event emitted when anchor price is updated
+    event AnchorPriceUpdated(string symbol, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
+
+    /// @notice The event emitted when the uniswap window changes
+    event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
+
+    /// @notice The event emitted when reporter invalidates itself
+    event ReporterInvalidated(address reporter);
+
+    bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
+    bytes32 constant rotateHash = keccak256(abi.encodePacked("rotate"));
 
     /**
      * @notice Construct a uniswap anchored view for a set of token configurations
@@ -61,28 +96,25 @@ contract OracleView {
      * @param signatures The signatures for the corresponding messages
      * @param symbols The symbols to compare to anchor for authoritative reading
      */
-    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols, proof[] proofs, publicInput[] inputs) external {
+    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols, Proof[] proofs, PublicInput[] inputs) external {
         require(messages.length == signatures.length, "messages and signatures must be 1:1");
 
         // Save the prices
         for (uint i = 0; i < messages.length; i++) {
-            require(messages[i].min == inputs[i][1],
-            "Minimum Price mis-match");
-            require(messages[i].max == inputs[i][2],
-            "Maximum Price mis-match");
-            require(verifier.verifyTx(proofs[i].a, proofs[i].b, proofs[i].c, inputs[i]),
-            "Invalid proof");
-            priceData.put(messages[i], signatures[i]);
+            priceData.put(messages[i], signatures[i], proofs[i], inputs[i]);
         }
     }
 
     /**
-     * @notice Get the official price for a symbol
-     * @param symbol The symbol to fetch the price of
+     * @notice Use priceData.getPriceRange() directly
+     * @param source The verifiable author of the data
+     * @param key The selector for the value to return (symbol in case of uniswap)
      * @return Price range denominated in USD, with 6 decimals
      */
-    function price(string memory symbol) external view returns (uint) {
-        TokenConfig memory config = getTokenConfigBySymbol(symbol);
-        return priceInternal(config);
+    function price(address source, string calldata key) external view returns (uint) {
+        uint64 min;
+        uint64 max;
+        (min, max) = getPriceRange(source, key);
+        return (min, max);
     }
 }

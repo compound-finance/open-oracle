@@ -22,6 +22,16 @@ contract OpenOraclePriceData is OpenOracleData {
         uint64 max;
     }
 
+    struct Proof {
+    uint[2] a;
+    uint[2][2] b;
+    uint[2] c;
+    }
+
+    struct PublicInput {
+        uint[3] in;
+    }
+
     /**
      * @dev The most recent authenticated data from all sources.
      *  This is private because dynamic mapping keys preclude auto-generated getters.
@@ -34,7 +44,15 @@ contract OpenOraclePriceData is OpenOracleData {
      * @param signature The cryptographic signature of the message payload, authorizing the source to write
      * @return The keys that were written
      */
-    function put(bytes calldata message, bytes calldata signature) external returns (string memory) {
+    function put(bytes calldata message, bytes calldata signature, Proof proof, PublicInput input) external returns (string memory) {
+        require(message.min == input[1],
+            "Minimum Price mis-match");
+        require(message.max == input[2],
+            "Maximum Price mis-match");
+        
+        // proof verification (gas benchmarking will be required)
+        require(verifier.verifyTx(proof.a, proof.b, proof.c, input),
+            "Invalid proof");
         (address source, uint64 timestamp, string memory key, uint64 min, uint64 max) = decodeMessage(message, signature);
         return putInternal(source, timestamp, key, min, max);
     }
@@ -75,7 +93,7 @@ contract OpenOraclePriceData is OpenOracleData {
     /**
      * @notice Read only the value for a single key from an authenticated source
      * @param source The verifiable author of the data
-     * @param key The selector for the value to return
+     * @param key The selector for the value to return (symbol in case of uniswap)
      * @return The price value (defaults to (0, 0))
      */
     function getPriceRange(address source, string calldata key) external view returns (uint64, uint64) {

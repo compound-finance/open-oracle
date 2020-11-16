@@ -12,6 +12,11 @@ struct Observation {
     uint acc;
 }
 
+struct PriceRange {
+    uint min;
+    uint max;
+}
+
 contract UniswapAnchoredView is UniswapConfig {
     using FixedPoint for *;
 
@@ -38,6 +43,9 @@ contract UniswapAnchoredView is UniswapConfig {
 
     /// @notice Official prices by symbol hash
     mapping(bytes32 => uint) public prices;
+    
+    /// @notice Price ranges satisfying uniswap anchor
+    mapping(bytes32 => PriceRange) public priceRanges;
 
     /// @notice Circuit breaker for using anchor price oracle directly, ignoring reporter
     bool public reporterInvalidated;
@@ -49,10 +57,12 @@ contract UniswapAnchoredView is UniswapConfig {
     mapping(bytes32 => Observation) public newObservations;
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
-    event PriceGuarded(string symbol, uint reporter, uint anchor);
+    event PriceGuarded(string symbol, uint reporterMin, uint reporterMax, uint anchor);
 
     /// @notice The event emitted when the stored price is updated
     event PriceUpdated(string symbol, uint price);
+
+    event PriceRangeUpdated(string symbol, uint minPrice, uint maxPrice);
 
     /// @notice The event emitted when anchor price is updated
     event AnchorPriceUpdated(string symbol, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
@@ -117,7 +127,7 @@ contract UniswapAnchoredView is UniswapConfig {
     }
 
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
-        if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash];
+        if (config.priceSource == PriceSource.REPORTER) return priceRanges[config.symbolHash];
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash];
@@ -167,7 +177,9 @@ contract UniswapAnchoredView is UniswapConfig {
         require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
 
         bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-        uint reporterPrice = priceData.getPrice(reporter, symbol);
+        uint reporterMinPrice;
+        uint reporterMaxPrice;
+        (reporterMinPrice, reporterMaxPrice) = priceData.getPriceRange(reporter, symbol);
         uint anchorPrice;
         if (symbolHash == ethHash) {
             anchorPrice = ethPrice;
@@ -178,18 +190,18 @@ contract UniswapAnchoredView is UniswapConfig {
         if (reporterInvalidated) {
             prices[symbolHash] = anchorPrice;
             emit PriceUpdated(symbol, anchorPrice);
-        } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
-            prices[symbolHash] = reporterPrice;
-            emit PriceUpdated(symbol, reporterPrice);
+        } else if (isWithinAnchor(reporterMinPrice, reporterMaxPrice, anchorPrice)) {
+            priceRanges[symbolHash].min = reporterMinPrice;
+            priceRanges[symbolHash].max = reporterMaxPrice;
+            emit PriceRangeUpdated(symbol, reporterMinPrice, reporterMaxPrice);
         } else {
-            emit PriceGuarded(symbol, reporterPrice, anchorPrice);
+            emit PriceGuarded(symbol, reporterMinPrice, reporterMaxPrice, anchorPrice);
         }
     }
 
-    function isWithinAnchor(uint reporterPrice, uint anchorPrice) internal view returns (bool) {
-        if (reporterPrice > 0) {
-            uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
-            return anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
+    function isWithinAnchor(uint reporterMinPrice, uint reporterMaxPrice, uint anchorPrice) internal view returns (bool) {
+        if (reporterMinPrice > 0 && reporterMaxPrice > 0) {
+            return anchorPrice <= reporterMaxPrice && anchorPrice >= reporterMinPrice;
         }
         return false;
     }
