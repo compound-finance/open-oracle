@@ -16,8 +16,7 @@ async function setup({isMockedView, freeze}) {
   const anchorMantissa = numToHex(1e17);
   const priceData = await deploy('OpenOraclePriceData', []);
   const anchorPeriod = 60;
-  const timestamp = 1600000000;
-
+  const timestamp = Math.floor(Date.now() / 1000);
 
   if (freeze) {
     await sendRPC(web3, 'evm_freezeTime', [timestamp]);
