@@ -47,7 +47,7 @@ describe('UniswapConfig', () => {
   });
 
   it('returns configs exactly as specified', async () => {
-    const symbols = Array(30).fill(0).map((_, i) => String.fromCharCode('a'.charCodeAt(0) + i));
+    const symbols = Array(20).fill(0).map((_, i) => String.fromCharCode('a'.charCodeAt(0) + i));
     const configs = symbols.map((symbol, i) => {
       return {cToken: address(i + 1), underlying: address(i), symbolHash: keccak256(symbol), baseUnit: uint(1e6), priceSource: 0, fixedPrice: 1, uniswapMarket: address(i + 50), reporter: address(i + 51), isUniswapReversed: i % 2 == 0}
     });
@@ -88,7 +88,7 @@ describe('UniswapConfig', () => {
   });
 
   it('checks gas', async () => {
-    const configs = Array(26).fill(0).map((_, i) => {
+    const configs = Array(20).fill(0).map((_, i) => {
       const symbol = String.fromCharCode('a'.charCodeAt(0) + i);
       return {
         cToken: address(i),
@@ -108,33 +108,33 @@ describe('UniswapConfig', () => {
     expect(cfg9.underlying).addrEquals(address(10));
     expect(tx9.gasUsed).toEqual(22814);
 
-    const cfg25 = await call(contract, 'getTokenConfig', [25]);
-    const tx25 = await send(contract, 'getTokenConfig', [25]);
-    expect(cfg25.underlying).addrEquals(address(26));
-    expect(tx25.gasUsed).toEqual(23230);
+    const cfg25 = await call(contract, 'getTokenConfig', [19]);
+    const tx25 = await send(contract, 'getTokenConfig', [19]);
+    expect(cfg25.underlying).addrEquals(address(20));
+    expect(tx25.gasUsed).toEqual(23074);
 
-    const cfgZ = await call(contract, 'getTokenConfigBySymbol', ['z']);
-    const txZ = await send(contract, 'getTokenConfigBySymbol', ['z']);
-    expect(cfgZ.cToken).addrEquals(address(25));
-    expect(cfgZ.underlying).addrEquals(address(26));
-    expect(txZ.gasUsed).toEqual(25511);
+    const cfgZ = await call(contract, 'getTokenConfigBySymbol', ['t']);
+    const txZ = await send(contract, 'getTokenConfigBySymbol', ['t']);
+    expect(cfgZ.cToken).addrEquals(address(19));
+    expect(cfgZ.underlying).addrEquals(address(20));
+    expect(txZ.gasUsed).toEqual(25199);
 
-    const cfgCT26 = await call(contract, 'getTokenConfigByCToken', [address(25)]);
-    const txCT26 = await send(contract, 'getTokenConfigByCToken', [address(25)]);
-    expect(cfgCT26.cToken).addrEquals(address(25));
-    expect(cfgCT26.underlying).addrEquals(address(26));
-    expect(txCT26.gasUsed).toEqual(25353);
+    const cfgCT26 = await call(contract, 'getTokenConfigByCToken', [address(19)]);
+    const txCT26 = await send(contract, 'getTokenConfigByCToken', [address(19)]);
+    expect(cfgCT26.cToken).addrEquals(address(19));
+    expect(cfgCT26.underlying).addrEquals(address(20));
+    expect(txCT26.gasUsed).toEqual(24825);
 
-    const cfgR26 = await call(contract, 'getTokenConfigByReporter', [address(25+51)]);
-    const txR26 = await send(contract, 'getTokenConfigByReporter', [address(25+51)]);
-    expect(cfgR26.cToken).addrEquals(address(25));
-    expect(cfgR26.underlying).addrEquals(address(26));
-    expect(txR26.gasUsed).toEqual(25354);
+    const cfgR26 = await call(contract, 'getTokenConfigByReporter', [address(19+51)]);
+    const txR26 = await send(contract, 'getTokenConfigByReporter', [address(19+51)]);
+    expect(cfgR26.cToken).addrEquals(address(19));
+    expect(cfgR26.underlying).addrEquals(address(20));
+    expect(txR26.gasUsed).toEqual(24826);
 
-    const cfgU26 = await call(contract, 'getTokenConfigByUnderlying', [address(26)]);
-    const txU26 = await send(contract, 'getTokenConfigByUnderlying', [address(26)]);
-    expect(cfgU26.cToken).addrEquals(address(25));
-    expect(cfgU26.underlying).addrEquals(address(26));
-    expect(txU26.gasUsed).toEqual(25376);
+    const cfgU26 = await call(contract, 'getTokenConfigByUnderlying', [address(20)]);
+    const txU26 = await send(contract, 'getTokenConfigByUnderlying', [address(20)]);
+    expect(cfgU26.cToken).addrEquals(address(19));
+    expect(cfgU26.underlying).addrEquals(address(20));
+    expect(txU26.gasUsed).toEqual(24848);
   });
 });
