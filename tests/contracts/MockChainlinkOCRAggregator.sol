@@ -12,7 +12,7 @@ contract MockChainlinkOCRAggregator {
         uniswapAnchoredView = AggregatorValidatorInterface(addr);
     }
 
-    function postPrice(int latestPrice) public {
+    function validate(int latestPrice) public {
         uniswapAnchoredView.validate(0, 0, 0, latestPrice);
     }
 }

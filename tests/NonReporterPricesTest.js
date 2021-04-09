@@ -66,7 +66,7 @@ describe('UniswapAnchoredView', () => {
       await send(reporter, 'setUniswapAnchoredView', [oracle.options.address]);
       await sendRPC(web3, 'evm_increaseTime', [30 * 60]);
       const ethPrice = 226815000;
-      await send(reporter, "postPrice", [ethPrice]);
+      await send(reporter, "validate", [ethPrice]);
       expect(await call(oracle, 'price', ["ETH"])).numEquals(ethPrice);
       expect(await call(oracle, 'price', ["SAI"])).numEquals(1198842);
     }

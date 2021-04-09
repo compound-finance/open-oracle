@@ -7,6 +7,45 @@ const fixed = num => {
   return (new BigNumber(num).toFixed());
 };
 
+const EVENTS = {
+  PriceUpdated: [
+    {
+      type: 'bytes32',
+      name: 'symbolHash'
+    },
+    {
+      type: 'uint',
+      name: 'price',
+    }
+  ],
+  PriceGuarded: [
+    {
+      type: 'bytes32',
+      name: 'symbolHash'
+    },
+    {
+      type: 'uint',
+      name: 'reporter',
+    },
+    {
+      type: 'uint',
+      name: 'anchor',
+    }
+  ]
+} 
+
+function decodeEvent(inputs, tx, index) {
+  return web3.eth.abi.decodeLog(
+    inputs,
+    tx.events[index].raw.data,
+    tx.events[index].raw.topics
+  );
+}
+
+function numberOfEvents(tx) {
+  return Object.keys(tx.events).length;
+}
+
 function uint(n) {
   return web3.utils.toBN(n).toString();
 }
@@ -80,5 +119,8 @@ module.exports = {
   uint,
   keccak256,
   currentBlockTimestamp,
-  fixed
+  fixed,
+  decodeEvent,
+  EVENTS,
+  numberOfEvents
 };
