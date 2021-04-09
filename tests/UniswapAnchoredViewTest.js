@@ -225,57 +225,59 @@ describe('UniswapAnchoredView', () => {
     });
 });
 
-  // describe('getUnderlyingPrice', () => {
-  //   // everything must return 1e36 - underlying units
+  describe('getUnderlyingPrice', () => {
+    // everything must return 1e36 - underlying units
 
-  //   beforeEach(async () => {
-  //     ({
-  //       cToken,
-  //       postPrices,
-  //       uniswapAnchoredView,
-  //     } = await setup({isMockedView: true}));
-  //   });
+    beforeEach(async () => {
+      ({
+        cToken,
+        uniswapAnchoredView,
+      } = await setup({isMockedView: true}));
+    });
 
-  //   it('should work correctly for USDT fixed USD price source', async () => {
-  //     // 1 * (1e(36 - 6)) = 1e30
-  //     let expected = new BigNumber('1e30');
-  //     expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.USDT])).numEquals(expected.toFixed());
-  //   });
+    it('should work correctly for USDT fixed USD price source', async () => {
+      // 1 * (1e(36 - 6)) = 1e30
+      let expected = new BigNumber('1e30');
+      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.USDT.addr])).numEquals(expected.toFixed());
+    });
 
-  //   it('should return fixed ETH amount if SAI', async () => {
-  //     const timestamp = time() - 5;
-  //     await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
-  //     const tx = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
-  //     // priceInternal:      returns 200e6 * 0.005e18 / 1e18 = 1e6
-  //     // getUnderlyingPrice:         1e30 * 1e6 / 1e18 = 1e18
-  //     expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.SAI])).numEquals(1e18);
-  //   });
+    it('should return fixed ETH amount if SAI', async () => {
+      reporter = cToken.ETH.reporter;
+      const price = 200e6;
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', price]);
+      const tx = await send(reporter, 'validate', [price]);
+      // priceInternal:      returns 200e6 * 0.005e18 / 1e18 = 1e6
+      // getUnderlyingPrice:         1e30 * 1e6 / 1e18 = 1e18
+      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.SAI.addr])).numEquals(1e18);
+    });
 
-  //   it('should return reported ETH price', async () => {
-  //     const timestamp = time() - 5;
-  //     await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
-  //     const tx = await postPrices(timestamp, [[['ETH', 200]]], ['ETH']);
-  //     // priceInternal:      returns 200e6
-  //     // getUnderlyingPrice: 1e30 * 200e6 / 1e18 = 200e18
-  //     expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.ETH])).numEquals(200e18);
-  //   });
+    it('should return reported ETH price', async () => {
+      reporter = cToken.ETH.reporter;
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
+      const tx = await send(reporter, 'validate', [200e6]);
+      // priceInternal:      returns 200e6
+      // getUnderlyingPrice: 1e30 * 200e6 / 1e18 = 200e18
+      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.ETH.addr])).numEquals(200e18);
+    });
 
-  //   it('should return reported WBTC price', async () => {
-  //     const timestamp = time() - 5;
-  //     await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
-  //     await send(uniswapAnchoredView, 'setAnchorPrice', ['BTC', 10000e6]);
+    it('should return reported WBTC price', async () => {
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['ETH', 200e6]);
+      await send(uniswapAnchoredView, 'setAnchorPrice', ['BTC', 10000e6]);
 
-  //     const tx = await postPrices(timestamp, [[['ETH', 200], ['BTC', 10000]]], ['ETH', 'BTC']);
-  //     const btcPrice  = await call(uniswapAnchoredView, 'prices', [keccak256('BTC')]);
+      reporter = cToken.ETH.reporter;
+      const tx1 = send(reporter, 'validate', [200e6])
+      reporter = cToken.WBTC.reporter;
+      const tx2 = send(reporter, 'validate', [10000e6])
 
-  //     expect(btcPrice).numEquals(10000e6);
-  //     // priceInternal:      returns 10000e6
-  //     // getUnderlyingPrice: 1e30 * 10000e6 / 1e8 = 1e32
-  //     let expected = new BigNumber('1e32');
-  //     expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.WBTC])).numEquals(expected.toFixed());
-  //   });
+      const btcPrice  = await call(uniswapAnchoredView, 'prices', [keccak256('BTC')]);
+      expect(btcPrice).numEquals(10000e6);
+      // priceInternal:      returns 10000e6
+      // getUnderlyingPrice: 1e30 * 10000e6 / 1e8 = 1e32
+      let expected = new BigNumber('1e32');
+      expect(await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.WBTC.addr])).numEquals(expected.toFixed());
+    });
 
-  // });
+  });
 
   // describe('pokeWindowValues', () => {
   //   beforeEach(async () => {
