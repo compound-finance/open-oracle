@@ -25,6 +25,7 @@ contract UniswapConfig {
         PriceSource priceSource;
         uint256 fixedPrice;
         address uniswapMarket;
+        address reporter;
         bool isUniswapReversed;
     }
 
@@ -251,6 +252,37 @@ contract UniswapConfig {
     address internal immutable uniswapMarket27;
     address internal immutable uniswapMarket28;
     address internal immutable uniswapMarket29;
+
+    address internal immutable reporter00;
+    address internal immutable reporter01;
+    address internal immutable reporter02;
+    address internal immutable reporter03;
+    address internal immutable reporter04;
+    address internal immutable reporter05;
+    address internal immutable reporter06;
+    address internal immutable reporter07;
+    address internal immutable reporter08;
+    address internal immutable reporter09;
+    address internal immutable reporter10;
+    address internal immutable reporter11;
+    address internal immutable reporter12;
+    address internal immutable reporter13;
+    address internal immutable reporter14;
+    address internal immutable reporter15;
+    address internal immutable reporter16;
+    address internal immutable reporter17;
+    address internal immutable reporter18;
+    address internal immutable reporter19;
+    address internal immutable reporter20;
+    address internal immutable reporter21;
+    address internal immutable reporter22;
+    address internal immutable reporter23;
+    address internal immutable reporter24;
+    address internal immutable reporter25;
+    address internal immutable reporter26;
+    address internal immutable reporter27;
+    address internal immutable reporter28;
+    address internal immutable reporter29;
 
     bool internal immutable isUniswapReversed00;
     bool internal immutable isUniswapReversed01;
@@ -508,6 +540,37 @@ contract UniswapConfig {
         uniswapMarket28 = get(configs, 28).uniswapMarket;
         uniswapMarket29 = get(configs, 29).uniswapMarket;
 
+        reporter00 = get(configs, 0).reporter;
+        reporter01 = get(configs, 1).reporter;
+        reporter02 = get(configs, 2).reporter;
+        reporter03 = get(configs, 3).reporter;
+        reporter04 = get(configs, 4).reporter;
+        reporter05 = get(configs, 5).reporter;
+        reporter06 = get(configs, 6).reporter;
+        reporter07 = get(configs, 7).reporter;
+        reporter08 = get(configs, 8).reporter;
+        reporter09 = get(configs, 9).reporter;
+        reporter10 = get(configs, 10).reporter;
+        reporter11 = get(configs, 11).reporter;
+        reporter12 = get(configs, 12).reporter;
+        reporter13 = get(configs, 13).reporter;
+        reporter14 = get(configs, 14).reporter;
+        reporter15 = get(configs, 15).reporter;
+        reporter16 = get(configs, 16).reporter;
+        reporter17 = get(configs, 17).reporter;
+        reporter18 = get(configs, 18).reporter;
+        reporter19 = get(configs, 19).reporter;
+        reporter20 = get(configs, 20).reporter;
+        reporter21 = get(configs, 21).reporter;
+        reporter22 = get(configs, 22).reporter;
+        reporter23 = get(configs, 23).reporter;
+        reporter24 = get(configs, 24).reporter;
+        reporter25 = get(configs, 25).reporter;
+        reporter26 = get(configs, 26).reporter;
+        reporter27 = get(configs, 27).reporter;
+        reporter28 = get(configs, 28).reporter;
+        reporter29 = get(configs, 29).reporter;
+
         isUniswapReversed00 = get(configs, 0).isUniswapReversed;
         isUniswapReversed01 = get(configs, 1).isUniswapReversed;
         isUniswapReversed02 = get(configs, 2).isUniswapReversed;
@@ -551,8 +614,44 @@ contract UniswapConfig {
             priceSource: PriceSource(0),
             fixedPrice: uint256(0),
             uniswapMarket: address(0),
+            reporter: address(0),
             isUniswapReversed: false
         });
+    }
+
+    function getReporterIndex(address reporter) internal view returns(uint) {
+        if (reporter == reporter00) return 0;
+        if (reporter == reporter01) return 1;
+        if (reporter == reporter02) return 2;
+        if (reporter == reporter03) return 3;
+        if (reporter == reporter04) return 4;
+        if (reporter == reporter05) return 5;
+        if (reporter == reporter06) return 6;
+        if (reporter == reporter07) return 7;
+        if (reporter == reporter08) return 8;
+        if (reporter == reporter09) return 9;
+        if (reporter == reporter10) return 10;
+        if (reporter == reporter11) return 11;
+        if (reporter == reporter12) return 12;
+        if (reporter == reporter13) return 13;
+        if (reporter == reporter14) return 14;
+        if (reporter == reporter15) return 15;
+        if (reporter == reporter16) return 16;
+        if (reporter == reporter17) return 17;
+        if (reporter == reporter18) return 18;
+        if (reporter == reporter19) return 19;
+        if (reporter == reporter20) return 20;
+        if (reporter == reporter21) return 21;
+        if (reporter == reporter22) return 22;
+        if (reporter == reporter23) return 23;
+        if (reporter == reporter24) return 24;
+        if (reporter == reporter25) return 25;
+        if (reporter == reporter26) return 26;
+        if (reporter == reporter27) return 27;
+        if (reporter == reporter28) return 28;
+        if (reporter == reporter29) return 29;
+
+        return type(uint).max;
     }
 
     function getCTokenIndex(address cToken) internal view returns (uint) {
@@ -668,38 +767,38 @@ contract UniswapConfig {
     function getTokenConfig(uint i) public view returns (TokenConfig memory) {
         require(i < numTokens, "token config not found");
 
-        if (i == 0) return TokenConfig({cToken: cToken00, underlying: underlying00, symbolHash: symbolHash00, baseUnit: baseUnit00, priceSource: priceSource00, fixedPrice: fixedPrice00, uniswapMarket: uniswapMarket00, isUniswapReversed: isUniswapReversed00});
-        if (i == 1) return TokenConfig({cToken: cToken01, underlying: underlying01, symbolHash: symbolHash01, baseUnit: baseUnit01, priceSource: priceSource01, fixedPrice: fixedPrice01, uniswapMarket: uniswapMarket01, isUniswapReversed: isUniswapReversed01});
-        if (i == 2) return TokenConfig({cToken: cToken02, underlying: underlying02, symbolHash: symbolHash02, baseUnit: baseUnit02, priceSource: priceSource02, fixedPrice: fixedPrice02, uniswapMarket: uniswapMarket02, isUniswapReversed: isUniswapReversed02});
-        if (i == 3) return TokenConfig({cToken: cToken03, underlying: underlying03, symbolHash: symbolHash03, baseUnit: baseUnit03, priceSource: priceSource03, fixedPrice: fixedPrice03, uniswapMarket: uniswapMarket03, isUniswapReversed: isUniswapReversed03});
-        if (i == 4) return TokenConfig({cToken: cToken04, underlying: underlying04, symbolHash: symbolHash04, baseUnit: baseUnit04, priceSource: priceSource04, fixedPrice: fixedPrice04, uniswapMarket: uniswapMarket04, isUniswapReversed: isUniswapReversed04});
-        if (i == 5) return TokenConfig({cToken: cToken05, underlying: underlying05, symbolHash: symbolHash05, baseUnit: baseUnit05, priceSource: priceSource05, fixedPrice: fixedPrice05, uniswapMarket: uniswapMarket05, isUniswapReversed: isUniswapReversed05});
-        if (i == 6) return TokenConfig({cToken: cToken06, underlying: underlying06, symbolHash: symbolHash06, baseUnit: baseUnit06, priceSource: priceSource06, fixedPrice: fixedPrice06, uniswapMarket: uniswapMarket06, isUniswapReversed: isUniswapReversed06});
-        if (i == 7) return TokenConfig({cToken: cToken07, underlying: underlying07, symbolHash: symbolHash07, baseUnit: baseUnit07, priceSource: priceSource07, fixedPrice: fixedPrice07, uniswapMarket: uniswapMarket07, isUniswapReversed: isUniswapReversed07});
-        if (i == 8) return TokenConfig({cToken: cToken08, underlying: underlying08, symbolHash: symbolHash08, baseUnit: baseUnit08, priceSource: priceSource08, fixedPrice: fixedPrice08, uniswapMarket: uniswapMarket08, isUniswapReversed: isUniswapReversed08});
-        if (i == 9) return TokenConfig({cToken: cToken09, underlying: underlying09, symbolHash: symbolHash09, baseUnit: baseUnit09, priceSource: priceSource09, fixedPrice: fixedPrice09, uniswapMarket: uniswapMarket09, isUniswapReversed: isUniswapReversed09});
+        if (i == 0) return TokenConfig({cToken: cToken00, underlying: underlying00, symbolHash: symbolHash00, baseUnit: baseUnit00, priceSource: priceSource00, fixedPrice: fixedPrice00, uniswapMarket: uniswapMarket00, reporter: reporter00, isUniswapReversed: isUniswapReversed00});
+        if (i == 1) return TokenConfig({cToken: cToken01, underlying: underlying01, symbolHash: symbolHash01, baseUnit: baseUnit01, priceSource: priceSource01, fixedPrice: fixedPrice01, uniswapMarket: uniswapMarket01, reporter: reporter01, isUniswapReversed: isUniswapReversed01});
+        if (i == 2) return TokenConfig({cToken: cToken02, underlying: underlying02, symbolHash: symbolHash02, baseUnit: baseUnit02, priceSource: priceSource02, fixedPrice: fixedPrice02, uniswapMarket: uniswapMarket02, reporter: reporter02, isUniswapReversed: isUniswapReversed02});
+        if (i == 3) return TokenConfig({cToken: cToken03, underlying: underlying03, symbolHash: symbolHash03, baseUnit: baseUnit03, priceSource: priceSource03, fixedPrice: fixedPrice03, uniswapMarket: uniswapMarket03, reporter: reporter03, isUniswapReversed: isUniswapReversed03});
+        if (i == 4) return TokenConfig({cToken: cToken04, underlying: underlying04, symbolHash: symbolHash04, baseUnit: baseUnit04, priceSource: priceSource04, fixedPrice: fixedPrice04, uniswapMarket: uniswapMarket04, reporter: reporter04, isUniswapReversed: isUniswapReversed04});
+        if (i == 5) return TokenConfig({cToken: cToken05, underlying: underlying05, symbolHash: symbolHash05, baseUnit: baseUnit05, priceSource: priceSource05, fixedPrice: fixedPrice05, uniswapMarket: uniswapMarket05, reporter: reporter05, isUniswapReversed: isUniswapReversed05});
+        if (i == 6) return TokenConfig({cToken: cToken06, underlying: underlying06, symbolHash: symbolHash06, baseUnit: baseUnit06, priceSource: priceSource06, fixedPrice: fixedPrice06, uniswapMarket: uniswapMarket06, reporter: reporter06, isUniswapReversed: isUniswapReversed06});
+        if (i == 7) return TokenConfig({cToken: cToken07, underlying: underlying07, symbolHash: symbolHash07, baseUnit: baseUnit07, priceSource: priceSource07, fixedPrice: fixedPrice07, uniswapMarket: uniswapMarket07, reporter: reporter07, isUniswapReversed: isUniswapReversed07});
+        if (i == 8) return TokenConfig({cToken: cToken08, underlying: underlying08, symbolHash: symbolHash08, baseUnit: baseUnit08, priceSource: priceSource08, fixedPrice: fixedPrice08, uniswapMarket: uniswapMarket08, reporter: reporter08, isUniswapReversed: isUniswapReversed08});
+        if (i == 9) return TokenConfig({cToken: cToken09, underlying: underlying09, symbolHash: symbolHash09, baseUnit: baseUnit09, priceSource: priceSource09, fixedPrice: fixedPrice09, uniswapMarket: uniswapMarket09, reporter: reporter09, isUniswapReversed: isUniswapReversed09});
 
-        if (i == 10) return TokenConfig({cToken: cToken10, underlying: underlying10, symbolHash: symbolHash10, baseUnit: baseUnit10, priceSource: priceSource10, fixedPrice: fixedPrice10, uniswapMarket: uniswapMarket10, isUniswapReversed: isUniswapReversed10});
-        if (i == 11) return TokenConfig({cToken: cToken11, underlying: underlying11, symbolHash: symbolHash11, baseUnit: baseUnit11, priceSource: priceSource11, fixedPrice: fixedPrice11, uniswapMarket: uniswapMarket11, isUniswapReversed: isUniswapReversed11});
-        if (i == 12) return TokenConfig({cToken: cToken12, underlying: underlying12, symbolHash: symbolHash12, baseUnit: baseUnit12, priceSource: priceSource12, fixedPrice: fixedPrice12, uniswapMarket: uniswapMarket12, isUniswapReversed: isUniswapReversed12});
-        if (i == 13) return TokenConfig({cToken: cToken13, underlying: underlying13, symbolHash: symbolHash13, baseUnit: baseUnit13, priceSource: priceSource13, fixedPrice: fixedPrice13, uniswapMarket: uniswapMarket13, isUniswapReversed: isUniswapReversed13});
-        if (i == 14) return TokenConfig({cToken: cToken14, underlying: underlying14, symbolHash: symbolHash14, baseUnit: baseUnit14, priceSource: priceSource14, fixedPrice: fixedPrice14, uniswapMarket: uniswapMarket14, isUniswapReversed: isUniswapReversed14});
-        if (i == 15) return TokenConfig({cToken: cToken15, underlying: underlying15, symbolHash: symbolHash15, baseUnit: baseUnit15, priceSource: priceSource15, fixedPrice: fixedPrice15, uniswapMarket: uniswapMarket15, isUniswapReversed: isUniswapReversed15});
-        if (i == 16) return TokenConfig({cToken: cToken16, underlying: underlying16, symbolHash: symbolHash16, baseUnit: baseUnit16, priceSource: priceSource16, fixedPrice: fixedPrice16, uniswapMarket: uniswapMarket16, isUniswapReversed: isUniswapReversed16});
-        if (i == 17) return TokenConfig({cToken: cToken17, underlying: underlying17, symbolHash: symbolHash17, baseUnit: baseUnit17, priceSource: priceSource17, fixedPrice: fixedPrice17, uniswapMarket: uniswapMarket17, isUniswapReversed: isUniswapReversed17});
-        if (i == 18) return TokenConfig({cToken: cToken18, underlying: underlying18, symbolHash: symbolHash18, baseUnit: baseUnit18, priceSource: priceSource18, fixedPrice: fixedPrice18, uniswapMarket: uniswapMarket18, isUniswapReversed: isUniswapReversed18});
-        if (i == 19) return TokenConfig({cToken: cToken19, underlying: underlying19, symbolHash: symbolHash19, baseUnit: baseUnit19, priceSource: priceSource19, fixedPrice: fixedPrice19, uniswapMarket: uniswapMarket19, isUniswapReversed: isUniswapReversed19});
+        if (i == 10) return TokenConfig({cToken: cToken10, underlying: underlying10, symbolHash: symbolHash10, baseUnit: baseUnit10, priceSource: priceSource10, fixedPrice: fixedPrice10, uniswapMarket: uniswapMarket10, reporter: reporter10, isUniswapReversed: isUniswapReversed10});
+        if (i == 11) return TokenConfig({cToken: cToken11, underlying: underlying11, symbolHash: symbolHash11, baseUnit: baseUnit11, priceSource: priceSource11, fixedPrice: fixedPrice11, uniswapMarket: uniswapMarket11, reporter: reporter11, isUniswapReversed: isUniswapReversed11});
+        if (i == 12) return TokenConfig({cToken: cToken12, underlying: underlying12, symbolHash: symbolHash12, baseUnit: baseUnit12, priceSource: priceSource12, fixedPrice: fixedPrice12, uniswapMarket: uniswapMarket12, reporter: reporter12, isUniswapReversed: isUniswapReversed12});
+        if (i == 13) return TokenConfig({cToken: cToken13, underlying: underlying13, symbolHash: symbolHash13, baseUnit: baseUnit13, priceSource: priceSource13, fixedPrice: fixedPrice13, uniswapMarket: uniswapMarket13, reporter: reporter13, isUniswapReversed: isUniswapReversed13});
+        if (i == 14) return TokenConfig({cToken: cToken14, underlying: underlying14, symbolHash: symbolHash14, baseUnit: baseUnit14, priceSource: priceSource14, fixedPrice: fixedPrice14, uniswapMarket: uniswapMarket14, reporter: reporter14, isUniswapReversed: isUniswapReversed14});
+        if (i == 15) return TokenConfig({cToken: cToken15, underlying: underlying15, symbolHash: symbolHash15, baseUnit: baseUnit15, priceSource: priceSource15, fixedPrice: fixedPrice15, uniswapMarket: uniswapMarket15, reporter: reporter15, isUniswapReversed: isUniswapReversed15});
+        if (i == 16) return TokenConfig({cToken: cToken16, underlying: underlying16, symbolHash: symbolHash16, baseUnit: baseUnit16, priceSource: priceSource16, fixedPrice: fixedPrice16, uniswapMarket: uniswapMarket16, reporter: reporter16, isUniswapReversed: isUniswapReversed16});
+        if (i == 17) return TokenConfig({cToken: cToken17, underlying: underlying17, symbolHash: symbolHash17, baseUnit: baseUnit17, priceSource: priceSource17, fixedPrice: fixedPrice17, uniswapMarket: uniswapMarket17, reporter: reporter17, isUniswapReversed: isUniswapReversed17});
+        if (i == 18) return TokenConfig({cToken: cToken18, underlying: underlying18, symbolHash: symbolHash18, baseUnit: baseUnit18, priceSource: priceSource18, fixedPrice: fixedPrice18, uniswapMarket: uniswapMarket18, reporter: reporter18, isUniswapReversed: isUniswapReversed18});
+        if (i == 19) return TokenConfig({cToken: cToken19, underlying: underlying19, symbolHash: symbolHash19, baseUnit: baseUnit19, priceSource: priceSource19, fixedPrice: fixedPrice19, uniswapMarket: uniswapMarket19, reporter: reporter19, isUniswapReversed: isUniswapReversed19});
 
-        if (i == 20) return TokenConfig({cToken: cToken20, underlying: underlying20, symbolHash: symbolHash20, baseUnit: baseUnit20, priceSource: priceSource20, fixedPrice: fixedPrice20, uniswapMarket: uniswapMarket20, isUniswapReversed: isUniswapReversed20});
-        if (i == 21) return TokenConfig({cToken: cToken21, underlying: underlying21, symbolHash: symbolHash21, baseUnit: baseUnit21, priceSource: priceSource21, fixedPrice: fixedPrice21, uniswapMarket: uniswapMarket21, isUniswapReversed: isUniswapReversed21});
-        if (i == 22) return TokenConfig({cToken: cToken22, underlying: underlying22, symbolHash: symbolHash22, baseUnit: baseUnit22, priceSource: priceSource22, fixedPrice: fixedPrice22, uniswapMarket: uniswapMarket22, isUniswapReversed: isUniswapReversed22});
-        if (i == 23) return TokenConfig({cToken: cToken23, underlying: underlying23, symbolHash: symbolHash23, baseUnit: baseUnit23, priceSource: priceSource23, fixedPrice: fixedPrice23, uniswapMarket: uniswapMarket23, isUniswapReversed: isUniswapReversed23});
-        if (i == 24) return TokenConfig({cToken: cToken24, underlying: underlying24, symbolHash: symbolHash24, baseUnit: baseUnit24, priceSource: priceSource24, fixedPrice: fixedPrice24, uniswapMarket: uniswapMarket24, isUniswapReversed: isUniswapReversed24});
-        if (i == 25) return TokenConfig({cToken: cToken25, underlying: underlying25, symbolHash: symbolHash25, baseUnit: baseUnit25, priceSource: priceSource25, fixedPrice: fixedPrice25, uniswapMarket: uniswapMarket25, isUniswapReversed: isUniswapReversed25});
-        if (i == 26) return TokenConfig({cToken: cToken26, underlying: underlying26, symbolHash: symbolHash26, baseUnit: baseUnit26, priceSource: priceSource26, fixedPrice: fixedPrice26, uniswapMarket: uniswapMarket26, isUniswapReversed: isUniswapReversed26});
-        if (i == 27) return TokenConfig({cToken: cToken27, underlying: underlying27, symbolHash: symbolHash27, baseUnit: baseUnit27, priceSource: priceSource27, fixedPrice: fixedPrice27, uniswapMarket: uniswapMarket27, isUniswapReversed: isUniswapReversed27});
-        if (i == 28) return TokenConfig({cToken: cToken28, underlying: underlying28, symbolHash: symbolHash28, baseUnit: baseUnit28, priceSource: priceSource28, fixedPrice: fixedPrice28, uniswapMarket: uniswapMarket28, isUniswapReversed: isUniswapReversed28});
-        if (i == 29) return TokenConfig({cToken: cToken29, underlying: underlying29, symbolHash: symbolHash29, baseUnit: baseUnit29, priceSource: priceSource29, fixedPrice: fixedPrice29, uniswapMarket: uniswapMarket29, isUniswapReversed: isUniswapReversed29});
+        if (i == 20) return TokenConfig({cToken: cToken20, underlying: underlying20, symbolHash: symbolHash20, baseUnit: baseUnit20, priceSource: priceSource20, fixedPrice: fixedPrice20, uniswapMarket: uniswapMarket20, reporter: reporter20, isUniswapReversed: isUniswapReversed20});
+        if (i == 21) return TokenConfig({cToken: cToken21, underlying: underlying21, symbolHash: symbolHash21, baseUnit: baseUnit21, priceSource: priceSource21, fixedPrice: fixedPrice21, uniswapMarket: uniswapMarket21, reporter: reporter21, isUniswapReversed: isUniswapReversed21});
+        if (i == 22) return TokenConfig({cToken: cToken22, underlying: underlying22, symbolHash: symbolHash22, baseUnit: baseUnit22, priceSource: priceSource22, fixedPrice: fixedPrice22, uniswapMarket: uniswapMarket22, reporter: reporter22, isUniswapReversed: isUniswapReversed22});
+        if (i == 23) return TokenConfig({cToken: cToken23, underlying: underlying23, symbolHash: symbolHash23, baseUnit: baseUnit23, priceSource: priceSource23, fixedPrice: fixedPrice23, uniswapMarket: uniswapMarket23, reporter: reporter23, isUniswapReversed: isUniswapReversed23});
+        if (i == 24) return TokenConfig({cToken: cToken24, underlying: underlying24, symbolHash: symbolHash24, baseUnit: baseUnit24, priceSource: priceSource24, fixedPrice: fixedPrice24, uniswapMarket: uniswapMarket24, reporter: reporter24, isUniswapReversed: isUniswapReversed24});
+        if (i == 25) return TokenConfig({cToken: cToken25, underlying: underlying25, symbolHash: symbolHash25, baseUnit: baseUnit25, priceSource: priceSource25, fixedPrice: fixedPrice25, uniswapMarket: uniswapMarket25, reporter: reporter25, isUniswapReversed: isUniswapReversed25});
+        if (i == 26) return TokenConfig({cToken: cToken26, underlying: underlying26, symbolHash: symbolHash26, baseUnit: baseUnit26, priceSource: priceSource26, fixedPrice: fixedPrice26, uniswapMarket: uniswapMarket26, reporter: reporter26, isUniswapReversed: isUniswapReversed26});
+        if (i == 27) return TokenConfig({cToken: cToken27, underlying: underlying27, symbolHash: symbolHash27, baseUnit: baseUnit27, priceSource: priceSource27, fixedPrice: fixedPrice27, uniswapMarket: uniswapMarket27, reporter: reporter27, isUniswapReversed: isUniswapReversed27});
+        if (i == 28) return TokenConfig({cToken: cToken28, underlying: underlying28, symbolHash: symbolHash28, baseUnit: baseUnit28, priceSource: priceSource28, fixedPrice: fixedPrice28, uniswapMarket: uniswapMarket28, reporter: reporter28, isUniswapReversed: isUniswapReversed28});
+        if (i == 29) return TokenConfig({cToken: cToken29, underlying: underlying29, symbolHash: symbolHash29, baseUnit: baseUnit29, priceSource: priceSource29, fixedPrice: fixedPrice29, uniswapMarket: uniswapMarket29, reporter: reporter29, isUniswapReversed: isUniswapReversed29});
     }
 
     /**
@@ -709,6 +808,20 @@ contract UniswapConfig {
      */
     function getTokenConfigBySymbol(string memory symbol) public view returns (TokenConfig memory) {
         return getTokenConfigBySymbolHash(keccak256(abi.encodePacked(symbol)));
+    }
+
+    /**
+     * @notice Get the config for the reporter
+     * @param reporter The address of the reporter of the config to get
+     * @return The config object
+     */
+    function getTokenConfigByReporter(address reporter) public view returns (TokenConfig memory) {
+        uint index = getReporterIndex(reporter);
+        if (index != uint(-1)) {
+            return getTokenConfig(index);
+        }
+
+        revert("token config not found");
     }
 
     /**

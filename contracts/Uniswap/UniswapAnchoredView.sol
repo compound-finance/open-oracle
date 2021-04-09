@@ -3,29 +3,24 @@
 pragma solidity ^0.6.10;
 pragma experimental ABIEncoderV2;
 
-import "../OpenOraclePriceData.sol";
 import "./UniswapConfig.sol";
 import "./UniswapLib.sol";
+import "../Ownable.sol";
+import "../Chainlink/AggregatorValidatorInterface.sol";
 
 struct Observation {
     uint timestamp;
     uint acc;
 }
 
-contract UniswapAnchoredView is UniswapConfig {
+contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Ownable {
     using FixedPoint for *;
-
-    /// @notice The Open Oracle Price Data contract
-    OpenOraclePriceData public immutable priceData;
 
     /// @notice The number of wei in 1 ETH
     uint public constant ethBaseUnit = 1e18;
 
     /// @notice A common scaling factor to maintain precision
     uint public constant expScale = 1e18;
-
-    /// @notice The Open Oracle Reporter
-    address public immutable reporter;
 
     /// @notice The highest ratio of the new price to the anchor price that will still trigger the price to be updated
     uint public immutable upperBoundAnchorRatio;
@@ -40,7 +35,7 @@ contract UniswapAnchoredView is UniswapConfig {
     mapping(bytes32 => uint) public prices;
 
     /// @notice Circuit breaker for using anchor price oracle directly, ignoring reporter
-    bool public reporterInvalidated;
+    mapping(address => bool) public reporterInvalidated;
 
     /// @notice The old observation for each symbolHash
     mapping(bytes32 => Observation) public oldObservations;
@@ -49,38 +44,33 @@ contract UniswapAnchoredView is UniswapConfig {
     mapping(bytes32 => Observation) public newObservations;
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
-    event PriceGuarded(string symbol, uint reporter, uint anchor);
+    event PriceGuarded(bytes32 symbolHash, uint reporter, uint anchor);
 
     /// @notice The event emitted when the stored price is updated
-    event PriceUpdated(string symbol, uint price);
+    event PriceUpdated(bytes32 symbolHash, uint price);
 
     /// @notice The event emitted when anchor price is updated
-    event AnchorPriceUpdated(string symbol, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
+    event AnchorPriceUpdated(bytes32 symbolHash, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
 
     /// @notice The event emitted when the uniswap window changes
     event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
 
-    /// @notice The event emitted when reporter invalidates itself
+    /// @notice The event emitted when reporter is invalidated
     event ReporterInvalidated(address reporter);
 
     bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
-    bytes32 constant rotateHash = keccak256(abi.encodePacked("rotate"));
 
     /**
      * @notice Construct a uniswap anchored view for a set of token configurations
      * @dev Note that to avoid immature TWAPs, the system must run for at least a single anchorPeriod before using.
-     * @param reporter_ The reporter whose prices are to be used
      * @param anchorToleranceMantissa_ The percentage tolerance that the reporter may deviate from the uniswap anchor
      * @param anchorPeriod_ The minimum amount of time required for the old uniswap price accumulator to be replaced
      * @param configs The static token configurations which define what prices are supported and how
      */
-    constructor(OpenOraclePriceData priceData_,
-                address reporter_,
-                uint anchorToleranceMantissa_,
+    constructor(uint anchorToleranceMantissa_,
                 uint anchorPeriod_,
                 TokenConfig[] memory configs) UniswapConfig(configs) public {
-        priceData = priceData_;
-        reporter = reporter_;
+
         anchorPeriod = anchorPeriod_;
 
         // Allow the tolerance to be whatever the deployer chooses, but prevent under/overflow (and prices from being 0)
@@ -140,51 +130,41 @@ contract UniswapAnchoredView is UniswapConfig {
     }
 
     /**
-     * @notice Post open oracle reporter prices, and recalculate stored price by comparing to anchor
-     * @dev We let anyone pay to post anything, but only prices from configured reporter will be stored in the view.
-     * @param messages The messages to post to the oracle
-     * @param signatures The signatures for the corresponding messages
-     * @param symbols The symbols to compare to anchor for authoritative reading
-     */
-    function postPrices(bytes[] calldata messages, bytes[] calldata signatures, string[] calldata symbols) external {
-        require(messages.length == signatures.length, "messages and signatures must be 1:1");
-
-        // Save the prices
-        for (uint i = 0; i < messages.length; i++) {
-            priceData.put(messages[i], signatures[i]);
-        }
+    * @notice This is called by the reporter whenever a new price is posted on-chain
+    * @dev called by AccessControlledOffChainAggregator
+    * @param currentAnswer the price
+    * @return valid bool
+    */
+    function validate(uint256 previousRoundId,
+            int256 previousAnswer,
+            uint256 currentRoundId,
+            int256 currentAnswer) external override returns (bool valid) {
+        
+        require(currentAnswer >= 0, "current answer cannot be negative");
+        uint256 reporterPrice = uint256(currentAnswer);
+        TokenConfig memory config = getTokenConfigByReporter(msg.sender);
 
         uint ethPrice = fetchEthPrice();
-
-        // Try to update the view storage
-        for (uint i = 0; i < symbols.length; i++) {
-            postPriceInternal(symbols[i], ethPrice);
-        }
-    }
-
-    function postPriceInternal(string memory symbol, uint ethPrice) internal {
-        TokenConfig memory config = getTokenConfigBySymbol(symbol);
         require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
-
-        bytes32 symbolHash = keccak256(abi.encodePacked(symbol));
-        uint reporterPrice = priceData.getPrice(reporter, symbol);
         uint anchorPrice;
-        if (symbolHash == ethHash) {
+        if (config.symbolHash == ethHash) {
             anchorPrice = ethPrice;
         } else {
-            anchorPrice = fetchAnchorPrice(symbol, config, ethPrice);
+            anchorPrice = fetchAnchorPrice(config.symbolHash, config, ethPrice);
         }
 
-        if (reporterInvalidated) {
-            prices[symbolHash] = anchorPrice;
-            emit PriceUpdated(symbol, anchorPrice);
+        if (reporterInvalidated[msg.sender]) {
+            prices[config.symbolHash] = anchorPrice;
+            emit PriceUpdated(config.symbolHash, anchorPrice);
         } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
-            prices[symbolHash] = reporterPrice;
-            emit PriceUpdated(symbol, reporterPrice);
+            prices[config.symbolHash] = reporterPrice;
+            emit PriceUpdated(config.symbolHash, reporterPrice);
+            valid = true;
         } else {
-            emit PriceGuarded(symbol, reporterPrice, anchorPrice);
+            emit PriceGuarded(config.symbolHash, reporterPrice, anchorPrice);
         }
     }
+
 
     function isWithinAnchor(uint reporterPrice, uint anchorPrice) internal view returns (bool) {
         if (reporterPrice > 0) {
@@ -218,7 +198,7 @@ contract UniswapAnchoredView is UniswapConfig {
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
      * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
-    function fetchAnchorPrice(string memory symbol, TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
+    function fetchAnchorPrice(bytes32 symbolHash, TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
         (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
 
         // This should be impossible, but better safe than sorry
@@ -245,7 +225,7 @@ contract UniswapAnchoredView is UniswapConfig {
         //             = unscaledPriceMantissa / expScale * tokenBaseUnit / ethBaseUnit
         anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
 
-        emit AnchorPriceUpdated(symbol, anchorPrice, oldTimestamp, block.timestamp);
+        emit AnchorPriceUpdated(symbolHash, anchorPrice, oldTimestamp, block.timestamp);
 
         return anchorPrice;
     }
@@ -273,40 +253,20 @@ contract UniswapAnchoredView is UniswapConfig {
         return (cumulativePrice, oldObservations[symbolHash].acc, oldObservations[symbolHash].timestamp);
     }
 
-    /**
-     * @notice Invalidate the reporter, and fall back to using anchor directly in all cases
-     * @dev Only the reporter may sign a message which allows it to invalidate itself.
-     *  To be used in cases of emergency, if the reporter thinks their key may be compromised.
-     * @param message The data that was presumably signed
-     * @param signature The fingerprint of the data + private key
-     */
-    function invalidateReporter(bytes memory message, bytes memory signature) external {
-        (string memory decodedMessage, ) = abi.decode(message, (string, address));
-        require(keccak256(abi.encodePacked(decodedMessage)) == rotateHash, "invalid message must be 'rotate'");
-        require(source(message, signature) == reporter, "invalidation message must come from the reporter");
-        reporterInvalidated = true;
-        emit ReporterInvalidated(reporter);
-    }
-
-    /**
-     * @notice Recovers the source address which signed a message
-     * @dev Comparing to a claimed address would add nothing,
-     *  as the caller could simply perform the recover and claim that address.
-     * @param message The data that was presumably signed
-     * @param signature The fingerprint of the data + private key
-     * @return The source address which signed the message, presumably
-     */
-    function source(bytes memory message, bytes memory signature) public pure returns (address) {
-        (bytes32 r, bytes32 s, uint8 v) = abi.decode(signature, (bytes32, bytes32, uint8));
-        bytes32 hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", keccak256(message)));
-        return ecrecover(hash, v, r, s);
-    }
-
     /// @dev Overflow proof multiplication
     function mul(uint a, uint b) internal pure returns (uint) {
         if (a == 0) return 0;
         uint c = a * b;
         require(c / a == b, "multiplication overflow");
         return c;
+    }
+
+    /**
+     * @notice Invalidate a reporter, and fall back to using anchor directly in all cases
+     * @dev Only the owner can call this function
+     */
+    function invalidateReporter(address reporterAddr) external onlyOwner() {
+        reporterInvalidated[reporterAddr] = true;
+        emit ReporterInvalidated(reporterAddr);
     }
 }
