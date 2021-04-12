@@ -474,7 +474,6 @@ describe('UniswapAnchoredView', () => {
       expect(await call(uniswapAnchoredView, 'reporterInvalidated', [cToken.ETH.reporter._address])).toBe(true);
 
       // Check that event is emitted
-      console.log(tx.events.ReporterInvalidated)
       expect(tx.events.ReporterInvalidated.returnValues.reporter).toBe(cToken.ETH.reporter._address);
     });
 
