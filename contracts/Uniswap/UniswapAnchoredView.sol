@@ -253,14 +253,6 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         return (cumulativePrice, oldObservations[symbolHash].acc, oldObservations[symbolHash].timestamp);
     }
 
-    /// @dev Overflow proof multiplication
-    function mul(uint a, uint b) internal pure returns (uint) {
-        if (a == 0) return 0;
-        uint c = a * b;
-        require(c / a == b, "multiplication overflow");
-        return c;
-    }
-
     /**
      * @notice Invalidate a reporter, and fall back to using anchor directly in all cases
      * @dev Only the owner can call this function
@@ -268,5 +260,13 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     function invalidateReporter(address reporterAddr) external onlyOwner() {
         reporterInvalidated[reporterAddr] = true;
         emit ReporterInvalidated(reporterAddr);
+    }
+
+    /// @dev Overflow proof multiplication
+    function mul(uint a, uint b) internal pure returns (uint) {
+        if (a == 0) return 0;
+        uint c = a * b;
+        require(c / a == b, "multiplication overflow");
+        return c;
     }
 }
