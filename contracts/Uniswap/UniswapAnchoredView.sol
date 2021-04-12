@@ -44,13 +44,13 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     mapping(bytes32 => Observation) public newObservations;
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
-    event PriceGuarded(bytes32 symbolHash, uint reporter, uint anchor);
+    event PriceGuarded(bytes32 indexed symbolHash, uint reporter, uint anchor);
 
     /// @notice The event emitted when the stored price is updated
-    event PriceUpdated(bytes32 symbolHash, uint price);
+    event PriceUpdated(bytes32 indexed symbolHash, uint price);
 
     /// @notice The event emitted when anchor price is updated
-    event AnchorPriceUpdated(bytes32 symbolHash, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
+    event AnchorPriceUpdated(bytes32 indexed symbolHash, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
 
     /// @notice The event emitted when the uniswap window changes
     event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
@@ -191,7 +191,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
     function fetchEthPrice() internal returns (uint) {
-        return fetchAnchorPrice("ETH", getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
+        return fetchAnchorPrice(ethHash, getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
     /**

@@ -11,7 +11,8 @@ const EVENTS = {
   PriceUpdated: [
     {
       type: 'bytes32',
-      name: 'symbolHash'
+      name: 'symbolHash',
+      indexed: true
     },
     {
       type: 'uint',
@@ -21,7 +22,8 @@ const EVENTS = {
   PriceGuarded: [
     {
       type: 'bytes32',
-      name: 'symbolHash'
+      name: 'symbolHash',
+      indexed: true
     },
     {
       type: 'uint',
@@ -31,10 +33,54 @@ const EVENTS = {
       type: 'uint',
       name: 'anchor',
     }
+  ],
+  AnchorPriceUpdated: [
+    {
+      type: 'bytes32',
+      name: 'symbolHash',
+      indexed: true
+    },
+    {
+      type: 'uint',
+      name: 'anchorPrice',
+    },
+    {
+      type: 'uint',
+      name: 'oldTimestamp',
+    },
+    {
+      type: 'uint',
+      name: 'newTimestamp',
+    }
+  ],
+  UniswapWindowUpdated: [
+    {
+      type: 'bytes32',
+      name: 'symbolHash',
+      indexed: true
+    },
+    {
+      type: 'uint',
+      name: 'oldTimestamp',
+    },
+    {
+      type: 'uint',
+      name: 'newTimestamp',
+    },
+    {
+      type: 'uint',
+      name: 'oldPrice',
+    },
+    {
+      type: 'uint',
+      name: 'newPrice',
+    }
   ]
 } 
 
 function decodeEvent(inputs, tx, index) {
+  // Remove event name hash from topics array
+  tx.events[index].raw.topics.shift()
   return web3.eth.abi.decodeLog(
     inputs,
     tx.events[index].raw.data,
