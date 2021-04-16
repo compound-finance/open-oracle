@@ -170,6 +170,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         }
 
         if (isWithinAnchor(reporterPrice, anchorPrice)) {
+            require(reporterPrice < 2**248, "Reporter price too big");
             prices[config.symbolHash].price = uint248(reporterPrice);
             emit PriceUpdated(config.symbolHash, reporterPrice);
         } else {
