@@ -14,8 +14,8 @@ struct Observation {
     uint acc;
 }
 
-struct OfficialPriceData {
-    uint price;
+struct PriceData {
+    uint248 price;
     bool failoverActive;
 }
 
@@ -38,7 +38,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     uint public immutable anchorPeriod;
 
     /// @notice Official prices by symbol hash
-    mapping(bytes32 => OfficialPriceData) public prices;
+    mapping(bytes32 => PriceData) public prices;
 
     /// @notice The old observation for each symbolHash
     mapping(bytes32 => Observation) public oldObservations;
@@ -118,7 +118,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @return price - using 6 decimals
      */
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
-        OfficialPriceData memory priceData = prices[config.symbolHash];
+        PriceData memory priceData = prices[config.symbolHash];
         if (priceData.failoverActive) {
             uint latestPrice = uint(AggregatorInterface(config.failoverPriceFeed).latestAnswer());
             return mul(latestPrice, config.failoverMultiplier) / config.baseUnit;
@@ -170,7 +170,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         }
 
         if (isWithinAnchor(reporterPrice, anchorPrice)) {
-            prices[config.symbolHash].price = reporterPrice;
+            prices[config.symbolHash].price = uint248(reporterPrice);
             emit PriceUpdated(config.symbolHash, reporterPrice);
         } else {
             emit PriceGuarded(config.symbolHash, reporterPrice, anchorPrice);
@@ -270,7 +270,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @dev Only the owner can call this function
      */
     function activateFailover(bytes32 symbolHash) external onlyOwner() {
-        require(prices[symbolHash].failoverActive == false, "Already activated");
+        require(!prices[symbolHash].failoverActive, "Already activated");
         prices[symbolHash].failoverActive = true;
         emit FailoverActivated(symbolHash);
     }
@@ -280,7 +280,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @dev Only the owner can call this function
      */
     function deactivateFailover(bytes32 symbolHash) external onlyOwner() {
-        require(prices[symbolHash].failoverActive == true, "Already deactivated");
+        require(prices[symbolHash].failoverActive, "Already deactivated");
         prices[symbolHash].failoverActive = false;
         emit FailoverDeactivated(symbolHash);
     }
