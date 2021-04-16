@@ -15,9 +15,12 @@ describe('UniswapConfig', () => {
     const unlistedButUnderlying = await deploy('MockCToken', [address(4)])
     const unlistedNorUnderlying = await deploy('MockCToken', [address(5)])
     const contract = await deploy('UniswapConfig', [[
-      {cToken: address(1), underlying: address(0), symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: 0, fixedPrice: 0, uniswapMarket: address(6), reporter: address(9), failoverPriceFeed: address(12), isUniswapReversed: false},
-      {cToken: address(2), underlying: address(3), symbolHash: keccak256('BTC'), baseUnit: uint(1e18), priceSource: 1, fixedPrice: 1, uniswapMarket: address(7), reporter: address(10), failoverPriceFeed: address(13), isUniswapReversed: true},
-      {cToken: unlistedButUnderlying._address, underlying: address(4), symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: 1, fixedPrice: 1, uniswapMarket: address(8), reporter: address(11), failoverPriceFeed: address(14), isUniswapReversed: true}
+      {cToken: address(1), underlying: address(0), symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: 0, fixedPrice: 0, uniswapMarket: address(6), reporter: address(9), failoverPriceFeed: address(12), failoverMultiplier: uint(1e16),
+      isUniswapReversed: false},
+      {cToken: address(2), underlying: address(3), symbolHash: keccak256('BTC'), baseUnit: uint(1e18), priceSource: 1, fixedPrice: 1, uniswapMarket: address(7), reporter: address(10), failoverPriceFeed: address(13), failoverMultiplier: uint(1e16),
+      isUniswapReversed: true},
+      {cToken: unlistedButUnderlying._address, underlying: address(4), symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: 1, fixedPrice: 1, uniswapMarket: address(8), reporter: address(11), failoverPriceFeed: address(14), failoverMultiplier: uint(1e16),
+      isUniswapReversed: true}
     ]]);
 
     const cfg0 = await call(contract, 'getTokenConfig', [0]);
@@ -47,9 +50,10 @@ describe('UniswapConfig', () => {
   });
 
   it('returns configs exactly as specified', async () => {
-    const symbols = Array(25).fill(0).map((_, i) => String.fromCharCode('a'.charCodeAt(0) + i));
+    const symbols = Array(24).fill(0).map((_, i) => String.fromCharCode('a'.charCodeAt(0) + i));
     const configs = symbols.map((symbol, i) => {
-      return {cToken: address(i + 1), underlying: address(i), symbolHash: keccak256(symbol), baseUnit: uint(1e6), priceSource: 0, fixedPrice: 1, uniswapMarket: address(i + 50), reporter: address(i + 51), failoverPriceFeed: address(i + 52), isUniswapReversed: i % 2 == 0}
+      return {cToken: address(i + 1), underlying: address(i), symbolHash: keccak256(symbol), baseUnit: uint(1e6), priceSource: 0, fixedPrice: 1, uniswapMarket: address(i + 50), reporter: address(i + 51), failoverPriceFeed: address(i + 52), failoverMultiplier: uint(1e16),
+        isUniswapReversed: i % 2 == 0}
     });
     const contract = await deploy('UniswapConfig', [configs]);
 
@@ -68,6 +72,8 @@ describe('UniswapConfig', () => {
         fixedPrice:  cfgByIndex.fixedPrice,
         uniswapMarket: cfgByIndex.uniswapMarket.toLowerCase(),
         reporter: cfgByIndex.reporter.toLowerCase(),
+        failoverPriceFeed: cfgByIndex.failoverPriceFeed.toLowerCase(),
+        failoverMultiplier: cfgByIndex.failoverMultiplier,
         isUniswapReversed: cfgByIndex.isUniswapReversed
       }).toEqual({
         cToken: config.cToken,
@@ -78,6 +84,8 @@ describe('UniswapConfig', () => {
         fixedPrice: `${config.fixedPrice}`,
         uniswapMarket: config.uniswapMarket,
         reporter: config.reporter,
+        failoverPriceFeed: config.failoverPriceFeed,
+        failoverMultiplier: config.failoverMultiplier,
         isUniswapReversed: config.isUniswapReversed
       });
       expect(cfgByIndex).toEqual(cfgBySymbol);
@@ -88,7 +96,7 @@ describe('UniswapConfig', () => {
   });
 
   it('checks gas', async () => {
-    const configs = Array(25).fill(0).map((_, i) => {
+    const configs = Array(24).fill(0).map((_, i) => {
       const symbol = String.fromCharCode('a'.charCodeAt(0) + i);
       return {
         cToken: address(i),
@@ -100,6 +108,7 @@ describe('UniswapConfig', () => {
         uniswapMarket: address(i + 50),
         reporter: address(i + 51),
         failoverPriceFeed: address(i + 52),
+        failoverMultiplier: uint(1e16),
         isUniswapReversed: i % 2 == 0}
     });
     const contract = await deploy('UniswapConfig', [configs]);
@@ -107,35 +116,35 @@ describe('UniswapConfig', () => {
     const cfg9 = await call(contract, 'getTokenConfig', [9]);
     const tx9 = await send(contract, 'getTokenConfig', [9]);
     expect(cfg9.underlying).addrEquals(address(10));
-    expect(tx9.gasUsed).toEqual(22983);
+    expect(tx9.gasUsed).toEqual(23052);
 
-    const cfg25 = await call(contract, 'getTokenConfig', [24]);
-    const tx25 = await send(contract, 'getTokenConfig', [24]);
-    expect(cfg25.underlying).addrEquals(address(25));
-    expect(tx25.gasUsed).toEqual(23373);
+    const cfg25 = await call(contract, 'getTokenConfig', [23]);
+    const tx25 = await send(contract, 'getTokenConfig', [23]);
+    expect(cfg25.underlying).addrEquals(address(24));
+    expect(tx25.gasUsed).toEqual(23416);
 
-    const cfgZ = await call(contract, 'getTokenConfigBySymbol', ['y']);
-    const txZ = await send(contract, 'getTokenConfigBySymbol', ['y']);
-    expect(cfgZ.cToken).addrEquals(address(24));
-    expect(cfgZ.underlying).addrEquals(address(25));
-    expect(txZ.gasUsed).toEqual(25670);
+    const cfgZ = await call(contract, 'getTokenConfigBySymbol', ['x']);
+    const txZ = await send(contract, 'getTokenConfigBySymbol', ['x']);
+    expect(cfgZ.cToken).addrEquals(address(23));
+    expect(cfgZ.underlying).addrEquals(address(24));
+    expect(txZ.gasUsed).toEqual(25730);
 
-    const cfgCT26 = await call(contract, 'getTokenConfigByCToken', [address(24)]);
-    const txCT26 = await send(contract, 'getTokenConfigByCToken', [address(24)]);
-    expect(cfgCT26.cToken).addrEquals(address(24));
-    expect(cfgCT26.underlying).addrEquals(address(25));
-    expect(txCT26.gasUsed).toEqual(25454);
+    const cfgCT26 = await call(contract, 'getTokenConfigByCToken', [address(23)]);
+    const txCT26 = await send(contract, 'getTokenConfigByCToken', [address(23)]);
+    expect(cfgCT26.cToken).addrEquals(address(23));
+    expect(cfgCT26.underlying).addrEquals(address(24));
+    expect(txCT26.gasUsed).toEqual(25457);
 
-    const cfgR26 = await call(contract, 'getTokenConfigByReporter', [address(24+51)]);
-    const txR26 = await send(contract, 'getTokenConfigByReporter', [address(24+51)]);
-    expect(cfgR26.cToken).addrEquals(address(24));
-    expect(cfgR26.underlying).addrEquals(address(25));
-    expect(txR26.gasUsed).toEqual(25455);
+    const cfgR26 = await call(contract, 'getTokenConfigByReporter', [address(23+51)]);
+    const txR26 = await send(contract, 'getTokenConfigByReporter', [address(23+51)]);
+    expect(cfgR26.cToken).addrEquals(address(23));
+    expect(cfgR26.underlying).addrEquals(address(24));
+    expect(txR26.gasUsed).toEqual(25458);
 
-    const cfgU26 = await call(contract, 'getTokenConfigByUnderlying', [address(25)]);
-    const txU26 = await send(contract, 'getTokenConfigByUnderlying', [address(25)]);
-    expect(cfgU26.cToken).addrEquals(address(24));
-    expect(cfgU26.underlying).addrEquals(address(25));
-    expect(txU26.gasUsed).toEqual(25477);
+    const cfgU26 = await call(contract, 'getTokenConfigByUnderlying', [address(24)]);
+    const txU26 = await send(contract, 'getTokenConfigByUnderlying', [address(24)]);
+    expect(cfgU26.cToken).addrEquals(address(23));
+    expect(cfgU26.underlying).addrEquals(address(24));
+    expect(txU26.gasUsed).toEqual(25480);
   });
 });

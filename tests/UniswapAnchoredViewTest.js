@@ -80,12 +80,12 @@ async function setup({isMockedView, freeze}) {
   };
   
   const tokenConfigs = [
-    {cToken: cToken.ETH.addr, underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.ETH.reporter._address, failoverPriceFeed: cToken.ETH.failover._address, isUniswapReversed: true},
-    {cToken: cToken.DAI.addr, underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.DAI.reporter._address, failoverPriceFeed: cToken.DAI.failover._address, isUniswapReversed: false},
-    {cToken: cToken.REP.addr, underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockRepPair._address, reporter: cToken.REP.reporter._address, failoverPriceFeed: cToken.REP.failover._address, isUniswapReversed: false},
-    {cToken: cToken.USDT.addr, underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e6), priceSource: PriceSource.FIXED_USD, fixedPrice: uint(1e6), uniswapMarket: dummyAddress, reporter: cToken.USDT.reporter, failoverPriceFeed: dummyAddress, isUniswapReversed: false},
-    {cToken: cToken.SAI.addr, underlying: dummyAddress, symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_ETH, fixedPrice: uint(FIXED_ETH_AMOUNT), uniswapMarket: dummyAddress, reporter: cToken.SAI.reporter, failoverPriceFeed: dummyAddress, isUniswapReversed: false},
-    {cToken: cToken.WBTC.addr, underlying: dummyAddress, symbolHash: keccak256('BTC'), baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.WBTC.reporter._address, failoverPriceFeed: cToken.WBTC.failover._address, isUniswapReversed: false},
+    {cToken: cToken.ETH.addr, underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.ETH.reporter._address, failoverPriceFeed: cToken.ETH.failover._address, failoverMultiplier: uint(1e16), isUniswapReversed: true},
+    {cToken: cToken.DAI.addr, underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.DAI.reporter._address, failoverPriceFeed: cToken.DAI.failover._address, failoverMultiplier: uint(1e16), isUniswapReversed: false},
+    {cToken: cToken.REP.addr, underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockRepPair._address, reporter: cToken.REP.reporter._address, failoverPriceFeed: cToken.REP.failover._address, failoverMultiplier: uint(1e16), isUniswapReversed: false},
+    {cToken: cToken.USDT.addr, underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e6), priceSource: PriceSource.FIXED_USD, fixedPrice: uint(1e6), uniswapMarket: dummyAddress, reporter: cToken.USDT.reporter, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: false},
+    {cToken: cToken.SAI.addr, underlying: dummyAddress, symbolHash: keccak256('SAI'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_ETH, fixedPrice: uint(FIXED_ETH_AMOUNT), uniswapMarket: dummyAddress, reporter: cToken.SAI.reporter, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: false},
+    {cToken: cToken.WBTC.addr, underlying: dummyAddress, symbolHash: keccak256('BTC'), baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.WBTC.reporter._address, failoverPriceFeed: cToken.WBTC.failover._address, failoverMultiplier: uint(1e16), isUniswapReversed: false},
   ];
 
   let uniswapAnchoredView;
@@ -407,9 +407,9 @@ describe('UniswapAnchoredView', () => {
       ]);
       const tokenConfigs = [
         // Set dummy address as a uniswap market address
-        {cToken: address(1), underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.ETH.reporter._address, failoverPriceFeed: dummyAddress, isUniswapReversed: true},
-        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: 0, priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.DAI.reporter._address, failoverPriceFeed: dummyAddress, isUniswapReversed: false},
-        {cToken: address(3), underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.REP.reporter._address, failoverPriceFeed: dummyAddress, isUniswapReversed: false}];
+        {cToken: address(1), underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.ETH.reporter._address, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: true},
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: 0, priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.DAI.reporter._address, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: false},
+        {cToken: address(3), underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: mockPair._address, reporter: cToken.REP.reporter._address, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: false}];
       await expect(
         deploy('UniswapAnchoredView', [anchorMantissa, 30, tokenConfigs])
       ).rejects.toRevert("revert baseUnit must be greater than zero");
@@ -421,9 +421,9 @@ describe('UniswapAnchoredView', () => {
       const dummyAddress = address(0);
       const tokenConfigs = [
         // Set dummy address as a uniswap market address
-        {cToken: address(1), underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyAddress, reporter: cToken.ETH.reporter._address, failoverPriceFeed: dummyAddress, isUniswapReversed: true},
-        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(4), reporter: cToken.DAI.reporter._address, failoverPriceFeed: dummyAddress, isUniswapReversed: false},
-        {cToken: address(3), underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(5), reporter: cToken.REP.reporter._address, failoverPriceFeed: dummyAddress, isUniswapReversed: false}];
+        {cToken: address(1), underlying: dummyAddress, symbolHash: keccak256('ETH'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: dummyAddress, reporter: cToken.ETH.reporter._address, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: true},
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('DAI'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(4), reporter: cToken.DAI.reporter._address, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: false},
+        {cToken: address(3), underlying: dummyAddress, symbolHash: keccak256('REP'), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: address(5), reporter: cToken.REP.reporter._address, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: false}];
       await expect(
         deploy('UniswapAnchoredView', [anchorMantissa, 30, tokenConfigs])
       ).rejects.toRevert("revert reported prices must have an anchor");
@@ -434,13 +434,13 @@ describe('UniswapAnchoredView', () => {
 
       const dummyAddress = address(0);
       const tokenConfigs1 = [
-        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_USD, fixedPrice: 0, uniswapMarket: address(5), reporter: cToken.ETH.reporter._address, failoverPriceFeed: dummyAddress, isUniswapReversed: false}];
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_USD, fixedPrice: 0, uniswapMarket: address(5), reporter: cToken.ETH.reporter._address, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: false}];
       await expect(
         deploy('UniswapAnchoredView', [anchorMantissa, 30, tokenConfigs1])
       ).rejects.toRevert("revert only reported prices utilize an anchor");
 
       const tokenConfigs2 = [
-        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_ETH, fixedPrice: 0, uniswapMarket: address(5),reporter: cToken.DAI.reporter._address, failoverPriceFeed: dummyAddress, isUniswapReversed: false}];
+        {cToken: address(2), underlying: dummyAddress, symbolHash: keccak256('USDT'), baseUnit: uint(1e18), priceSource: PriceSource.FIXED_ETH, fixedPrice: 0, uniswapMarket: address(5),reporter: cToken.DAI.reporter._address, failoverPriceFeed: dummyAddress, failoverMultiplier: uint(1e16), isUniswapReversed: false}];
       await expect(
         deploy('UniswapAnchoredView', [anchorMantissa, 30, tokenConfigs2])
       ).rejects.toRevert("revert only reported prices utilize an anchor");
@@ -519,7 +519,8 @@ describe('UniswapAnchoredView', () => {
       // Failover ETH, but not WBTC
       await send(uniswapAnchoredView, 'activateFailover', [keccak256('ETH')], {from: accounts[0]});
       
-      await send(cToken.ETH.failover, 'setLatestAnswer', [202e6])
+      // Chainlink Proxy USD pairs are 8 decimals
+      await send(cToken.ETH.failover, 'setLatestAnswer', [202e8])
 
       // Check that BTC (which wasn't failed over) gets updated
       const wbtcPrice2  = await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.WBTC.addr]);
@@ -591,7 +592,8 @@ describe('UniswapAnchoredView', () => {
       // Failover ETH, but not WBTC
       await send(uniswapAnchoredView, 'activateFailover', [keccak256('ETH')], {from: accounts[0]});
       
-      await send(cToken.ETH.failover, 'setLatestAnswer', [202e6])
+      // Chainlink Proxy USD pairs are 8 decimals
+      await send(cToken.ETH.failover, 'setLatestAnswer', [202e8])
 
       // Check that BTC (which wasn't failed over) gets updated
       const wbtcPrice2  = await call(uniswapAnchoredView, 'getUnderlyingPrice', [cToken.WBTC.addr]);

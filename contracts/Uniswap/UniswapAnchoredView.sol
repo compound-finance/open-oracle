@@ -112,9 +112,17 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         return priceInternal(config);
     }
 
+    /**
+     * @notice Return the price of a Token using 6 decimal places, based on its TokenConfig
+     * @param config TokenConfig
+     * @return price - using 6 decimals
+     */
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
         OfficialPriceData memory priceData = prices[config.symbolHash];
-        if (priceData.failoverActive) return uint(AggregatorInterface(config.failoverPriceFeed).latestAnswer());
+        if (priceData.failoverActive) {
+            uint latestPrice = uint(AggregatorInterface(config.failoverPriceFeed).latestAnswer());
+            return mul(latestPrice, config.failoverMultiplier) / config.baseUnit;
+        }
         if (config.priceSource == PriceSource.REPORTER) return priceData.price;
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
@@ -146,7 +154,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     function validate(uint256 /* previousRoundId */,
             int256 /* previousAnswer */,
             uint256 /* currentRoundId */,
-            int256 currentAnswer) external override returns (bool valid) {
+            int256 currentAnswer) external override returns (bool) {
         
         require(currentAnswer >= 0, "current answer cannot be negative");
         uint256 reporterPrice = uint256(currentAnswer);
@@ -164,7 +172,6 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         if (isWithinAnchor(reporterPrice, anchorPrice)) {
             prices[config.symbolHash].price = reporterPrice;
             emit PriceUpdated(config.symbolHash, reporterPrice);
-            valid = true;
         } else {
             emit PriceGuarded(config.symbolHash, reporterPrice, anchorPrice);
         }
