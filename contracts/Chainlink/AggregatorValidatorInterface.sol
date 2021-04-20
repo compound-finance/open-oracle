@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.6.10;
+pragma solidity ^0.6.12;
 
 interface AggregatorValidatorInterface {
 	function validate(uint256 previousRoundId,

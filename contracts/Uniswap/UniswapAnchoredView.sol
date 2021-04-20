@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.6.10;
+pragma solidity ^0.6.12;
 pragma experimental ABIEncoderV2;
 
 import "./UniswapConfig.sol";
@@ -135,11 +135,11 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     /**
-    * @notice This is called by the reporter whenever a new price is posted on-chain
-    * @dev called by AccessControlledOffChainAggregator
-    * @param currentAnswer the price
-    * @return valid bool
-    */
+     * @notice This is called by the reporter whenever a new price is posted on-chain
+     * @dev called by AccessControlledOffChainAggregator
+     * @param currentAnswer the price
+     * @return valid bool
+     */
     function validate(uint256/* previousRoundId */,
             int256 /* previousAnswer */,
             uint256 /* currentRoundId */,
@@ -148,15 +148,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         // This will revert if no configs found for the msg.sender
         TokenConfig memory config = getTokenConfigByReporter(msg.sender);
         uint256 reportedPrice = convertReportedPrice(config, currentAnswer);
-
-        uint ethPrice = fetchEthPrice();
-        require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
-        uint anchorPrice;
-        if (config.symbolHash == ethHash) {
-            anchorPrice = ethPrice;
-        } else {
-            anchorPrice = fetchAnchorPrice(config.symbolHash, config, ethPrice);
-        }
+        uint256 anchorPrice = calculateAnchorPriceFromEthPrice(config);
 
         PriceData memory priceData = prices[config.symbolHash];
         if (priceData.failoverActive) {
@@ -170,6 +162,37 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             valid = true;
         } else {
             emit PriceGuarded(config.symbolHash, reportedPrice, anchorPrice);
+        }
+    }
+
+    /**
+     * @notice In the event that a feed is failed over to Uniswap TWAP, this function can be called
+     * by anyone to update the TWAP price.
+     * @dev This only works if the feed represented by the symbolHash is failed over, and will revert otherwise
+     * @param symbolHash bytes32
+     */
+    function pokeFailedOverPrice(bytes32 symbolHash) public {
+        PriceData memory priceData = prices[symbolHash];
+        require(priceData.failoverActive, "Failover must be active");
+        TokenConfig memory config = getTokenConfigBySymbolHash(symbolHash);
+        uint anchorPrice = calculateAnchorPriceFromEthPrice(config);
+        require(anchorPrice <= 2**248, "Anchor price too large");
+        prices[config.symbolHash].price = uint248(anchorPrice);
+        emit PriceUpdated(config.symbolHash, anchorPrice);
+    }
+
+    /**
+     * @notice Calculate the anchor price by fetching price data from the TWAP
+     * @param config TokenConfig
+     * @return anchorPrice uint
+     */
+    function calculateAnchorPriceFromEthPrice(TokenConfig memory config) internal returns (uint anchorPrice) {
+        uint ethPrice = fetchEthPrice();
+        require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
+        if (config.symbolHash == ethHash) {
+            anchorPrice = ethPrice;
+        } else {
+            anchorPrice = fetchAnchorPrice(config.symbolHash, config, ethPrice);
         }
     }
 
@@ -283,6 +306,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         prices[symbolHash].failoverActive = true;
         emit FailoverActivated(symbolHash);
     }
+
     /**
      * @notice Deactivate a previously activated failover
      * @dev Only the owner can call this function
