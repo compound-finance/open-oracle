@@ -153,15 +153,15 @@ async function setupUniswapAnchoredView(pairs) {
   const anchorPeriod = 30 * 60;
 
   const tokenConfigs = [
-    {cToken: address(1), underlying: address(1), symbolHash: keccak256("ETH"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH.pair._address, reporter: pairs.ETH.reporter._address, isUniswapReversed: true},
-    {cToken: address(2), underlying: address(2), symbolHash: keccak256("DAI"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.DAI.pair._address, reporter: pairs.DAI.reporter._address, isUniswapReversed: false},
-    {cToken: address(3), underlying: address(3), symbolHash: keccak256("REP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.REP.pair._address, reporter: pairs.REP.reporter._address, isUniswapReversed: false},
-    {cToken: address(4), underlying: address(4), symbolHash: keccak256("BAT"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BAT.pair._address, reporter: pairs.BAT.reporter._address, isUniswapReversed: false},
-    {cToken: address(5), underlying: address(5), symbolHash: keccak256("ZRX"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ZRX.pair._address, reporter: pairs.ZRX.reporter._address, isUniswapReversed: true},
-    {cToken: address(6), underlying: address(6), symbolHash: keccak256("BTC"), baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BTC.pair._address, reporter: pairs.BTC.reporter._address, isUniswapReversed: false},
-    {cToken: address(7), underlying: address(7), symbolHash: keccak256("COMP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.COMP.pair._address, reporter: pairs.COMP.reporter._address, isUniswapReversed: false},
-    {cToken: address(8), underlying: address(8), symbolHash: keccak256("KNC"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.KNC.pair._address, reporter: pairs.KNC.reporter._address, isUniswapReversed: true},
-    {cToken: address(9), underlying: address(9), symbolHash: keccak256("LINK"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.LINK.pair._address, reporter: pairs.LINK.reporter._address, isUniswapReversed: false},
+    {cToken: address(1), underlying: address(1), symbolHash: keccak256("ETH"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ETH.pair._address, reporter: pairs.ETH.reporter._address, reporterMultiplier: uint(1e16), isUniswapReversed: true},
+    {cToken: address(2), underlying: address(2), symbolHash: keccak256("DAI"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.DAI.pair._address, reporter: pairs.DAI.reporter._address, reporterMultiplier: uint(1e16), isUniswapReversed: false},
+    {cToken: address(3), underlying: address(3), symbolHash: keccak256("REP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.REP.pair._address, reporter: pairs.REP.reporter._address, reporterMultiplier: uint(1e16), isUniswapReversed: false},
+    {cToken: address(4), underlying: address(4), symbolHash: keccak256("BAT"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BAT.pair._address, reporter: pairs.BAT.reporter._address, reporterMultiplier: uint(1e16), isUniswapReversed: false},
+    {cToken: address(5), underlying: address(5), symbolHash: keccak256("ZRX"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.ZRX.pair._address, reporter: pairs.ZRX.reporter._address, reporterMultiplier: uint(1e16), isUniswapReversed: true},
+    {cToken: address(6), underlying: address(6), symbolHash: keccak256("BTC"), baseUnit: uint(1e8), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.BTC.pair._address, reporter: pairs.BTC.reporter._address, reporterMultiplier: uint(1e6), isUniswapReversed: false},
+    {cToken: address(7), underlying: address(7), symbolHash: keccak256("COMP"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.COMP.pair._address, reporter: pairs.COMP.reporter._address, reporterMultiplier: uint(1e16), isUniswapReversed: false},
+    {cToken: address(8), underlying: address(8), symbolHash: keccak256("KNC"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.KNC.pair._address, reporter: pairs.KNC.reporter._address, reporterMultiplier: uint(1e16), isUniswapReversed: true},
+    {cToken: address(9), underlying: address(9), symbolHash: keccak256("LINK"), baseUnit: uint(1e18), priceSource: PriceSource.REPORTER, fixedPrice: 0, uniswapMarket: pairs.LINK.pair._address, reporter: pairs.LINK.reporter._address, reporterMultiplier: uint(1e16), isUniswapReversed: false},
   ];
 
   return deploy("UniswapAnchoredView", [anchorMantissa, anchorPeriod, tokenConfigs]);
@@ -297,7 +297,8 @@ describe("UniswapAnchoredView", () => {
     for (let i = 0; i < prices.length; i++) {
       const element = prices[i];
       reporter = pairs[element[0]].reporter;
-      await validate(reporter, element[1]);
+      // *100 to conform to 8 decimals
+      const tx = await validate(reporter, (element[1] * 100));
       let updatedPrice = await call(uniswapAnchoredView, "price", [element[0]]);
       expect(updatedPrice).toBe(prices[i][1].toString());
     }
@@ -310,7 +311,8 @@ describe("UniswapAnchoredView", () => {
     for (let i = 0; i < prices.length; i++) {
       const element = prices[i];
       reporter = pairs[element[0]].reporter;
-      const tx = await validate(reporter, element[1]);
+      // *100 to conform to 8 decimals
+      const tx = await validate(reporter, (element[1] * 100));
       const priceUpdatedEvent = decodeEvent(EVENTS.PriceUpdated, tx, Object.keys(tx.events).length-1)
       // All prices were updated
       expect(priceUpdatedEvent.price).toBe(prices[i][1].toString());
