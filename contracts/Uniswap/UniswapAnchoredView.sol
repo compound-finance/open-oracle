@@ -7,16 +7,10 @@ import "./UniswapConfig.sol";
 import "./UniswapLib.sol";
 import "../Ownable.sol";
 import "../Chainlink/AggregatorValidatorInterface.sol";
-import "../Chainlink/AggregatorInterface.sol";
 
 struct Observation {
     uint timestamp;
     uint acc;
-}
-
-struct PriceData {
-    uint248 price;
-    bool failoverActive;
 }
 
 contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Ownable {
@@ -38,7 +32,10 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     uint public immutable anchorPeriod;
 
     /// @notice Official prices by symbol hash
-    mapping(bytes32 => PriceData) public prices;
+    mapping(bytes32 => uint) public prices;
+
+    /// @notice Circuit breaker for using anchor price oracle directly, ignoring reporter
+    mapping(address => bool) public reporterInvalidated;
 
     /// @notice The old observation for each symbolHash
     mapping(bytes32 => Observation) public oldObservations;
@@ -58,11 +55,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     /// @notice The event emitted when the uniswap window changes
     event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
 
-    /// @notice The event emitted when a failover is activated
-    event FailoverActivated(bytes32 symbolHash);
-
-    /// @notice The event emitted when a failover is deactivated
-    event FailoverDeactivated(bytes32 symbolHash);
+    /// @notice The event emitted when reporter is invalidated
+    event ReporterInvalidated(address reporter);
 
     bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
 
@@ -112,21 +106,11 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         return priceInternal(config);
     }
 
-    /**
-     * @notice Return the price of a Token using 6 decimal places, based on its TokenConfig
-     * @param config TokenConfig
-     * @return price - using 6 decimals
-     */
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
-        PriceData memory priceData = prices[config.symbolHash];
-        if (priceData.failoverActive) {
-            uint latestPrice = uint(AggregatorInterface(config.failoverPriceFeed).latestAnswer());
-            return mul(latestPrice, config.failoverMultiplier) / config.baseUnit;
-        }
-        if (config.priceSource == PriceSource.REPORTER) return priceData.price;
+        if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash];
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
-            uint usdPerEth = prices[ethHash].price;
+            uint usdPerEth = prices[ethHash];
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
             return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
         }
@@ -140,8 +124,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      */
     function getUnderlyingPrice(address cToken) external view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
-        // Comptroller needs prices in the format: ${raw price} * 1e(36 - baseUnit)
-        // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6 - baseUnit)
+         // Comptroller needs prices in the format: ${raw price} * 1e(36 - baseUnit)
+         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6 - baseUnit)
         return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
@@ -151,10 +135,10 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     * @param currentAnswer the price
     * @return valid bool
     */
-    function validate(uint256 /* previousRoundId */,
-            int256 /* previousAnswer */,
-            uint256 /* currentRoundId */,
-            int256 currentAnswer) external override returns (bool) {
+    function validate(uint256 previousRoundId,
+            int256 previousAnswer,
+            uint256 currentRoundId,
+            int256 currentAnswer) external override returns (bool valid) {
         
         require(currentAnswer >= 0, "current answer cannot be negative");
         uint256 reporterPrice = uint256(currentAnswer);
@@ -169,10 +153,13 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             anchorPrice = fetchAnchorPrice(config.symbolHash, config, ethPrice);
         }
 
-        if (isWithinAnchor(reporterPrice, anchorPrice)) {
-            require(reporterPrice < 2**248, "Reporter price too big");
-            prices[config.symbolHash].price = uint248(reporterPrice);
+        if (reporterInvalidated[msg.sender]) {
+            prices[config.symbolHash] = anchorPrice;
+            emit PriceUpdated(config.symbolHash, anchorPrice);
+        } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
+            prices[config.symbolHash] = reporterPrice;
             emit PriceUpdated(config.symbolHash, reporterPrice);
+            valid = true;
         } else {
             emit PriceGuarded(config.symbolHash, reporterPrice, anchorPrice);
         }
@@ -267,23 +254,12 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     /**
-     * @notice Activate failover, and fall back to using failover directly.
+     * @notice Invalidate a reporter, and fall back to using anchor directly in all cases
      * @dev Only the owner can call this function
      */
-    function activateFailover(bytes32 symbolHash) external onlyOwner() {
-        require(!prices[symbolHash].failoverActive, "Already activated");
-        prices[symbolHash].failoverActive = true;
-        emit FailoverActivated(symbolHash);
-    }
-
-    /**
-     * @notice Deactivate a previously activated failover
-     * @dev Only the owner can call this function
-     */
-    function deactivateFailover(bytes32 symbolHash) external onlyOwner() {
-        require(prices[symbolHash].failoverActive, "Already deactivated");
-        prices[symbolHash].failoverActive = false;
-        emit FailoverDeactivated(symbolHash);
+    function invalidateReporter(address reporterAddr) external onlyOwner() {
+        reporterInvalidated[reporterAddr] = true;
+        emit ReporterInvalidated(reporterAddr);
     }
 
     /// @dev Overflow proof multiplication
