@@ -112,8 +112,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
-        PriceData memory priceData = prices[config.symbolHash];
-        if (config.priceSource == PriceSource.REPORTER) return priceData.price;
+        if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash].price;
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash].price;
@@ -145,10 +144,10 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             int256 /* previousAnswer */,
             uint256 /* currentRoundId */,
             int256 currentAnswer) external override returns (bool valid) {
-        
-        require(currentAnswer >= 0, "current answer cannot be negative");
-        uint256 reporterPrice = uint256(currentAnswer);
+
+        // This will revert if no configs found for the msg.sender
         TokenConfig memory config = getTokenConfigByReporter(msg.sender);
+        uint256 reportedPrice = convertReportedPrice(config, currentAnswer);
 
         uint ethPrice = fetchEthPrice();
         require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
@@ -164,14 +163,27 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             require(anchorPrice <= 2**248, "Anchor price too large");
             prices[config.symbolHash].price = uint248(anchorPrice);
             emit PriceUpdated(config.symbolHash, anchorPrice);
-        } else if (isWithinAnchor(reporterPrice, anchorPrice)) {
-            require(reporterPrice <= 2**248, "Reported price too large");
-            prices[config.symbolHash].price = uint248(reporterPrice);
-            emit PriceUpdated(config.symbolHash, reporterPrice);
+        } else if (isWithinAnchor(reportedPrice, anchorPrice)) {
+            require(reportedPrice <= 2**248, "Reported price too large");
+            prices[config.symbolHash].price = uint248(reportedPrice);
+            emit PriceUpdated(config.symbolHash, reportedPrice);
             valid = true;
         } else {
-            emit PriceGuarded(config.symbolHash, reporterPrice, anchorPrice);
+            emit PriceGuarded(config.symbolHash, reportedPrice, anchorPrice);
         }
+    }
+
+    /**
+     * @notice Convert the reported price to the 6 decimal format that this view requires
+     * @param config TokenConfig
+     * @param reportedPrice from the reporter
+     * @return convertedPrice uint256
+     */
+    function convertReportedPrice(TokenConfig memory config, int256 reportedPrice) internal pure returns (uint256) {
+        require(reportedPrice >= 0, "Reported price cannot be negative");
+        uint256 unsignedPrice = uint256(reportedPrice);
+        uint256 convertedPrice = mul(unsignedPrice, config.reporterMultiplier) / config.baseUnit;
+        return convertedPrice;
     }
 
 
