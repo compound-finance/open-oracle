@@ -152,11 +152,11 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
 
         PriceData memory priceData = prices[config.symbolHash];
         if (priceData.failoverActive) {
-            require(anchorPrice <= 2**248, "Anchor price too large");
+            require(anchorPrice < 2**248, "Anchor price too large");
             prices[config.symbolHash].price = uint248(anchorPrice);
             emit PriceUpdated(config.symbolHash, anchorPrice);
         } else if (isWithinAnchor(reportedPrice, anchorPrice)) {
-            require(reportedPrice <= 2**248, "Reported price too large");
+            require(reportedPrice < 2**248, "Reported price too large");
             prices[config.symbolHash].price = uint248(reportedPrice);
             emit PriceUpdated(config.symbolHash, reportedPrice);
             valid = true;
@@ -176,7 +176,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         require(priceData.failoverActive, "Failover must be active");
         TokenConfig memory config = getTokenConfigBySymbolHash(symbolHash);
         uint anchorPrice = calculateAnchorPriceFromEthPrice(config);
-        require(anchorPrice <= 2**248, "Anchor price too large");
+        require(anchorPrice < 2**248, "Anchor price too large");
         prices[config.symbolHash].price = uint248(anchorPrice);
         emit PriceUpdated(config.symbolHash, anchorPrice);
     }
