@@ -174,7 +174,7 @@ describe('UniswapAnchoredView', () => {
       expect(priceGuardedLog.reporter).numEquals(convertedPrice);
       expect(priceGuardedLog.anchor).numEquals(anchorPrice);
       const response = await call(uniswapAnchoredView, 'prices', [keccak256('ETH')]);
-      expect(response.price).numEquals(0);
+      expect(response.price).numEquals(1);
     });
 
     it('should not update view if ERC20 price is below anchor bounds', async () => {
@@ -193,7 +193,7 @@ describe('UniswapAnchoredView', () => {
       expect(priceGuardedLog.reporter).numEquals(convertedPrice);
       expect(priceGuardedLog.anchor).numEquals(anchorPrice);
       const response = await call(uniswapAnchoredView, 'prices', [keccak256('REP')])
-      expect(response.price).numEquals(0);
+      expect(response.price).numEquals(1);
     });
 
     it('should not update view if ETH price is above anchor bounds', async () => {
@@ -212,7 +212,7 @@ describe('UniswapAnchoredView', () => {
       expect(priceGuardedLog.reporter).numEquals(convertedPrice);
       expect(priceGuardedLog.anchor).numEquals(anchorPrice);
       const response = await call(uniswapAnchoredView, 'prices', [keccak256('ETH')])
-      expect(response.price).numEquals(0);
+      expect(response.price).numEquals(1);
     });
 
     it('should not update view if ERC20 price is above anchor bounds', async () => {
@@ -231,7 +231,7 @@ describe('UniswapAnchoredView', () => {
       expect(priceGuardedLog.reporter).numEquals(convertedPrice);
       expect(priceGuardedLog.anchor).numEquals(anchorPrice);
       const response = await call(uniswapAnchoredView, 'prices', [keccak256('REP')])
-      expect(response.price).numEquals(0);
+      expect(response.price).numEquals(1);
     });
 
     it('should revert reporter is not associated with a token config', async () => {
