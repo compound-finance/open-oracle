@@ -49,7 +49,7 @@ describe('UniswapConfig', () => {
   it('returns configs exactly as specified', async () => {
     const symbols = Array(25).fill(0).map((_, i) => String.fromCharCode('a'.charCodeAt(0) + i));
     const configs = symbols.map((symbol, i) => {
-      return {cToken: address(i + 1), underlying: address(i), symbolHash: keccak256(symbol), baseUnit: uint(1e6), priceSource: 0, fixedPrice: 1, uniswapMarket: address(i + 50), reporter: address(i + 51), reporterMultiplier: uint(1e16), isUniswapReversed: i % 2 == 0}
+      return {cToken: address(i + 1), underlying: address(i), symbolHash: keccak256(symbol), baseUnit: uint(i + 49), priceSource: 0, fixedPrice: 1, uniswapMarket: address(i + 50), reporter: address(i + 51), reporterMultiplier: uint(i + 52), isUniswapReversed: i % 2 == 0}
     });
     const contract = await deploy('UniswapConfig', [configs]);
 
@@ -96,12 +96,12 @@ describe('UniswapConfig', () => {
         cToken: address(i),
         underlying: address(i + 1),
         symbolHash: keccak256(symbol),
-        baseUnit: uint(1e6),
+        baseUnit: uint(i + 49),
         priceSource: 0,
         fixedPrice: 1,
         uniswapMarket: address(i + 50),
         reporter: address(i + 51),
-        reporterMultiplier: uint(1e16),
+        reporterMultiplier: uint(i + 52),
         isUniswapReversed: i % 2 == 0}
     });
     const contract = await deploy('UniswapConfig', [configs]);

@@ -88,6 +88,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             address uniswapMarket = config.uniswapMarket;
             if (config.priceSource == PriceSource.REPORTER) {
                 require(uniswapMarket != address(0), "reported prices must have an anchor");
+                require(config.reporter != address(0), "reported price much have a reporter");
                 bytes32 symbolHash = config.symbolHash;
                 prices[symbolHash].price = 1;
                 uint cumulativePrice = currentCumulativePrice(config);
