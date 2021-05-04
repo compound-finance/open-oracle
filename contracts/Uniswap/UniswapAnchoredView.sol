@@ -68,6 +68,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     /**
      * @notice Construct a uniswap anchored view for a set of token configurations
      * @dev Note that to avoid immature TWAPs, the system must run for at least a single anchorPeriod before using.
+     *      NOTE: Reported prices are set to 1 during construction. We assume that this contract will not be voted in by
+     *      governance until prices have been updated through `validate` for each TokenConfig.
      * @param anchorToleranceMantissa_ The percentage tolerance that the reporter may deviate from the uniswap anchor
      * @param anchorPeriod_ The minimum amount of time required for the old uniswap price accumulator to be replaced
      * @param configs The static token configurations which define what prices are supported and how
@@ -147,7 +149,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             uint256 /* currentRoundId */,
             int256 currentAnswer) external override returns (bool valid) {
 
-        // This will revert if no configs found for the msg.sender
+        // NOTE: We don't do any access control on msg.sender here. The access control is done in getTokenConfigByReporter,
+        // which will REVERT if an unauthorized address is passed.
         TokenConfig memory config = getTokenConfigByReporter(msg.sender);
         uint256 reportedPrice = convertReportedPrice(config, currentAnswer);
         uint256 anchorPrice = calculateAnchorPriceFromEthPrice(config);
