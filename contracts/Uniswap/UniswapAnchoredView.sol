@@ -117,10 +117,12 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
 
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
         if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash].price;
+        // config.fixedPrice holds a fixed-point number with scaling factor 10**6 for FIXED_USD
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash].price;
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
+            // config.fixedPrice holds a fixed-point number with scaling factor 10**18 for FIXED_ETH
             return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
         }
     }
@@ -194,7 +196,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @return anchorPrice uint
      */
     function calculateAnchorPriceFromEthPrice(TokenConfig memory config) internal returns (uint anchorPrice) {
-        uint ethPrice = fetchEthPrice();
+        uint ethPrice = fetchEthAnchorPrice();
         require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
         if (config.symbolHash == ethHash) {
             anchorPrice = ethPrice;
@@ -241,7 +243,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @dev Fetches the current eth/usd price from uniswap, with 6 decimals of precision.
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
-    function fetchEthPrice() internal returns (uint) {
+    function fetchEthAnchorPrice() internal returns (uint) {
         return fetchAnchorPrice(ethHash, getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
@@ -312,6 +314,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         require(!prices[symbolHash].failoverActive, "Already activated");
         prices[symbolHash].failoverActive = true;
         emit FailoverActivated(symbolHash);
+        pokeFailedOverPrice(symbolHash);
     }
 
     /**
