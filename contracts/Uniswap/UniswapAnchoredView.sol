@@ -138,7 +138,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
          // Comptroller needs prices in the format: ${raw price} * 1e36 / baseUnit
          // The baseUnit of an asset is the amount of the smallest denomination of that asset per whole.
          // For example, the baseUnit of ETH is 1e18.
-         // Since the prices in this view have 6 decimals, we must scale them by 1e36 - 1e6 - baseUnit
+         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6)/baseUnit
         return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
