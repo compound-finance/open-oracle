@@ -1,0 +1,14 @@
+[
+  {
+    "cToken": "0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643",
+    "underlying": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    "symbolHash": "0xa5e92f3efb6826155f1f728e162af9d7cda33a574a1153b58f03ea01cc37e568",
+    "baseUnit": "1000000000000000000",
+    "priceSource": "2",
+    "fixedPrice": "2",
+    "uniswapMarket": "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
+    "reporter": "0xb2419f587f497CDd64437f1B367E2e80889631ea",
+    "reporterMultiplier": "10000000000000000",
+    "isUniswapReversed": false
+  }
+]
