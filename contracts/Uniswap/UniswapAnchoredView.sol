@@ -10,7 +10,7 @@ import "../Chainlink/AggregatorValidatorInterface.sol";
 
 struct Observation {
     uint timestamp;
-    uint acc;
+    int24 acc;
 }
 
 struct PriceData {
@@ -19,8 +19,6 @@ struct PriceData {
 }
 
 contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Ownable {
-    using FixedPoint for *;
-
     /// @notice The number of wei in 1 ETH
     uint public constant ethBaseUnit = 1e18;
 
@@ -55,21 +53,16 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     event AnchorPriceUpdated(bytes32 indexed symbolHash, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
 
     /// @notice The event emitted when the uniswap window changes
-    event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, uint oldPrice, uint newPrice);
+    event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, int24 oldPrice, int24 newPrice);
 
     /// @notice The event emitted when failover is activated
-    event FailoverActivated(bytes32 indexed symbolHash);
-
-    /// @notice The event emitted when failover is deactivated
-    event FailoverDeactivated(bytes32 indexed symbolHash);
+    event FailoverUpdated(bytes32 indexed symbolHash, bool status);
 
     bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
 
     /**
      * @notice Construct a uniswap anchored view for a set of token configurations
      * @dev Note that to avoid immature TWAPs, the system must run for at least a single anchorPeriod before using.
-     *      NOTE: Reported prices are set to 1 during construction. We assume that this contract will not be voted in by
-     *      governance until prices have been updated through `validate` for each TokenConfig.
      * @param anchorToleranceMantissa_ The percentage tolerance that the reporter may deviate from the uniswap anchor
      * @param anchorPeriod_ The minimum amount of time required for the old uniswap price accumulator to be replaced
      * @param configs The static token configurations which define what prices are supported and how
@@ -90,15 +83,15 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             address uniswapMarket = config.uniswapMarket;
             if (config.priceSource == PriceSource.REPORTER) {
                 require(uniswapMarket != address(0), "reported prices must have an anchor");
-                require(config.reporter != address(0), "reported price must have a reporter");
+                require(config.reporter != address(0), "reported price much have a reporter");
                 bytes32 symbolHash = config.symbolHash;
                 prices[symbolHash].price = 1;
-                uint cumulativePrice = currentCumulativePrice(config);
+                int24 tick = currentTick(config);
                 oldObservations[symbolHash].timestamp = block.timestamp;
                 newObservations[symbolHash].timestamp = block.timestamp;
-                oldObservations[symbolHash].acc = cumulativePrice;
-                newObservations[symbolHash].acc = cumulativePrice;
-                emit UniswapWindowUpdated(symbolHash, block.timestamp, block.timestamp, cumulativePrice, cumulativePrice);
+                oldObservations[symbolHash].acc = tick;
+                newObservations[symbolHash].acc = tick;
+                emit UniswapWindowUpdated(symbolHash, block.timestamp, block.timestamp, tick, tick);
             } else {
                 require(uniswapMarket == address(0), "only reported prices utilize an anchor");
             }
@@ -117,12 +110,10 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
 
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
         if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash].price;
-        // config.fixedPrice holds a fixed-point number with scaling factor 10**6 for FIXED_USD
         if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash].price;
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-            // config.fixedPrice holds a fixed-point number with scaling factor 10**18 for FIXED_ETH
             return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
         }
     }
@@ -135,16 +126,14 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      */
     function getUnderlyingPrice(address cToken) external view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
-         // Comptroller needs prices in the format: ${raw price} * 1e36 / baseUnit
-         // The baseUnit of an asset is the amount of the smallest denomination of that asset per whole.
-         // For example, the baseUnit of ETH is 1e18.
-         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6)/baseUnit
+         // Comptroller needs prices in the format: ${raw price} * 1e(36 - baseUnit)
+         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6 - baseUnit)
         return mul(1e30, priceInternal(config)) / config.baseUnit;
     }
 
     /**
      * @notice This is called by the reporter whenever a new price is posted on-chain
-     * @dev called by AccessControlledOffchainAggregator
+     * @dev called by AccessControlledOffChainAggregator
      * @param currentAnswer the price
      * @return valid bool
      */
@@ -153,8 +142,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             uint256 /* currentRoundId */,
             int256 currentAnswer) external override returns (bool valid) {
 
-        // NOTE: We don't do any access control on msg.sender here. The access control is done in getTokenConfigByReporter,
-        // which will REVERT if an unauthorized address is passed.
+        // This will revert if no configs found for the msg.sender
         TokenConfig memory config = getTokenConfigByReporter(msg.sender);
         uint256 reportedPrice = convertReportedPrice(config, currentAnswer);
         uint256 anchorPrice = calculateAnchorPriceFromEthPrice(config);
@@ -196,7 +184,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @return anchorPrice uint
      */
     function calculateAnchorPriceFromEthPrice(TokenConfig memory config) internal returns (uint anchorPrice) {
-        uint ethPrice = fetchEthAnchorPrice();
+        uint ethPrice = fetchEthPrice();
         require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
         if (config.symbolHash == ethHash) {
             anchorPrice = ethPrice;
@@ -230,12 +218,12 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     /**
      * @dev Fetches the current token/eth price accumulator from uniswap.
      */
-    function currentCumulativePrice(TokenConfig memory config) internal view returns (uint) {
-        (uint cumulativePrice0, uint cumulativePrice1,) = UniswapV2OracleLibrary.currentCumulativePrices(config.uniswapMarket);
+    function currentTick(TokenConfig memory config) internal view returns (int24) {
+        Slot0 memory slot0 = IUniswapV3Pool(config.uniswapMarket).slot0();
         if (config.isUniswapReversed) {
-            return cumulativePrice1;
+            return (-int24(slot0.tick));
         } else {
-            return cumulativePrice0;
+            return slot0.tick;
         }
     }
 
@@ -243,7 +231,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @dev Fetches the current eth/usd price from uniswap, with 6 decimals of precision.
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
-    function fetchEthAnchorPrice() internal returns (uint) {
+    function fetchEthPrice() internal returns (uint) {
         return fetchAnchorPrice(ethHash, getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
@@ -252,31 +240,23 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
     function fetchAnchorPrice(bytes32 symbolHash, TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
-        (uint nowCumulativePrice, uint oldCumulativePrice, uint oldTimestamp) = pokeWindowValues(config);
-
-        // This should be impossible, but better safe than sorry
-        require(block.timestamp > oldTimestamp, "now must come after before");
-        uint timeElapsed = block.timestamp - oldTimestamp;
+        (int24 tick, uint oldTimestamp) = pokeWindowValues(config);
 
         // Calculate uniswap time-weighted average price
         // Underflow is a property of the accumulators: https://uniswap.org/audit.html#orgc9b3190
-        FixedPoint.uq112x112 memory priceAverage = FixedPoint.uq112x112(uint224((nowCumulativePrice - oldCumulativePrice) / timeElapsed));
-        uint rawUniswapPriceMantissa = priceAverage.decode112with18();
+        uint256 sqrtPriceX96 = mul(TickMath.getSqrtRatioAtTick(tick), ethBaseUnit) / (2**96);
+        uint rawUniswapPriceMantissa = mul(sqrtPriceX96, sqrtPriceX96) / ethBaseUnit;
         uint unscaledPriceMantissa = mul(rawUniswapPriceMantissa, conversionFactor);
         uint anchorPrice;
 
         // Adjust rawUniswapPrice according to the units of the non-ETH asset
         // In the case of ETH, we would have to scale by 1e6 / USDC_UNITS, but since baseUnit2 is 1e6 (USDC), it cancels
-
-        // In the case of non-ETH tokens
-        // a. pokeWindowValues already handled uniswap reversed cases, so priceAverage will always be Token/ETH TWAP price.
-        // b. conversionFactor = ETH price * 1e6
-        // unscaledPriceMantissa = priceAverage(token/ETH TWAP price) * expScale * conversionFactor
-        // so ->
-        // anchorPrice = priceAverage * tokenBaseUnit / ethBaseUnit * ETH_price * 1e6
-        //             = priceAverage * conversionFactor * tokenBaseUnit / ethBaseUnit
-        //             = unscaledPriceMantissa / expScale * tokenBaseUnit / ethBaseUnit
-        anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
+        if (config.isUniswapReversed) {
+            // unscaledPriceMantissa * ethBaseUnit / config.baseUnit / expScale, but we simplify bc ethBaseUnit == expScale
+            anchorPrice = (unscaledPriceMantissa / config.baseUnit) / (ethBaseUnit / config.baseUnit);
+        } else {
+            anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
+        }
 
         emit AnchorPriceUpdated(symbolHash, anchorPrice, oldTimestamp, block.timestamp);
 
@@ -287,9 +267,9 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @dev Get time-weighted average prices for a token at the current timestamp.
      *  Update new and old observations of lagging window if period elapsed.
      */
-    function pokeWindowValues(TokenConfig memory config) internal returns (uint, uint, uint) {
+    function pokeWindowValues(TokenConfig memory config) internal returns (int24, uint) {
         bytes32 symbolHash = config.symbolHash;
-        uint cumulativePrice = currentCumulativePrice(config);
+        int24 tick = currentTick(config);
 
         Observation memory newObservation = newObservations[symbolHash];
 
@@ -300,31 +280,19 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             oldObservations[symbolHash].acc = newObservation.acc;
 
             newObservations[symbolHash].timestamp = block.timestamp;
-            newObservations[symbolHash].acc = cumulativePrice;
-            emit UniswapWindowUpdated(config.symbolHash, newObservation.timestamp, block.timestamp, newObservation.acc, cumulativePrice);
+            newObservations[symbolHash].acc = tick;
+            emit UniswapWindowUpdated(config.symbolHash, newObservation.timestamp, block.timestamp, newObservation.acc, tick);
         }
-        return (cumulativePrice, oldObservations[symbolHash].acc, oldObservations[symbolHash].timestamp);
+        return (tick, oldObservations[symbolHash].timestamp);
     }
 
     /**
-     * @notice Activate failover, and fall back to using failover directly.
+     * @notice Activate/Deactivate failover, and fall back to using failover directly.
      * @dev Only the owner can call this function
      */
-    function activateFailover(bytes32 symbolHash) external onlyOwner() {
-        require(!prices[symbolHash].failoverActive, "Already activated");
-        prices[symbolHash].failoverActive = true;
-        emit FailoverActivated(symbolHash);
-        pokeFailedOverPrice(symbolHash);
-    }
-
-    /**
-     * @notice Deactivate a previously activated failover
-     * @dev Only the owner can call this function
-     */
-    function deactivateFailover(bytes32 symbolHash) external onlyOwner() {
-        require(prices[symbolHash].failoverActive, "Already deactivated");
-        prices[symbolHash].failoverActive = false;
-        emit FailoverDeactivated(symbolHash);
+    function updateFailover(bytes32 symbolHash, bool status) external onlyOwner() {
+        require(prices[symbolHash].failoverActive != status, "Already updated");
+        prices[symbolHash].failoverActive = status;
     }
 
     /// @dev Overflow proof multiplication

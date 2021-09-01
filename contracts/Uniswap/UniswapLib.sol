@@ -1,68 +1,98 @@
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.6.12;
+pragma experimental ABIEncoderV2;
 
-// Based on code from https://github.com/Uniswap/uniswap-v2-periphery
+library TickMath {
+    /// @dev The maximum tick that may be passed to #getSqrtRatioAtTick computed from log base 1.0001 of 2**128
+    int24 internal constant MAX_TICK = 887272;
 
-// a library for handling binary fixed point numbers (https://en.wikipedia.org/wiki/Q_(number_format))
-library FixedPoint {
-    // range: [0, 2**112 - 1]
-    // resolution: 1 / 2**112
-    struct uq112x112 {
-        uint224 _x;
-    }
+    /// @notice Calculates sqrt(1.0001^tick) * 2^96
+    /// @dev Throws if |tick| > max tick
+    /// @param tick The input tick for the above formula
+    /// @return sqrtPriceX96 A Fixed point Q64.96 number representing the sqrt of the ratio of the two assets (token1/token0)
+    /// at the given tick
+    function getSqrtRatioAtTick(int24 tick)
+        internal
+        pure
+        returns (uint160 sqrtPriceX96)
+    {
+        uint256 absTick = tick < 0
+            ? uint256(-int256(tick))
+            : uint256(int256(tick));
+        require(absTick <= uint256(MAX_TICK), "T");
 
-    // returns a uq112x112 which represents the ratio of the numerator to the denominator
-    // equivalent to encode(numerator).div(denominator)
-    function fraction(uint112 numerator, uint112 denominator) internal pure returns (uq112x112 memory) {
-        require(denominator > 0, "FixedPoint: DIV_BY_ZERO");
-        return uq112x112((uint224(numerator) << 112) / denominator);
-    }
+        uint256 ratio = absTick & 0x1 != 0
+            ? 0xfffcb933bd6fad37aa2d162d1a594001
+            : 0x100000000000000000000000000000000;
+        if (absTick & 0x2 != 0)
+            ratio = (ratio * 0xfff97272373d413259a46990580e213a) >> 128;
+        if (absTick & 0x4 != 0)
+            ratio = (ratio * 0xfff2e50f5f656932ef12357cf3c7fdcc) >> 128;
+        if (absTick & 0x8 != 0)
+            ratio = (ratio * 0xffe5caca7e10e4e61c3624eaa0941cd0) >> 128;
+        if (absTick & 0x10 != 0)
+            ratio = (ratio * 0xffcb9843d60f6159c9db58835c926644) >> 128;
+        if (absTick & 0x20 != 0)
+            ratio = (ratio * 0xff973b41fa98c081472e6896dfb254c0) >> 128;
+        if (absTick & 0x40 != 0)
+            ratio = (ratio * 0xff2ea16466c96a3843ec78b326b52861) >> 128;
+        if (absTick & 0x80 != 0)
+            ratio = (ratio * 0xfe5dee046a99a2a811c461f1969c3053) >> 128;
+        if (absTick & 0x100 != 0)
+            ratio = (ratio * 0xfcbe86c7900a88aedcffc83b479aa3a4) >> 128;
+        if (absTick & 0x200 != 0)
+            ratio = (ratio * 0xf987a7253ac413176f2b074cf7815e54) >> 128;
+        if (absTick & 0x400 != 0)
+            ratio = (ratio * 0xf3392b0822b70005940c7a398e4b70f3) >> 128;
+        if (absTick & 0x800 != 0)
+            ratio = (ratio * 0xe7159475a2c29b7443b29c7fa6e889d9) >> 128;
+        if (absTick & 0x1000 != 0)
+            ratio = (ratio * 0xd097f3bdfd2022b8845ad8f792aa5825) >> 128;
+        if (absTick & 0x2000 != 0)
+            ratio = (ratio * 0xa9f746462d870fdf8a65dc1f90e061e5) >> 128;
+        if (absTick & 0x4000 != 0)
+            ratio = (ratio * 0x70d869a156d2a1b890bb3df62baf32f7) >> 128;
+        if (absTick & 0x8000 != 0)
+            ratio = (ratio * 0x31be135f97d08fd981231505542fcfa6) >> 128;
+        if (absTick & 0x10000 != 0)
+            ratio = (ratio * 0x9aa508b5b7a84e1c677de54f3e99bc9) >> 128;
+        if (absTick & 0x20000 != 0)
+            ratio = (ratio * 0x5d6af8dedb81196699c329225ee604) >> 128;
+        if (absTick & 0x40000 != 0)
+            ratio = (ratio * 0x2216e584f5fa1ea926041bedfe98) >> 128;
+        if (absTick & 0x80000 != 0)
+            ratio = (ratio * 0x48a170391f7dc42444e8fa2) >> 128;
 
-    // decode a uq112x112 into a uint with 18 decimals of precision
-    function decode112with18(uq112x112 memory self) internal pure returns (uint) {
-        // we only have 256 - 224 = 32 bits to spare, so scaling up by ~60 bits is dangerous
-        // instead, get close to:
-        //  (x * 1e18) >> 112
-        // without risk of overflowing, e.g.:
-        //  (x) / 2 ** (112 - lg(1e18))
-        return uint(self._x) / 5192296858534827;
+        if (tick > 0) ratio = type(uint256).max / ratio;
+
+        // this divides by 1<<32 rounding up to go from a Q128.128 to a Q128.96.
+        // we then downcast because we know the result always fits within 160 bits due to our tick input constraint
+        // we round up in the division so getTickAtSqrtRatio of the output price is always consistent
+        sqrtPriceX96 = uint160(
+            (ratio >> 32) + (ratio % (1 << 32) == 0 ? 0 : 1)
+        );
     }
 }
 
-// library with helper methods for oracles that are concerned with computing average prices
-library UniswapV2OracleLibrary {
-    using FixedPoint for *;
-
-    // helper function that returns the current block timestamp within the range of uint32, i.e. [0, 2**32 - 1]
-    function currentBlockTimestamp() internal view returns (uint32) {
-        return uint32(block.timestamp % 2 ** 32);
-    }
-
-    // produces the cumulative price using counterfactuals to save gas and avoid a call to sync.
-    function currentCumulativePrices(
-        address pair
-    ) internal view returns (uint price0Cumulative, uint price1Cumulative, uint32 blockTimestamp) {
-        blockTimestamp = currentBlockTimestamp();
-        price0Cumulative = IUniswapV2Pair(pair).price0CumulativeLast();
-        price1Cumulative = IUniswapV2Pair(pair).price1CumulativeLast();
-
-        // if time has elapsed since the last update on the pair, mock the accumulated price values
-        (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast) = IUniswapV2Pair(pair).getReserves();
-        if (blockTimestampLast != blockTimestamp) {
-            // subtraction overflow is desired
-            uint32 timeElapsed = blockTimestamp - blockTimestampLast;
-            // addition overflow is desired
-            // counterfactual
-            price0Cumulative += uint(FixedPoint.fraction(reserve1, reserve0)._x) * timeElapsed;
-            // counterfactual
-            price1Cumulative += uint(FixedPoint.fraction(reserve0, reserve1)._x) * timeElapsed;
-        }
-    }
+struct Slot0 {
+    // the current price
+    uint160 sqrtPriceX96;
+    // the current tick
+    int24 tick;
+    // the most-recently updated index of the observations array
+    uint16 observationIndex;
+    // the current maximum number of observations that are being stored
+    uint16 observationCardinality;
+    // the next maximum number of observations to store, triggered in observations.write
+    uint16 observationCardinalityNext;
+    // the current protocol fee as a percentage of the swap fee taken on withdrawal
+    // represented as an integer denominator (1/x)%
+    uint8 feeProtocol;
+    // whether the pool is locked
+    bool unlocked;
 }
 
-interface IUniswapV2Pair {
-    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
-    function price0CumulativeLast() external view returns (uint);
-    function price1CumulativeLast() external view returns (uint);
+interface IUniswapV3Pool {
+    function slot0() external view returns (Slot0 memory);
 }
