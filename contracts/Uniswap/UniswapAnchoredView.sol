@@ -37,23 +37,11 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     /// @notice Official prices by symbol hash
     mapping(bytes32 => PriceData) public prices;
 
-    /// @notice The old observation for each symbolHash
-    mapping(bytes32 => Observation) public oldObservations;
-
-    /// @notice The new observation for each symbolHash
-    mapping(bytes32 => Observation) public newObservations;
-
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
     event PriceGuarded(bytes32 indexed symbolHash, uint reporter, uint anchor);
 
     /// @notice The event emitted when the stored price is updated
     event PriceUpdated(bytes32 indexed symbolHash, uint price);
-
-    /// @notice The event emitted when anchor price is updated
-    event AnchorPriceUpdated(bytes32 indexed symbolHash, uint anchorPrice, uint oldTimestamp, uint newTimestamp);
-
-    /// @notice The event emitted when the uniswap window changes
-    event UniswapWindowUpdated(bytes32 indexed symbolHash, uint oldTimestamp, uint newTimestamp, int24 oldPrice, int24 newPrice);
 
     /// @notice The event emitted when failover is activated
     event FailoverUpdated(bytes32 indexed symbolHash, bool status);
@@ -86,12 +74,6 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
                 require(config.reporter != address(0), "reported price much have a reporter");
                 bytes32 symbolHash = config.symbolHash;
                 prices[symbolHash].price = 1;
-                int24 tick = currentTick(config);
-                oldObservations[symbolHash].timestamp = block.timestamp;
-                newObservations[symbolHash].timestamp = block.timestamp;
-                oldObservations[symbolHash].acc = tick;
-                newObservations[symbolHash].acc = tick;
-                emit UniswapWindowUpdated(symbolHash, block.timestamp, block.timestamp, tick, tick);
             } else {
                 require(uniswapMarket == address(0), "only reported prices utilize an anchor");
             }
@@ -183,13 +165,13 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @param config TokenConfig
      * @return anchorPrice uint
      */
-    function calculateAnchorPriceFromEthPrice(TokenConfig memory config) internal returns (uint anchorPrice) {
+    function calculateAnchorPriceFromEthPrice(TokenConfig memory config) internal view returns (uint anchorPrice) {
         uint ethPrice = fetchEthPrice();
         require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
         if (config.symbolHash == ethHash) {
             anchorPrice = ethPrice;
         } else {
-            anchorPrice = fetchAnchorPrice(config.symbolHash, config, ethPrice);
+            anchorPrice = fetchAnchorPrice(config, ethPrice);
         }
     }
 
@@ -216,36 +198,37 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     /**
-     * @dev Fetches the current token/eth price accumulator from uniswap.
+     * @dev Fetches the latest TWAP from the UniV3 pool tick, over the last anchor period.
      */
-    function currentTick(TokenConfig memory config) internal view returns (int24) {
-        Slot0 memory slot0 = IUniswapV3Pool(config.uniswapMarket).slot0();
-        if (config.isUniswapReversed) {
-            return (-int24(slot0.tick));
-        } else {
-            return slot0.tick;
-        }
+    function getUniswapTwapX96(TokenConfig memory config) internal view returns (uint256) {
+        uint32 anchorPeriod_ = uint32(anchorPeriod); // overflow is expected
+        uint32[] memory secondsAgos = new uint32[](2);
+        secondsAgos[0] = anchorPeriod_;
+        secondsAgos[1] = 0;
+        (int56[] memory tickCumulatives, ) = IUniswapV3Pool(config.uniswapMarket).observe(secondsAgos);
+
+        int24 timeWeightedAverageTick = int24((tickCumulatives[1] - tickCumulatives[0]) / anchorPeriod_);
+        uint160 sqrtPriceX96 = TickMath.getSqrtRatioAtTick(timeWeightedAverageTick);
+        uint256 priceX96 = FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
+        return priceX96;
     }
 
     /**
      * @dev Fetches the current eth/usd price from uniswap, with 6 decimals of precision.
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
-    function fetchEthPrice() internal returns (uint) {
-        return fetchAnchorPrice(ethHash, getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
+    function fetchEthPrice() internal view returns (uint) {
+        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
     }
 
     /**
      * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
      * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
-    function fetchAnchorPrice(bytes32 symbolHash, TokenConfig memory config, uint conversionFactor) internal virtual returns (uint) {
-        (int24 tick, uint oldTimestamp) = pokeWindowValues(config);
+    function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual view returns (uint) {
+        uint256 twapX96 = getUniswapTwapX96(config);
 
-        // Calculate uniswap time-weighted average price
-        // Underflow is a property of the accumulators: https://uniswap.org/audit.html#orgc9b3190
-        uint256 sqrtPriceX96 = mul(TickMath.getSqrtRatioAtTick(tick), ethBaseUnit) / (2**96);
-        uint rawUniswapPriceMantissa = mul(sqrtPriceX96, sqrtPriceX96) / ethBaseUnit;
+        uint rawUniswapPriceMantissa = mul(twapX96, ethBaseUnit) / (2**96);
         uint unscaledPriceMantissa = mul(rawUniswapPriceMantissa, conversionFactor);
         uint anchorPrice;
 
@@ -258,32 +241,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
         }
 
-        emit AnchorPriceUpdated(symbolHash, anchorPrice, oldTimestamp, block.timestamp);
-
         return anchorPrice;
-    }
-
-    /**
-     * @dev Get time-weighted average prices for a token at the current timestamp.
-     *  Update new and old observations of lagging window if period elapsed.
-     */
-    function pokeWindowValues(TokenConfig memory config) internal returns (int24, uint) {
-        bytes32 symbolHash = config.symbolHash;
-        int24 tick = currentTick(config);
-
-        Observation memory newObservation = newObservations[symbolHash];
-
-        // Update new and old observations if elapsed time is greater than or equal to anchor period
-        uint timeElapsed = block.timestamp - newObservation.timestamp;
-        if (timeElapsed >= anchorPeriod) {
-            oldObservations[symbolHash].timestamp = newObservation.timestamp;
-            oldObservations[symbolHash].acc = newObservation.acc;
-
-            newObservations[symbolHash].timestamp = block.timestamp;
-            newObservations[symbolHash].acc = tick;
-            emit UniswapWindowUpdated(config.symbolHash, newObservation.timestamp, block.timestamp, newObservation.acc, tick);
-        }
-        return (tick, oldObservations[symbolHash].timestamp);
     }
 
     /**

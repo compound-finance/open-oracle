@@ -2,7 +2,11 @@
 
 pragma solidity ^0.6.12;
 
-contract MockUniswapTokenPair {
+import "../../contracts/Uniswap/UniswapLib.sol";
+
+// Adapted from: https://github.com/Uniswap/uniswap-v3-core/blob/main/contracts/UniswapV3Pool.sol
+
+contract MockUniswapTokenPair is IUniswapV3Pool {
     uint112 public reserve0;
     uint112 public reserve1;
     uint32 public blockTimestampLast;
@@ -50,5 +54,19 @@ contract MockUniswapTokenPair {
         } else {
           return (uint224(reserve1) << 112) / reserve0;
         }
+    }
+
+    function observe(uint32[] calldata secondsAgos)
+        external
+        override
+        view
+        returns (
+            int56[] memory tickCumulatives,
+            uint160[] memory secondsPerLiquidityCumulativeX128s
+        ) {
+        // TODO: Mock these if necessary
+        secondsAgos;
+        tickCumulatives = new int56[](0);
+        secondsPerLiquidityCumulativeX128s = new uint160[](0);
     }
 }

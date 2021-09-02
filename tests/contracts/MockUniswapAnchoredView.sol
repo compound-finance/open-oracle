@@ -17,8 +17,7 @@ contract MockUniswapAnchoredView is UniswapAnchoredView {
         anchorPrices[keccak256(abi.encodePacked(symbol))] = price;
     }
 
-    function fetchAnchorPrice(bytes32 _symbolHash, TokenConfig memory config, uint _conversionFactor) internal override returns (uint) {
-        _symbolHash; // Shh
+    function fetchAnchorPrice(TokenConfig memory config, uint _conversionFactor) internal override view returns (uint) {
         _conversionFactor; // Shh
         return anchorPrices[config.symbolHash];
     }
