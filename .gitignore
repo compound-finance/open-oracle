@@ -11,3 +11,10 @@ yarn-error.log
 junit.xml
 coverage/*
 .saddle_history
+
+# Hardhat
+cache
+artifacts
+
+# Typechain generated types
+types

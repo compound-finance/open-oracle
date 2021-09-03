@@ -13,16 +13,33 @@
     "yargs": "^15.0.2"
   },
   "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-etherscan": "^2.1.6",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@typechain/ethers-v5": "^7.0.1",
+    "@typechain/hardhat": "^2.3.0",
+    "@types/chai": "^4.2.21",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.7.10",
+    "chai": "^4.3.4",
+    "dotenv": "^10.0.0",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.4.6",
+    "hardhat": "^2.6.2",
     "istanbul": "^0.4.5",
     "jest": "^24.9.0",
     "jest-cli": "^24.9.0",
-    "jest-junit": "^10.0.0"
+    "jest-junit": "^10.0.0",
+    "prettier": "^2.3.2",
+    "ts-node": "^10.2.1",
+    "typechain": "^5.1.2",
+    "typescript": "^4.4.2"
   },
   "scripts": {
-    "test": "script/test",
+    "test": "yarn hardhat test",
     "coverage": "script/coverage",
     "console": "npx -n --experimental-repl-await saddle console",
-    "compile": "npx saddle compile",
+    "compile": "yarn hardhat compile",
     "deploy": "npx saddle deploy"
   },
   "resolutions": {
