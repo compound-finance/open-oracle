@@ -200,7 +200,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     /**
      * @dev Fetches the latest TWAP from the UniV3 pool tick, over the last anchor period.
      */
-    function getUniswapTwapX96(TokenConfig memory config) internal view returns (uint256) {
+    function getUniswapTwap(TokenConfig memory config) internal view returns (uint256) {
         uint32 anchorPeriod_ = uint32(anchorPeriod); // overflow is expected
         uint32[] memory secondsAgos = new uint32[](2);
         secondsAgos[0] = anchorPeriod_;
@@ -209,8 +209,24 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
 
         int24 timeWeightedAverageTick = int24((tickCumulatives[1] - tickCumulatives[0]) / anchorPeriod_);
         uint160 sqrtPriceX96 = TickMath.getSqrtRatioAtTick(timeWeightedAverageTick);
-        uint256 priceX96 = FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
-        return priceX96;
+        // Squaring the result also squares the Q96 scalar (2**96),
+        // so after this mulDiv, the resulting TWAP is still in Q96 fixed precision.
+        uint256 twapX96 = FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
+
+        uint256 twap;
+        if (config.isUniswapReversed) {
+            // In this case, we want the price of token1 relative to token0 instead,
+            // so calculate the inverse of the TWAP with a common precision (expScale).
+            // e.g. We want the ETH/USDC price but the actual pool is USDC/ETH.
+            // The TWAP is also down-scaled from Q96 in this step.
+            // -> twap = expScale / (twapX96 / (2**96))
+            twap = mul(expScale, 2**96) / twapX96;
+        } else {
+            // Scale up to a common precision (expScale), then down-scale from Q96.
+            twap = mul(expScale, twapX96) / (2**96);
+        }
+
+        return twap;
     }
 
     /**
@@ -226,20 +242,11 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
     function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual view returns (uint) {
-        uint256 twapX96 = getUniswapTwapX96(config);
+        uint256 twap = getUniswapTwap(config);
 
-        uint rawUniswapPriceMantissa = mul(twapX96, ethBaseUnit) / (2**96);
+        uint rawUniswapPriceMantissa = twap;
         uint unscaledPriceMantissa = mul(rawUniswapPriceMantissa, conversionFactor);
-        uint anchorPrice;
-
-        // Adjust rawUniswapPrice according to the units of the non-ETH asset
-        // In the case of ETH, we would have to scale by 1e6 / USDC_UNITS, but since baseUnit2 is 1e6 (USDC), it cancels
-        if (config.isUniswapReversed) {
-            // unscaledPriceMantissa * ethBaseUnit / config.baseUnit / expScale, but we simplify bc ethBaseUnit == expScale
-            anchorPrice = (unscaledPriceMantissa / config.baseUnit) / (ethBaseUnit / config.baseUnit);
-        } else {
-            anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
-        }
+        uint anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
 
         return anchorPrice;
     }
