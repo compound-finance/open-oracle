@@ -3,13 +3,13 @@ import * as path from "path";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
-import { task } from "hardhat/config";
+import { task, HardhatUserConfig } from "hardhat/config";
 require("dotenv").config();
 
-const MAINNET_URL = process.env.MAINNET_URL;
-const MAINNET_PK = process.env.MAINNET_PK;
-const ETHERSCAN = process.env.ETHERSCAN;
-const COMP_MULTISIG = process.env.COMP_MULTISIG;
+const MAINNET_URL = process.env.MAINNET_URL!;
+const MAINNET_PK = process.env.MAINNET_PK!;
+const ETHERSCAN = process.env.ETHERSCAN!;
+const COMP_MULTISIG = process.env.COMP_MULTISIG!;
 
 // You need to export an object to set up your config
 // Go to https://hardhat.org/config/ to learn more
@@ -43,22 +43,20 @@ task("transfer-ownership", "Transfer ownership of the UAV to the COMP multisig")
   .setAction(async (args, hre) => {
     const UAV = await hre.ethers.getContractFactory("UniswapAnchoredView");
     const uav = await UAV.attach(args.uav);
-    await uav.transferOwnership(COMP_MULTISIG!);
+    await uav.transferOwnership(COMP_MULTISIG);
   });
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
-module.exports = {
+const hardhatUserConfig: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
         url: MAINNET_URL,
+        blockNumber: 13152450,
       },
       accounts: [
         {
           privateKey: MAINNET_PK,
-          balance: "8700000000000000000",
+          balance: "1000009583538498497992",
         },
       ],
     },
@@ -84,3 +82,5 @@ module.exports = {
     target: "ethers-v5",
   },
 };
+
+module.exports = hardhatUserConfig;

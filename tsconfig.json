@@ -13,7 +13,8 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "suppressImplicitAnyIndexErrors": true,
-    "noUnusedLocals": true
+    "noUnusedLocals": true,
+    "resolveJsonModule": true
   },
   "include": ["hardhat.config.ts", "scripts", "test", "deploy", "utils"]
 }

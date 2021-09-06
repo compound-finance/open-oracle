@@ -13,6 +13,8 @@
     "yargs": "^15.0.2"
   },
   "devDependencies": {
+    "@defi-wonderland/smock": "^2.0.2",
+    "@nomiclabs/ethereumjs-vm": "^4.2.2",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.6",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
@@ -21,6 +23,8 @@
     "@types/chai": "^4.2.21",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.7.10",
+    "@uniswap/v3-core": "^1.0.0",
+    "@uniswap/v3-sdk": "^3.3.2",
     "chai": "^4.3.4",
     "dotenv": "^10.0.0",
     "ethereum-waffle": "^3.4.0",
@@ -30,9 +34,11 @@
     "jest": "^24.9.0",
     "jest-cli": "^24.9.0",
     "jest-junit": "^10.0.0",
+    "jsbi": "^3.2.1",
     "prettier": "^2.3.2",
     "ts-node": "^10.2.1",
     "typechain": "^5.1.2",
+    "typechain-common-abi": "^0.1.2",
     "typescript": "^4.4.2"
   },
   "scripts": {
