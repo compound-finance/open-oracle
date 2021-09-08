@@ -17,13 +17,9 @@ import { address, uint, keccak256, getWeth9 } from "./utils";
 const BigNumber = ethers.BigNumber;
 type BigNumber = ReturnType<typeof BigNumber.from>;
 
-// @notice UniswapAnchoredView `postPrices` test
-// Based on data from Coinbase oracle https://api.pro.coinbase.com/oracle and Uniswap token pairs at July 2nd 2020.
-const BN = require("bignumber.js");
-
-// Cut all digits after decimal point
-BN.set({ DECIMAL_PLACES: 0, ROUNDING_MODE: 3 });
-
+// @notice UniswapAnchoredView `validate` test
+// Based on price data from Coingecko and Uniswap token pairs
+// at block 13152450 (2021-09-03 11:23:34 UTC)
 interface TestTokenPair {
   pair: Contract;
   reporter: MockChainlinkOCRAggregator;

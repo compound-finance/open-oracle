@@ -72,6 +72,11 @@ const hardhatUserConfig: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
+      outputSelection: {
+        "*": {
+          "*": ["storageLayout"],
+        },
+      },
     },
   },
   etherscan: {

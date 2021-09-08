@@ -423,10 +423,10 @@
   dependencies:
     "@cspotcode/source-map-consumer" "0.8.0"
 
-"@defi-wonderland/smock@^2.0.2":
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/smock/-/smock-2.0.2.tgz#0be863a61420fb162190c9be8798befada179f30"
-  integrity sha512-nZtnUftPkMmFedqDzBqQrZWX+6Q3fK5MNMK3R6mLTg8Ig087A7ifs1KH9vGGpZ3p9RdgC+scUy9KfDASp2SKxg==
+"@defi-wonderland/smock@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/smock/-/smock-2.0.3.tgz#db4e9fbc15f088bf3878ed0a5aab9457b491c4d1"
+  integrity sha512-0TZVjKH9sj2ZL2NI98TDwwIx616juxJMYOtAsTSKg3b0HpZANKPL1qbrfdS9daH8GtKUGlfMK9cWs7BzdiIo1w==
   dependencies:
     diff "^5.0.0"
     lodash.isequal "^4.5.0"
