@@ -53,12 +53,10 @@ const hardhatUserConfig: HardhatUserConfig = {
         url: MAINNET_URL,
         blockNumber: 13152450,
       },
-      accounts: [
-        {
-          privateKey: MAINNET_PK,
-          balance: "1000009583538498497992",
-        },
-      ],
+      accounts: {
+        mnemonic: "test test test test test test test test test test test test",
+        accountsBalance: "1000009583538498497992",
+      },
     },
     mainnet: {
       url: MAINNET_URL,
