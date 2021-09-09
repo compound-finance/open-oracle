@@ -806,101 +806,101 @@ describe("UniswapAnchoredView", () => {
     });
   });
 
-  // describe("deactivateFailover", () => {
-  //   let accounts;
+  describe("deactivateFailover", () => {
+    let signers: SignerWithAddress[];
 
-  //   beforeEach(async (done) => {
-  //     accounts = await web3.eth.getAccounts();
-  //     ({ uniswapAnchoredView, validate, cToken } = await setup({
-  //       isMockedView: true,
-  //     }));
-  //     done();
-  //   });
+    beforeEach(async () => {
+      ({ uniswapAnchoredView, signers, cToken } = await setup({
+        isMockedView: true,
+      }));
+    });
 
-  //   it("reverts if called by a non-owner", async () => {
-  //     await expect(
-  //       send(uniswapAnchoredView, "activateFailover", [keccak256("ETH")], {
-  //         from: accounts[1],
-  //       })
-  //     ).rejects.toRevert("revert Only callable by owner");
-  //   });
+    it("reverts if called by a non-owner", async () => {
+      await expect(
+        uniswapAnchoredView
+          .connect(signers[1])
+          .updateFailover(keccak256("ETH"), false)
+      ).to.be.revertedWith("Only callable by owner");
+    });
 
-  //   it("basic scenario, sets failoverActive and emits FailoverDeactivated event", async () => {
-  //     // Check that failoverActive variable is properly set
-  //     const response1 = await call(uniswapAnchoredView, "prices", [
-  //       keccak256("ETH"),
-  //     ]);
-  //     expect(response1.failoverActive).toBe(false);
-  //     await send(uniswapAnchoredView, "activateFailover", [keccak256("ETH")], {
-  //       from: accounts[0],
-  //     });
-  //     const response2 = await call(uniswapAnchoredView, "prices", [
-  //       keccak256("ETH"),
-  //     ]);
-  //     expect(response2.failoverActive).toBe(true);
-  //     const tx = await send(
-  //       uniswapAnchoredView,
-  //       "deactivateFailover",
-  //       [keccak256("ETH")],
-  //       { from: accounts[0] }
-  //     );
-  //     const response3 = await call(uniswapAnchoredView, "prices", [
-  //       keccak256("ETH"),
-  //     ]);
-  //     expect(response3.failoverActive).toBe(false);
+    it("basic scenario, sets failoverActive and emits FailoverUpdate event with correct args", async () => {
+      // Check that failoverActive variable is properly set
+      const response1 = await uniswapAnchoredView.prices(keccak256("ETH"));
+      expect(response1.failoverActive).to.equal(false);
+      // Activate & check
+      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      const response2 = await uniswapAnchoredView.prices(keccak256("ETH"));
+      expect(response2.failoverActive).to.equal(true);
+      // De-activate & check
+      const deactivateTx = await uniswapAnchoredView.updateFailover(
+        keccak256("ETH"),
+        false
+      );
+      const response3 = await uniswapAnchoredView.prices(keccak256("ETH"));
+      expect(response3.failoverActive).to.equal(false);
 
-  //     // Check that event is emitted
-  //     expect(tx.events.FailoverDeactivated.returnValues.symbolHash).toBe(
-  //       keccak256("ETH")
-  //     );
-  //   });
+      // Check that event is emitted
+      const emittedEvents = await uniswapAnchoredView.queryFilter(
+        uniswapAnchoredView.filters.FailoverUpdated(null, null),
+        deactivateTx.blockNumber,
+        deactivateTx.blockNumber
+      );
+      expect(emittedEvents.length).to.equal(1);
+      expect(emittedEvents[0].args.symbolHash).to.equal(keccak256("ETH"));
+      expect(emittedEvents[0].args.status).to.equal(false);
+    });
 
-  //   it("basic scenario, return reporter price after failover is deactivated", async () => {
-  //     await send(uniswapAnchoredView, "setAnchorPrice", ["ETH", 200e6]);
+    it("basic scenario, return reporter price after failover is deactivated", async () => {
+      reporter = cToken.ETH.reporter;
+      await reporter.validate(3960e8);
 
-  //     reporter = cToken.ETH.reporter;
-  //     await validate(reporter, 201e8);
+      // Check that prices = posted prices
+      const ethPrice1 = await uniswapAnchoredView.getUnderlyingPrice(
+        cToken.ETH.addr
+      );
+      // priceInternal:      returns 3960e6
+      // getUnderlyingPrice: 1e30 * 3960e6 / 1e18 = 3960e18
+      const expectedEth1 = exp(3960, 18);
+      expect(ethPrice1).to.equal(expectedEth1);
 
-  //     // Check that prices = posted prices
-  //     const ethPrice1 = await call(uniswapAnchoredView, "getUnderlyingPrice", [
-  //       cToken.ETH.addr,
-  //     ]);
-  //     // priceInternal:      returns 201e6
-  //     // getUnderlyingPrice: 1e30 * 201e6 / 1e18 = 201e18
-  //     const expectedEth1 = new BigNumber("201e18");
-  //     expect(ethPrice1).numEquals(expectedEth1.toFixed());
+      // Failover ETH
+      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
 
-  //     // Failover ETH
-  //     await sendRPC(web3, "evm_increaseTime", [30 * 60]);
-  //     await send(uniswapAnchoredView, "activateFailover", [keccak256("ETH")], {
-  //       from: accounts[0],
-  //     });
-  //     await send(uniswapAnchoredView, "pokeFailedOverPrice", [
-  //       keccak256("ETH"),
-  //     ]);
+      // Check that ETH (which was failed over) = uniswap TWAP prices
+      // 1. Get UniV3 TWAP from pool
+      const tokenConfig = await uniswapAnchoredView.getTokenConfigBySymbolHash(
+        keccak256("ETH")
+      );
+      const usdcEthPool = await ethers.getContractAt(
+        UniswapV3Pool.abi,
+        tokenConfig.uniswapMarket
+      );
+      const tickCumulatives: BigNumber[] = (
+        await usdcEthPool.observe([60, 0])
+      )[0];
+      const timeWeightedAvgTick = tickCumulatives[1]
+        .sub(tickCumulatives[0])
+        .div(60)
+        .toNumber(); // int24
+      const expectedEth2 = exp(1, 12).mul(
+        Math.round(1e18 * 1.0001 ** -timeWeightedAvgTick)
+      );
+      // 2. Get the underlying price from the UAV (which should be failed over)
+      const ethPrice2 = await uniswapAnchoredView.getUnderlyingPrice(
+        cToken.ETH.addr
+      );
+      // failover price:      returns 3950e6
+      // getUnderlyingPrice:  1e30 * 3950e6 / 1e18 = 3950e18
+      expect(ethPrice2).to.equal(BigNumber.from(expectedEth2.toString()));
 
-  //     // Check that ETH (which was failed over) = uniswap TWAP prices
-  //     const ethPrice2 = await call(uniswapAnchoredView, "getUnderlyingPrice", [
-  //       cToken.ETH.addr,
-  //     ]);
-  //     // failover price:      returns 200e6
-  //     // getUnderlyingPrice:  1e30 * 200e6 / 1e18 = 200e18
-  //     const expectedEth2 = new BigNumber("200e18");
-  //     expect(ethPrice2).numEquals(expectedEth2.toFixed());
+      // deactivate failover for eth
+      await uniswapAnchoredView.updateFailover(keccak256("ETH"), false);
+      await reporter.validate(3960e8);
 
-  //     // deactivate failover for eth
-  //     await send(
-  //       uniswapAnchoredView,
-  //       "deactivateFailover",
-  //       [keccak256("ETH")],
-  //       { from: accounts[0] }
-  //     );
-  //     await validate(reporter, 201e8);
-
-  //     const ethPrice3 = await call(uniswapAnchoredView, "getUnderlyingPrice", [
-  //       cToken.ETH.addr,
-  //     ]);
-  //     expect(ethPrice3).numEquals(expectedEth1.toFixed());
-  //   });
-  // });
+      const ethPrice3 = await uniswapAnchoredView.getUnderlyingPrice(
+        cToken.ETH.addr
+      );
+      expect(ethPrice3).to.equal(expectedEth1);
+    });
+  });
 });
