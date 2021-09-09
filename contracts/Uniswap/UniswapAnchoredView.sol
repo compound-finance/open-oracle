@@ -258,6 +258,11 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     function updateFailover(bytes32 symbolHash, bool status) external onlyOwner() {
         require(prices[symbolHash].failoverActive != status, "Already updated");
         prices[symbolHash].failoverActive = status;
+
+        emit FailoverUpdated(symbolHash, status);
+        if (status) {
+            pokeFailedOverPrice(symbolHash);
+        }
     }
 
     /// @dev Overflow proof multiplication
