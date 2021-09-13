@@ -2,7 +2,7 @@
 
 pragma solidity ^0.6.12;
 
-import "./Chainlink/AggregatorValidatorInterface.sol";
+import "../Chainlink/AggregatorValidatorInterface.sol";
 
 contract MockChainlinkOCRAggregator {
     AggregatorValidatorInterface public uniswapAnchoredView;
