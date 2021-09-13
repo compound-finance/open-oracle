@@ -8,11 +8,6 @@ import "./UniswapLib.sol";
 import "../Ownable.sol";
 import "../Chainlink/AggregatorValidatorInterface.sol";
 
-struct Observation {
-    uint timestamp;
-    int24 acc;
-}
-
 struct PriceData {
     uint248 price;
     bool failoverActive;
