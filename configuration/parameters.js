@@ -10,7 +10,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc",
+      uniswapMarket: "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8",
       reporter: "0x264BDDFD9D93D48d759FBDB0670bE1C6fDd50236",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: true
@@ -23,7 +23,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11",
+      uniswapMarket: "0xc2e9f25be6257c210d7adf0d4cd6e3e881ba25f8",
       reporter: "0xb2419f587f497CDd64437f1B367E2e80889631ea",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -62,7 +62,7 @@ module.exports = [
       baseUnit: "100000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xBb2b8038a1640196FbE3e38816F3e67Cba72D940",
+      uniswapMarket: "0xcbcdf9626bc03e24f779434178a73a0b4bad62ed",
       reporter: "0x4846efc15CC725456597044e6267ad0b3B51353E",
       reporterMultiplier: "1000000",
       isUniswapReversed: false
@@ -75,7 +75,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xB6909B960DbbE7392D405429eB2b3649752b4838",
+      uniswapMarket: "0xae614a7a56cb79c04df2aeba6f5dab80a39ca78e",
       reporter: "0xeBa6F33730B9751a8BA0b18d9C256093E82f6bC2",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -88,20 +88,21 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xc6F348dd3B91a56D117ec0071C1e9b83C0996De4",
+      uniswapMarket: "0x14424eeecbff345b38187d0b8b749e56faa68539",
       reporter: "0x5c5db112c98dbe5977A4c37AD33F8a4c9ebd5575",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: true
     },
     {
       // "NAME": "REP",
+      // Warning: as of 2021-09-13, this has very low liquidity ($33.6k)
       cToken: "0x158079Ee67Fce2f58472A96584A73C7Ab9AC95c1",
       underlying: "0x1985365e9f78359a9B6AD760e32412f4a445E862",
       symbolHash: "0x91a08135082b0a28b4ad8ecc7749a009e0408743a9d1cdf34dd6a58d60ee9504",
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0x8979A3Ef9D540480342AC0F56e9D4c88807b1CBa",
+      uniswapMarket: "0xb055103b7633b61518cd806d95beeb2d4cd217e7",
       reporter: "0x90655316479383795416B615B61282C72D8382C1",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -127,7 +128,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xd3d2E2692501A5c9Ca623199D38826e513033a17",
+      uniswapMarket: "0x1d42064fc4beb5f8aaf85f4617ae8b3b5b8bd801",
       reporter: "0x70f4D236FD678c9DB41a52d28f90E299676d9D90",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -140,7 +141,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xCFfDdeD873554F362Ac02f8Fb1f02E5ada10516f",
+      uniswapMarket: "0xea4ba4ce14fdd287f380b55419b1c5b6c3f22ab6",
       reporter: "0xE270B8E9d7a7d2A7eE35a45E43d17D56b3e272b1",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -153,7 +154,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974",
+      uniswapMarket: "0xa6cc3c2531fdaa6ae1a3ca84c2855806728693e8",
       reporter: "0xBcFd9b1a97cCD0a3942f0408350cdc281cDCa1B1",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -179,7 +180,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xDFC14d2Af169B0D36C4EFF567Ada9b2E0CAE044f",
+      uniswapMarket: "0x5ab53ee1d50eef2c1dd3d5402789cd27bb52c1bb",
       reporter: "0x0238247E71AD0aB272203Af13bAEa72e99EE7c3c",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -192,7 +193,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xCE84867c3c02B05dc570d0135103d3fB9CC19433",
+      uniswapMarket: "0x73a6a761fe483ba19debb8f56ac5bbf14c0cdad1",
       reporter: "0x875acA7030B75b5D8cB59c913910a7405337dFf7",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -205,7 +206,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xC2aDdA861F89bBB333c90c492cB837741916A225",
+      uniswapMarket: "0xe8c6c9227491c0a8156a0106a0204d881bb7e531",
       reporter: "0xbA895504a8E286691E7dacFb47ae8A3A737e2Ce1",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -218,7 +219,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0x2fDbAdf3C4D5A8666Bc06645B8358ab803996E28",
+      uniswapMarket: "0x04916039b1f59d9745bf6e0a21f191d1e0a84287",
       reporter: "0xBa4319741782151D2B1df4799d757892EFda4165",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
@@ -231,7 +232,7 @@ module.exports = [
       baseUnit: "100000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xBb2b8038a1640196FbE3e38816F3e67Cba72D940",
+      uniswapMarket: "0xcbcdf9626bc03e24f779434178a73a0b4bad62ed",
       reporter: "0x4846efc15CC725456597044e6267ad0b3B51353E",
       reporterMultiplier: "1000000",
       isUniswapReversed: false
