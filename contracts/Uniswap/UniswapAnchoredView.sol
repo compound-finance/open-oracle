@@ -208,23 +208,20 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         (int56[] memory tickCumulatives, ) = IUniswapV3Pool(config.uniswapMarket).observe(secondsAgos);
 
         int24 timeWeightedAverageTick = int24((tickCumulatives[1] - tickCumulatives[0]) / anchorPeriod_);
+        if (config.isUniswapReversed) {
+            // If the reverse price is desired, inverse the tick
+            // price = 1.0001^{tick}
+            // (price)^{-1} = (1.0001^{tick})^{-1}
+            // \frac{1}{price} = 1.0001^{-tick}
+            timeWeightedAverageTick = -timeWeightedAverageTick;
+        }
         uint160 sqrtPriceX96 = TickMath.getSqrtRatioAtTick(timeWeightedAverageTick);
         // Squaring the result also squares the Q96 scalar (2**96),
         // so after this mulDiv, the resulting TWAP is still in Q96 fixed precision.
         uint256 twapX96 = FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
 
-        uint256 twap;
-        if (config.isUniswapReversed) {
-            // In this case, we want the price of token1 relative to token0 instead,
-            // so calculate the inverse of the TWAP with a common precision (expScale).
-            // e.g. We want the ETH/USDC price but the actual pool is USDC/ETH.
-            // The TWAP is also down-scaled from Q96 in this step.
-            // -> twap = expScale / (twapX96 / (2**96))
-            twap = mul(expScale, 2**96) / twapX96;
-        } else {
-            // Scale up to a common precision (expScale), then down-scale from Q96.
-            twap = mul(expScale, twapX96) / (2**96);
-        }
+        // Scale up to a common precision (expScale), then down-scale from Q96.
+        uint256 twap = mul(expScale, twapX96) / (2**96);
 
         return twap;
     }
