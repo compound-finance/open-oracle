@@ -12,7 +12,7 @@ import {
   UniswapV3SwapHelper,
 } from "../types";
 import { WETH9 } from "typechain-common-abi/types/contract-types/ethers";
-import { address, uint, keccak256, getWeth9 } from "./utils";
+import { address, uint, keccak256, getWeth9, resetFork } from "./utils";
 
 const BigNumber = ethers.BigNumber;
 type BigNumber = ReturnType<typeof BigNumber.from>;
@@ -333,6 +333,8 @@ describe("UniswapAnchoredView", () => {
   let uniswapV3SwapHelper: UniswapV3SwapHelper;
   let weth9: WETH9;
   beforeEach(async () => {
+    await resetFork();
+
     const signers = await ethers.getSigners();
     deployer = signers[0];
     ({ uniswapAnchoredView, pairs, uniswapV3SwapHelper, weth9 } = await setup(
@@ -342,7 +344,6 @@ describe("UniswapAnchoredView", () => {
 
   it("basic scenario, use real world data", async () => {
     await configureReporters(uniswapAnchoredView.address, pairs);
-    await ethers.provider.send("evm_increaseTime", [31 * 60]);
 
     for (let i = 0; i < prices.length; i++) {
       const element = prices[i];
@@ -357,7 +358,6 @@ describe("UniswapAnchoredView", () => {
   // TODO: PriceGuarded tests?!
   it("test price events - PriceUpdated", async () => {
     await configureReporters(uniswapAnchoredView.address, pairs);
-    await ethers.provider.send("evm_increaseTime", [31 * 60]);
 
     for (let i = 0; i < prices.length; i++) {
       const element = prices[i];
@@ -376,10 +376,18 @@ describe("UniswapAnchoredView", () => {
 
   it("test ETH (USDC/ETH) pair while token reserves change", async () => {
     await configureReporters(uniswapAnchoredView.address, pairs);
-    // TODO: Get price of ETH here
-    // Emulate timeElapsed for ETH token pair, so that timestamps are set up correctly
-    await ethers.provider.send("evm_increaseTime", [60 * 60]);
-    const ethToSell = BigNumber.from("100").mul(String(1e18));
+    // Report new price so the UAV TWAP is initialised, and confirm it
+    await pairs.ETH.reporter.validate(3950e8);
+    const ethAnchorInitial = await uniswapAnchoredView.price("ETH");
+    expect(ethAnchorInitial).to.equal(3950e6);
+
+    // Record the ETH mid-price from the pool
+    const ethPriceInitial = Math.ceil(
+      1e12 * 1.0001 ** -(await pairs.ETH.pair.slot0()).tick
+    );
+    expect(ethPriceInitial).to.equal(3951);
+
+    const ethToSell = BigNumber.from("20000").mul(String(1e18));
     // Wrap ETH, unlimited allowance to UniswapV3SwapHelper
     await weth9.deposit({ value: ethToSell });
     await weth9.approve(
@@ -395,51 +403,22 @@ describe("UniswapAnchoredView", () => {
         "1"
       ) // (MAX_SQRT_RATIO - 1) -> "no price limit"
     );
-    // TODO: Check the mid price - should be dumped quite a bit
+
+    // Check that mid-price on the V3 pool has dumped
+    const ethPriceAfter = Math.ceil(
+      1e12 * 1.0001 ** -(await pairs.ETH.pair.slot0()).tick
+    );
+    expect(1 - ethPriceAfter / ethPriceInitial).to.be.greaterThan(0.1);
     // TWAP should not be severely affected
-    // so try to report a feed that's within anchor tolerance.
-    // UAV should emit PriceUpdated or PriceGuarded accordingly.
+    // so try to report a price that's within anchor tolerance of TWAP.
+    // UAV should emit PriceUpdated accordingly.
+    const tx = await pairs.ETH.reporter.validate(3960e8);
+    const emittedEvents = await uniswapAnchoredView.queryFilter(
+      uniswapAnchoredView.filters.PriceUpdated(null, null),
+      tx.blockNumber
+    );
+    expect(emittedEvents.length).to.equal(1);
+    expect(emittedEvents[0].args.symbolHash).to.equal(keccak256("ETH"));
+    expect(emittedEvents[0].args.price).to.equal(3960e6);
   });
-
-  // it("test ETH pair while token reserves change", async () => {
-  //   await configureReporters(uniswapAnchoredView.address, pairs);
-  //   // Emulate timeElapsed for ETH token pair, so that timestamps are set up correctly
-  //   // 1594232101 - 1593755855 = 476246
-  //   await ethers.provider.send("evm_increaseTime", [476246]);
-
-  //   // Update reserves, last block timestamp and cumulative prices for uniswap token pair
-  //   await send(pairs.ETH.pair, "update", [
-  //     "2699846518724",
-  //     "10900804290754780075806",
-  //     "1594232101",
-  //     "130440674219479413955332918569393260852443923640848",
-  //     "6394369143386285784459187027043",
-  //   ]);
-
-  //   const tx1 = await validate(pairs.ETH.reporter, prices[1][1]);
-  //   const anchorEvent1 = decodeEvent(EVENTS.AnchorPriceUpdated, tx1, 1);
-
-  //   const oldObservation1 = await call(uniswapAnchoredView, "oldObservations", [
-  //     keccak256("ETH"),
-  //   ]);
-  //   const block1 = await ethers.provider.send("eth_getBlockByNumber", [
-  //     tx1.blockNumber,
-  //     false,
-  //   ]);
-  //   const blockTimestamp1 = block1.result.timestamp;
-
-  //   const cumulativePrice_eth1 = await getCumulativePrice(
-  //     pairs.ETH.pair,
-  //     blockTimestamp1,
-  //     true
-  //   );
-  //   const ethPrice1 = calculateTWAP(
-  //     cumulativePrice_eth1,
-  //     oldObservation1.acc,
-  //     blockTimestamp1,
-  //     oldObservation1.timestamp
-  //   ).toFixed();
-  //   expect(anchorEvent1.symbolHash).toBe(keccak256("ETH"));
-  //   expect(anchorEvent1.anchorPrice).toBe(ethPrice1);
-  // });
 });

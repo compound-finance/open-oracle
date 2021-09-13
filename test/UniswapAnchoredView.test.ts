@@ -1,7 +1,7 @@
-import { ethers, network, config } from "hardhat";
+import { ethers } from "hardhat";
 import { expect, use } from "chai";
 import { MockContract, smock } from "@defi-wonderland/smock";
-import { address, uint, keccak256 } from "./utils";
+import { address, uint, keccak256, exp, resetFork } from "./utils";
 import {
   MockChainlinkOCRAggregator,
   MockChainlinkOCRAggregator__factory,
@@ -10,7 +10,6 @@ import {
 } from "../types";
 import * as UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
 import { BigNumberish } from "ethers";
-import { exp } from "./utils/exp";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 // Chai matchers for mocked contracts
@@ -254,19 +253,7 @@ describe("UniswapAnchoredView", () => {
   let deployer: SignerWithAddress;
 
   beforeEach(async () => {
-    // Reset the fork for each test
-    const { url, blockNumber } = config.networks.hardhat.forking!;
-    await network.provider.request({
-      method: "hardhat_reset",
-      params: [
-        {
-          forking: {
-            jsonRpcUrl: url,
-            blockNumber,
-          },
-        },
-      ],
-    });
+    await resetFork();
   });
 
   describe("validate", () => {

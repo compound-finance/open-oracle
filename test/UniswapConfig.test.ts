@@ -172,7 +172,7 @@ describe("UniswapConfig", () => {
     );
   });
 
-  it("checks gas", async () => {
+  it("checks gas [ @skip-on-coverage ]", async () => {
     const configs = Array(25)
       .fill(0)
       .map((_, i) => {

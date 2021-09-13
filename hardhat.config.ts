@@ -4,6 +4,7 @@ import "@typechain/hardhat";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
 import "hardhat-contract-sizer";
+import "solidity-coverage";
 import { task, HardhatUserConfig } from "hardhat/config";
 require("dotenv").config();
 
@@ -56,7 +57,7 @@ const hardhatUserConfig: HardhatUserConfig = {
       },
       accounts: {
         mnemonic: "test test test test test test test test test test test test",
-        accountsBalance: "1000009583538498497992",
+        accountsBalance: "1000000009583538498497992",
       },
     },
     mainnet: {

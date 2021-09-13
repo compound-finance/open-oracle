@@ -6,8 +6,7 @@
   "repository": "https://github.com/compound-finance/open-oracle",
   "author": "Compound Labs, Inc.",
   "license": "MIT",
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "@defi-wonderland/smock": "^2.0.3",
     "@nomiclabs/ethereumjs-vm": "^4.2.2",
@@ -33,6 +32,7 @@
     "jest-junit": "^10.0.0",
     "jsbi": "^3.2.1",
     "prettier": "^2.3.2",
+    "solidity-coverage": "^0.7.17",
     "ts-node": "^10.2.1",
     "typechain": "^5.1.2",
     "typechain-common-abi": "^0.1.2",
@@ -40,6 +40,7 @@
   },
   "scripts": {
     "test": "yarn hardhat test",
+    "coverage": "yarn hardhat coverage --network hardhat",
     "compile": "yarn hardhat compile",
     "deploy": "yarn hardhat run ./scripts/deploy-uav.js --network mainnet",
     "deploy-test": "yarn hardhat run ./scripts/deploy-uav.js --network hardhat",
