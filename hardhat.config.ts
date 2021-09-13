@@ -3,6 +3,7 @@ import * as path from "path";
 import "@typechain/hardhat";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
+import "hardhat-contract-sizer";
 import { task, HardhatUserConfig } from "hardhat/config";
 require("dotenv").config();
 
@@ -68,7 +69,7 @@ const hardhatUserConfig: HardhatUserConfig = {
     settings: {
       optimizer: {
         enabled: true,
-        runs: 200,
+        runs: 100,
       },
       outputSelection: {
         "*": {
@@ -83,6 +84,11 @@ const hardhatUserConfig: HardhatUserConfig = {
   typechain: {
     outDir: "types",
     target: "ethers-v5",
+  },
+  contractSizer: {
+    alphaSort: true,
+    runOnCompile: true,
+    disambiguatePaths: false,
   },
 };
 

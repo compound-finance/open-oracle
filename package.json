@@ -30,6 +30,7 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.4.6",
     "hardhat": "^2.6.2",
+    "hardhat-contract-sizer": "^2.0.3",
     "istanbul": "^0.4.5",
     "jest": "^24.9.0",
     "jest-cli": "^24.9.0",

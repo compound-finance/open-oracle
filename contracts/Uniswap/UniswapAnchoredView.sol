@@ -7,6 +7,7 @@ import "./UniswapConfig.sol";
 import "./UniswapLib.sol";
 import "../Ownable.sol";
 import "../Chainlink/AggregatorValidatorInterface.sol";
+import "../SafeMath.sol";
 
 struct PriceData {
     uint248 price;
@@ -14,6 +15,8 @@ struct PriceData {
 }
 
 contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Ownable {
+    using SafeMath for uint;
+
     /// @notice The number of wei in 1 ETH
     uint public constant ethBaseUnit = 1e18;
 
@@ -93,7 +96,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash].price;
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-            return mul(usdPerEth, config.fixedPrice) / ethBaseUnit;
+            return usdPerEth.mul(config.fixedPrice).div(ethBaseUnit);
         }
     }
 
@@ -109,7 +112,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         // The baseUnit of an asset is the amount of the smallest denomination of that asset per whole.
         // For example, the baseUnit of ETH is 1e18.
         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6)/baseUnit
-        return mul(1e30, priceInternal(config)) / config.baseUnit;
+        return priceInternal(config).mul(1e30).div(config.baseUnit);
     }
 
     /**
@@ -183,14 +186,14 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     function convertReportedPrice(TokenConfig memory config, int256 reportedPrice) internal pure returns (uint256) {
         require(reportedPrice >= 0, "Reported price cannot be negative");
         uint256 unsignedPrice = uint256(reportedPrice);
-        uint256 convertedPrice = mul(unsignedPrice, config.reporterMultiplier) / config.baseUnit;
+        uint256 convertedPrice = unsignedPrice.mul(config.reporterMultiplier).div(config.baseUnit);
         return convertedPrice;
     }
 
 
     function isWithinAnchor(uint reporterPrice, uint anchorPrice) internal view returns (bool) {
         if (reporterPrice > 0) {
-            uint anchorRatio = mul(anchorPrice, 100e16) / reporterPrice;
+            uint anchorRatio = anchorPrice.mul(100e16).div(reporterPrice);
             return anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
         }
         return false;
@@ -206,6 +209,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         secondsAgos[1] = 0;
         (int56[] memory tickCumulatives, ) = IUniswapV3Pool(config.uniswapMarket).observe(secondsAgos);
 
+        require(anchorPeriod_ > 0, "Anchor period must be >0");
         int24 timeWeightedAverageTick = int24((tickCumulatives[1] - tickCumulatives[0]) / anchorPeriod_);
         if (config.isUniswapReversed) {
             // If the reverse price is desired, inverse the tick
@@ -220,7 +224,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         uint256 twapX96 = FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
 
         // Scale up to a common precision (expScale), then down-scale from Q96.
-        uint256 twap = mul(expScale, twapX96) / (2**96);
+        uint256 twap = expScale.mul(twapX96).div(2**96);
 
         return twap;
     }
@@ -241,8 +245,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         uint256 twap = getUniswapTwap(config);
 
         uint rawUniswapPriceMantissa = twap;
-        uint unscaledPriceMantissa = mul(rawUniswapPriceMantissa, conversionFactor);
-        uint anchorPrice = mul(unscaledPriceMantissa, config.baseUnit) / ethBaseUnit / expScale;
+        uint unscaledPriceMantissa = rawUniswapPriceMantissa.mul(conversionFactor);
+        uint anchorPrice = unscaledPriceMantissa.mul(config.baseUnit).div(ethBaseUnit).div(expScale);
 
         return anchorPrice;
     }
@@ -259,13 +263,5 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         if (status) {
             pokeFailedOverPrice(symbolHash);
         }
-    }
-
-    /// @dev Overflow proof multiplication
-    function mul(uint a, uint b) internal pure returns (uint) {
-        if (a == 0) return 0;
-        uint c = a * b;
-        require(c / a == b, "multiplication overflow");
-        return c;
     }
 }
