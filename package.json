@@ -7,10 +7,6 @@
   "author": "Compound Labs, Inc.",
   "license": "MIT",
   "dependencies": {
-    "bignumber.js": "^9.0.0",
-    "eth-saddle": "0.1.21",
-    "web3": "^1.2.4",
-    "yargs": "^15.0.2"
   },
   "devDependencies": {
     "@defi-wonderland/smock": "^2.0.3",
@@ -44,10 +40,12 @@
   },
   "scripts": {
     "test": "yarn hardhat test",
-    "coverage": "script/coverage",
-    "console": "npx -n --experimental-repl-await saddle console",
     "compile": "yarn hardhat compile",
-    "deploy": "npx saddle deploy"
+    "deploy": "yarn hardhat run ./scripts/deploy-uav.js --network mainnet",
+    "deploy-test": "yarn hardhat run ./scripts/deploy-uav.js --network hardhat",
+    "verify": "yarn hardhat verify --network mainnet --constructor-args ./configuration/parameters.js",
+    "verify-manual": "yarn hardhat manual-verify",
+    "transfer": "yarn hardhat transfer-ownership --network mainnet --uav"
   },
   "resolutions": {
     "**/ganache-core": "https://github.com/compound-finance/ganache-core.git#compound",
