@@ -271,21 +271,35 @@ describe("UniswapAnchoredView", () => {
     it("should update view if ETH price is within anchor bounds", async () => {
       const ethSymbol = keccak256("ETH");
       // Price to report (8 decimals of precision)
-      const price = BigNumber.from(3950e8); // ETH/USDC = ~$3950
+      const price = BigNumber.from(3950e8); // ETH/USDC = ~$3950 (block 13152450)
       // Expected price from UAV (6 decimals of precision)
       const expectedPrice = BigNumber.from(3950e6);
       reporter = cToken.ETH.reporter;
-      // TODO: Figure out this issue
-      // This doesn't seem to work (@defi-wonderland/smock)
-      // so instead we are using real mainnet values from block 13152450
-      // await (
-      //   uniswapAnchoredView as MockContract<UniswapAnchoredView>
-      // ).setVariable("prices", {
-      //   [ethSymbol]: {
-      //     price: expectedPrice,
-      //     failoverActive: false,
-      //   },
-      // });
+
+      // Try to report new price
+      const tx_ = await reporter.validate(price);
+      const tx = await tx_.wait(1);
+
+      // Check event log and make sure the PriceUpdated event was emitted correctly
+      const events = await uniswapAnchoredView.queryFilter(
+        uniswapAnchoredView.filters.PriceUpdated(null, null),
+        tx.blockNumber,
+        tx.blockNumber
+      );
+      expect(events.length).to.equal(1);
+      expect(events[0].args.symbolHash).to.equal(ethSymbol);
+      expect(events[0].args.price).to.equal(expectedPrice);
+      const updatedEthPriceData = await uniswapAnchoredView.prices(ethSymbol);
+      expect(updatedEthPriceData.price).to.equal(expectedPrice);
+    });
+
+    it("should update view if ETH price is within anchor bounds", async () => {
+      const ethSymbol = keccak256("ETH");
+      // Price to report (8 decimals of precision)
+      const price = BigNumber.from(3950e8); // ETH/USDC = ~$3950 (block 13152450)
+      // Expected price from UAV (6 decimals of precision)
+      const expectedPrice = BigNumber.from(3950e6);
+      reporter = cToken.ETH.reporter;
 
       // Try to report new price
       const tx_ = await reporter.validate(price);
@@ -428,6 +442,31 @@ describe("UniswapAnchoredView", () => {
       expect(events[0].args.reporter).to.equal(convertedPrice);
       expect(events[0].args.anchor).to.equal(anchorPrice);
       const updatedPrice = await uniswapAnchoredView.price("REPv2");
+      expect(updatedPrice).to.equal(1);
+    });
+
+    it("should not update view if reported price is 0", async () => {
+      const ethSymbol = keccak256("ETH");
+      const anchorPrice = 3950860042; // ~UniV3 ETH-USDC TWAP at block 13152450
+      // anchorMantissa is 1e17, so 10% tolerance - test with a value outside of this tolerance range
+      const postedPrice = 0;
+      reporter = cToken.ETH.reporter;
+      // The internal price should be initialised with a value of 1
+      expect(await uniswapAnchoredView.price("ETH")).to.equal(1);
+      // Try to report new price
+      // This validates against the ETH-USDC UniV3 pool's TWAP at block 13152450
+      await reporter.validate(postedPrice);
+      expect(await uniswapAnchoredView.price("ETH")).to.equal(1);
+
+      // Check event log and make sure the PriceGuarded event was emitted correctly
+      const events = await uniswapAnchoredView.queryFilter(
+        uniswapAnchoredView.filters.PriceGuarded(null, null)
+      );
+      expect(events.length).to.equal(1);
+      expect(events[0].args.symbolHash).to.equal(ethSymbol);
+      expect(events[0].args.reporter).to.equal(postedPrice);
+      expect(events[0].args.anchor).to.equal(anchorPrice);
+      const updatedPrice = await uniswapAnchoredView.price("ETH");
       expect(updatedPrice).to.equal(1);
     });
 
@@ -790,6 +829,57 @@ describe("UniswapAnchoredView", () => {
       // failover price:      returns 3950e6
       // getUnderlyingPrice:  1e30 * 3950e6 / 1e18 = 3950e18
       expect(ethPrice2).to.equal(BigNumber.from(expectedEth2.toString()));
+    });
+
+    it("updates price from anchor instead of reporter when failover is active", async () => {
+      reporter = cToken.ETH.reporter;
+      await reporter.validate(BigNumber.from(3960e8));
+
+      // Check that prices = posted prices
+      const ethPrice1 = await uniswapAnchoredView.getUnderlyingPrice(
+        cToken.ETH.addr
+      );
+      // priceInternal:      returns 3960e6
+      // getUnderlyingPrice: 1e30 * 3960e6 / 1e18 = 3960e18
+      const expectedEth1 = exp(3960, 18);
+      expect(ethPrice1).to.equal(expectedEth1);
+
+      // Failover ETH
+      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+
+      // Check that ETH (which was failed over) = uniswap TWAP prices
+      // 1. Get UniV3 TWAP from pool
+      const tokenConfig = await uniswapAnchoredView.getTokenConfigBySymbolHash(
+        keccak256("ETH")
+      );
+      const usdcEthPool = await ethers.getContractAt(
+        UniswapV3Pool.abi,
+        tokenConfig.uniswapMarket
+      );
+      const tickCumulatives: BigNumber[] = (
+        await usdcEthPool.observe([60, 0])
+      )[0];
+      const timeWeightedAvgTick = tickCumulatives[1]
+        .sub(tickCumulatives[0])
+        .div(60)
+        .toNumber(); // int24
+      const expectedEth2 = Math.round(1e18 * 1.0001 ** -timeWeightedAvgTick);
+
+      // 2. Try to report a price, which should be ignored
+      const reporterPrice = 3940e8;
+      const convertedReporterPrice = 3940e6;
+      const tx = await reporter.validate(reporterPrice);
+
+      // 3. Check that PriceUpdated was emitted with anchor (Uniswap TWAP) price
+      // instead of reporter price
+      const emittedEvents = await uniswapAnchoredView.queryFilter(
+        uniswapAnchoredView.filters.PriceUpdated(null, null),
+        tx.blockNumber
+      );
+      expect(emittedEvents.length).to.equal(1);
+      expect(emittedEvents[0].args.symbolHash).to.equal(keccak256("ETH"));
+      expect(emittedEvents[0].args.price).to.not.equal(convertedReporterPrice);
+      expect(emittedEvents[0].args.price).to.equal(expectedEth2);
     });
   });
 
