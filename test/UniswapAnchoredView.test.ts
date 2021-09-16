@@ -741,7 +741,7 @@ describe("UniswapAnchoredView", () => {
       await expect(
         uniswapAnchoredView
           .connect(signers[1])
-          .updateFailover(keccak256("ETH"), true)
+          .activateFailover(keccak256("ETH"))
       ).to.be.revertedWith("Only callable by owner");
     });
 
@@ -753,17 +753,16 @@ describe("UniswapAnchoredView", () => {
       // Check that failoverActive variable is properly set
       const response1 = await uniswapAnchoredView.prices(bytes32EthSymbolHash);
       expect(response1.failoverActive).to.equal(false);
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
       const response2 = await uniswapAnchoredView.prices(bytes32EthSymbolHash);
       expect(response2.failoverActive).to.equal(true);
 
       const emittedEvents = await uniswapAnchoredView.queryFilter(
-        uniswapAnchoredView.filters.FailoverUpdated(null, null)
+        uniswapAnchoredView.filters.FailoverActivated(null)
       );
       // Check that event is emitted
       expect(emittedEvents.length).to.equal(1);
       expect(emittedEvents[0].args.symbolHash).to.equal(keccak256("ETH"));
-      expect(emittedEvents[0].args.status).to.equal(true);
     });
 
     it("basic scenario, return failover price after failover is activated", async () => {
@@ -780,7 +779,7 @@ describe("UniswapAnchoredView", () => {
       expect(ethPrice1).to.equal(expectedEth1);
 
       // Failover ETH
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
 
       // Check that ETH (which was failed over) = uniswap TWAP prices
       // 1. Get UniV3 TWAP from pool
@@ -824,7 +823,7 @@ describe("UniswapAnchoredView", () => {
       expect(ethPrice1).to.equal(expectedEth1);
 
       // Failover ETH
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
 
       // Check that ETH (which was failed over) = uniswap TWAP prices
       // 1. Get UniV3 TWAP from pool
@@ -875,7 +874,7 @@ describe("UniswapAnchoredView", () => {
       await expect(
         uniswapAnchoredView
           .connect(signers[1])
-          .updateFailover(keccak256("ETH"), false)
+          .deactivateFailover(keccak256("ETH"))
       ).to.be.revertedWith("Only callable by owner");
     });
 
@@ -884,26 +883,24 @@ describe("UniswapAnchoredView", () => {
       const response1 = await uniswapAnchoredView.prices(keccak256("ETH"));
       expect(response1.failoverActive).to.equal(false);
       // Activate & check
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
       const response2 = await uniswapAnchoredView.prices(keccak256("ETH"));
       expect(response2.failoverActive).to.equal(true);
       // De-activate & check
-      const deactivateTx = await uniswapAnchoredView.updateFailover(
-        keccak256("ETH"),
-        false
+      const deactivateTx = await uniswapAnchoredView.deactivateFailover(
+        keccak256("ETH")
       );
       const response3 = await uniswapAnchoredView.prices(keccak256("ETH"));
       expect(response3.failoverActive).to.equal(false);
 
       // Check that event is emitted
       const emittedEvents = await uniswapAnchoredView.queryFilter(
-        uniswapAnchoredView.filters.FailoverUpdated(null, null),
+        uniswapAnchoredView.filters.FailoverDeactivated(null),
         deactivateTx.blockNumber,
         deactivateTx.blockNumber
       );
       expect(emittedEvents.length).to.equal(1);
       expect(emittedEvents[0].args.symbolHash).to.equal(keccak256("ETH"));
-      expect(emittedEvents[0].args.status).to.equal(false);
     });
 
     it("basic scenario, return reporter price after failover is deactivated", async () => {
@@ -920,7 +917,7 @@ describe("UniswapAnchoredView", () => {
       expect(ethPrice1).to.equal(expectedEth1);
 
       // Failover ETH
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
 
       // Check that ETH (which was failed over) = uniswap TWAP prices
       // 1. Get UniV3 TWAP from pool
@@ -950,7 +947,7 @@ describe("UniswapAnchoredView", () => {
       expect(ethPrice2).to.equal(BigNumber.from(expectedEth2.toString()));
 
       // deactivate failover for eth
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), false);
+      await uniswapAnchoredView.deactivateFailover(keccak256("ETH"));
       await reporter.validate(3960e8);
 
       const ethPrice3 = await uniswapAnchoredView.getUnderlyingPrice(

@@ -38,7 +38,10 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     event PriceUpdated(bytes32 indexed symbolHash, uint price);
 
     /// @notice The event emitted when failover is activated
-    event FailoverUpdated(bytes32 indexed symbolHash, bool status);
+    event FailoverActivated(bytes32 indexed symbolHash);
+
+    /// @notice The event emitted when failover is deactivated
+    event FailoverDeactivated(bytes32 indexed symbolHash);
 
     bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
 
@@ -256,16 +259,23 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     /**
-     * @notice Activate/Deactivate failover, and fall back to using failover directly.
+     * @notice Activate failover, and fall back to using failover directly.
      * @dev Only the owner can call this function
      */
-    function updateFailover(bytes32 symbolHash, bool status) external onlyOwner() {
-        require(prices[symbolHash].failoverActive != status, "Already updated");
-        prices[symbolHash].failoverActive = status;
+    function activateFailover(bytes32 symbolHash) external onlyOwner() {
+        require(!prices[symbolHash].failoverActive, "Already activated");
+        prices[symbolHash].failoverActive = true;
+        emit FailoverActivated(symbolHash);
+        pokeFailedOverPrice(symbolHash);
+    }
 
-        emit FailoverUpdated(symbolHash, status);
-        if (status) {
-            pokeFailedOverPrice(symbolHash);
-        }
+    /**
+     * @notice Deactivate a previously activated failover
+     * @dev Only the owner can call this function
+     */
+    function deactivateFailover(bytes32 symbolHash) external onlyOwner() {
+        require(prices[symbolHash].failoverActive, "Already deactivated");
+        prices[symbolHash].failoverActive = false;
+        emit FailoverDeactivated(symbolHash);
     }
 }
