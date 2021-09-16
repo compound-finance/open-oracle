@@ -1,12 +1,10 @@
 import { ethers } from "hardhat";
-import { solidity } from "ethereum-waffle";
 import { expect, use } from "chai";
 import { UniswapConfig__factory } from "../types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { address, keccak256, uint } from "./utils";
 import { smock } from "@defi-wonderland/smock";
 
-use(solidity);
 use(smock.matchers);
 
 describe("UniswapConfig", () => {
