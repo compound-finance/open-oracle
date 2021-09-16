@@ -1,57 +1,126 @@
-
 ## Open Oracle
 
 The Open Oracle is a standard and SDK allowing reporters to sign key-value pairs (e.g. a price feed) that interested users can post to the blockchain. The system has a built-in view system that allows clients to easily share data and build aggregates (e.g. the median price from several sources).
 
-## Contracts
+## Contents
 
-First, you will need solc 0.6.6 installed.
-Additionally for testing, you will need TypeScript installed and will need to build the open-oracle-reporter project by running `cd sdk/javascript && yarn`.
+- [Install](#install)
+- [Deploy](#deploy)
+- [Verify](#verify)
+  - [Manual Verification](#manual-verification)
+- [Transfer Ownership](#transfer-ownership)
+- [Common Issues](#common-issues)
 
-To fetch dependencies run:
+## Install
 
-```
+1. Clone the repo
+2. Install dependencies
+
+```sh
 yarn install
 ```
 
-To compile everything run:
+3. Copy the contents of `.env.example` to `.env`
 
+```sh
+cp .env.example .env
 ```
+
+4. Edit `.env` with your values
+
+## Compiling & Testing
+
+1. To compile:
+
+```sh
 yarn run compile
 ```
 
-To deploy contracts locally, you can run:
+2. To run tests:
 
-```
-yarn run deploy --network development OpenOraclePriceData
-```
-
-Note: you will need to be running an Ethereum node locally in order for this to work.
-E.g., start [ganache-cli](https://github.com/trufflesuite/ganache-cli) in another shell.
-
-You can add a view in `MyView.sol` and run (default is `network=development`):
-
-```
-yarn run deploy MyView arg1 arg2 ...
-```
-
-To run tests:
-
-```
+```sh
 yarn run test
 ```
 
-To track deployed contracts in a saddle console:
+3. To run test coverage:
 
+```sh
+yarn run coverage
 ```
-yarn run console
+
+Note that tests run for coverage will likely fail as resetting forked mainnet is disabled under coverage testing, due to [this issue](https://github.com/sc-forks/solidity-coverage/issues/574) in the `solidity-coverage` package, which fails to report coverage when the fork is reset. However, it is kept here as an indicator of coverage.
+
+## Deploy
+
+The UAV is deployed using constructor parameters defined in `./configuration/parameters.js`. If new markets need to be added, they should be added to this file first. Read more about how to add new markets in the [configuration README](./configuration/).
+
+1. Configure constructor params in `./configuration/parameters.js`
+2. Test in a local fork of mainnet:
+
+```sh
+yarn deploy-test
 ```
+
+3. Deploy the UAV to mainnet:
+
+```sh
+yarn deploy
+```
+
+This will output the address where the UAV was deployed. Keep this to verify on Etherscan.
+
+## Verify
+
+Use the address from the previous step as a positional parameter in the following command:
+
+```sh
+yarn verify <UAV_ADDRESS>
+```
+
+### Manual Verification
+
+A known issue is that the Etherscan API has a limit on the amount of data it accepts. You may see an error like this:
+
+`hardhat-etherscan constructor arguments exceeds max accepted (10k chars) length`
+
+If so, it means verification must be performed through the UI manually:
+
+1. Generate Standard JSON Input by running:
+
+```sh
+yarn verify-manual
+```
+
+This will create a file in this project at `./etherscan/verify.json`
+
+2. Navigate to the contract in your browser `https://etherscan.io/address/<UAV_ADDRESS>`
+3. Click `Contract` tab, then click `Verify and Publish`
+4. In the form, the address should already be filled. Fill in the following, and submit:
+5. Compiler type: `Solidity (Standard-Json-Input)`
+6. Compiler Version: `v0.6.12+...`
+7. License: `GNU GPLv3`
+8. Upload `etherscan/verify.json` and submit.
+
+## Transfer Ownership
+
+Use the UAV address as a positional parameter in the same way as the verify step. The COMP_MULTISIG address from .env will be the new proposed owner. Run the following command:
+
+```sh
+yarn transfer <UAV_ADDRESS>
+```
+
+## Common Issues
+
+### Failure to deploy
+
+If deployment fails with an unhelpful GAS error, it usually means that something failed during the UAV's complex construction. The most common problem is incorrect uniswap config. If the `uniswapMarket` address is not a Uniswap V2 pool, construction will fail. Double check the address, and whether the pool needs to be reversed. More info on this in the [configuration README](./configuration/).
+
 ## Reporter SDK
 
 This repository contains a set of SDKs for reporters to easily sign "reporter" data in any supported languages. We currently support the following languages:
 
-  * [JavaScript](./sdk/javascript/README.md) (in TypeScript)
-  * [Elixir](./sdk/typescript/README.md)
+- [JavaScript](./sdk/javascript/README.md) (in TypeScript)
+- [Elixir](./sdk/typescript/README.md)
 
 ## Poster
 

@@ -16,6 +16,7 @@ coverage.json
 # Hardhat
 cache
 artifacts
+etherscan/
 
 # Typechain generated types
 types
