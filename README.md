@@ -97,7 +97,7 @@ This will create a file in this project at `./etherscan/verify.json`
 3. Click `Contract` tab, then click `Verify and Publish`
 4. In the form, the address should already be filled. Fill in the following, and submit:
 5. Compiler type: `Solidity (Standard-Json-Input)`
-6. Compiler Version: `v0.6.12+...`
+6. Compiler Version: `v0.8.7+...`
 7. License: `GNU GPLv3`
 8. Upload `etherscan/verify.json` and submit.
 

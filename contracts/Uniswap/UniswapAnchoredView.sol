@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.7;
 
 import "./UniswapConfig.sol";
 import "./UniswapLib.sol";
 import "../Ownable.sol";
 import "../Chainlink/AggregatorValidatorInterface.sol";
-import "../SafeMath.sol";
 
 struct PriceData {
     uint248 price;
@@ -15,8 +13,6 @@ struct PriceData {
 }
 
 contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Ownable {
-    using SafeMath for uint;
-
     /// @notice The number of wei in 1 ETH
     uint public constant ethBaseUnit = 1e18;
 
@@ -57,12 +53,12 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      */
     constructor(uint anchorToleranceMantissa_,
                 uint anchorPeriod_,
-                TokenConfig[] memory configs) UniswapConfig(configs) public {
+                TokenConfig[] memory configs) UniswapConfig(configs) {
 
         anchorPeriod = anchorPeriod_;
 
         // Allow the tolerance to be whatever the deployer chooses, but prevent under/overflow (and prices from being 0)
-        upperBoundAnchorRatio = anchorToleranceMantissa_ > uint(-1) - 100e16 ? uint(-1) : 100e16 + anchorToleranceMantissa_;
+        upperBoundAnchorRatio = anchorToleranceMantissa_ > type(uint).max - 100e16 ? type(uint).max : 100e16 + anchorToleranceMantissa_;
         lowerBoundAnchorRatio = anchorToleranceMantissa_ < 100e16 ? 100e16 - anchorToleranceMantissa_ : 1;
 
         for (uint i = 0; i < configs.length; i++) {
@@ -96,7 +92,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         if (config.priceSource == PriceSource.FIXED_ETH) {
             uint usdPerEth = prices[ethHash].price;
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-            return usdPerEth.mul(config.fixedPrice).div(ethBaseUnit);
+            return usdPerEth * config.fixedPrice / ethBaseUnit;
         }
     }
 
@@ -112,7 +108,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         // The baseUnit of an asset is the amount of the smallest denomination of that asset per whole.
         // For example, the baseUnit of ETH is 1e18.
         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6)/baseUnit
-        return priceInternal(config).mul(1e30).div(config.baseUnit);
+        return 1e30 * priceInternal(config) / (config.baseUnit);
     }
 
     /**
@@ -187,14 +183,14 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     function convertReportedPrice(TokenConfig memory config, int256 reportedPrice) internal pure returns (uint256) {
         require(reportedPrice >= 0, "Reported price cannot be negative");
         uint256 unsignedPrice = uint256(reportedPrice);
-        uint256 convertedPrice = unsignedPrice.mul(config.reporterMultiplier).div(config.baseUnit);
+        uint256 convertedPrice = unsignedPrice * config.reporterMultiplier / config.baseUnit;
         return convertedPrice;
     }
 
 
     function isWithinAnchor(uint reporterPrice, uint anchorPrice) internal view returns (bool) {
         if (reporterPrice > 0) {
-            uint anchorRatio = anchorPrice.mul(100e16).div(reporterPrice);
+            uint anchorRatio = anchorPrice * 100e16 / reporterPrice;
             return anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
         }
         return false;
@@ -210,8 +206,15 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         secondsAgos[1] = 0;
         (int56[] memory tickCumulatives, ) = IUniswapV3Pool(config.uniswapMarket).observe(secondsAgos);
 
-        require(anchorPeriod_ > 0, "Anchor period must be >0");
-        int24 timeWeightedAverageTick = int24((tickCumulatives[1] - tickCumulatives[0]) / anchorPeriod_);
+        int56 anchorPeriod__ = int56(uint56(anchorPeriod_));
+        require(anchorPeriod__ > 0, "Anchor period must be >0");
+        int56 timeWeightedAverageTickS56 = (tickCumulatives[1] - tickCumulatives[0]) / anchorPeriod__;
+        require(
+            timeWeightedAverageTickS56 >= TickMath.MIN_TICK &&
+                timeWeightedAverageTickS56 <= TickMath.MAX_TICK,
+            "Calculated TWAP outside possible tick range"
+        );
+        int24 timeWeightedAverageTick = int24(timeWeightedAverageTickS56);
         if (config.isUniswapReversed) {
             // If the reverse price is desired, inverse the tick
             // price = 1.0001^{tick}
@@ -225,7 +228,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         uint256 twapX96 = FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
 
         // Scale up to a common precision (expScale), then down-scale from Q96.
-        uint256 twap = expScale.mul(twapX96).div(2**96);
+        uint256 twap = expScale * twapX96 / (2**96);
 
         return twap;
     }
@@ -246,8 +249,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         uint256 twap = getUniswapTwap(config);
 
         uint rawUniswapPriceMantissa = twap;
-        uint unscaledPriceMantissa = rawUniswapPriceMantissa.mul(conversionFactor);
-        uint anchorPrice = unscaledPriceMantissa.mul(config.baseUnit).div(ethBaseUnit).div(expScale);
+        uint unscaledPriceMantissa = rawUniswapPriceMantissa * conversionFactor;
+        uint anchorPrice = unscaledPriceMantissa * config.baseUnit / ethBaseUnit / expScale;
 
         return anchorPrice;
     }

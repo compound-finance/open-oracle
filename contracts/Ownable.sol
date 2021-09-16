@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.6.12;
+pragma solidity ^0.8.7;
 
 /**
  * @notice A contract with helpers for safe contract ownership.
@@ -12,7 +12,7 @@ contract Ownable {
     event OwnershipTransferRequested(address indexed from, address indexed to);
     event OwnershipTransferred(address indexed from, address indexed to);
 
-    constructor() public {
+    constructor() {
         ownerAddr = msg.sender;
     }
 

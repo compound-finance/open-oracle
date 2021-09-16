@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.7;
 
 interface CErc20 {
     function underlying() external view returns (address);
@@ -32,7 +31,7 @@ contract UniswapConfig {
 
     /// @notice The max number of tokens this contract is hardcoded to support
     /// @dev Do not change this variable without updating all the fields throughout the contract.
-    uint public constant maxTokens = 25;
+    uint public constant maxTokens = 24;
 
     /// @notice The number of tokens this contract actually supports
     uint public immutable numTokens;
@@ -61,7 +60,6 @@ contract UniswapConfig {
     address internal immutable cToken21;
     address internal immutable cToken22;
     address internal immutable cToken23;
-    address internal immutable cToken24;
 
     address internal immutable underlying00;
     address internal immutable underlying01;
@@ -87,7 +85,6 @@ contract UniswapConfig {
     address internal immutable underlying21;
     address internal immutable underlying22;
     address internal immutable underlying23;
-    address internal immutable underlying24;
 
     bytes32 internal immutable symbolHash00;
     bytes32 internal immutable symbolHash01;
@@ -113,7 +110,6 @@ contract UniswapConfig {
     bytes32 internal immutable symbolHash21;
     bytes32 internal immutable symbolHash22;
     bytes32 internal immutable symbolHash23;
-    bytes32 internal immutable symbolHash24;
 
     uint256 internal immutable baseUnit00;
     uint256 internal immutable baseUnit01;
@@ -139,7 +135,6 @@ contract UniswapConfig {
     uint256 internal immutable baseUnit21;
     uint256 internal immutable baseUnit22;
     uint256 internal immutable baseUnit23;
-    uint256 internal immutable baseUnit24;
 
     PriceSource internal immutable priceSource00;
     PriceSource internal immutable priceSource01;
@@ -165,7 +160,6 @@ contract UniswapConfig {
     PriceSource internal immutable priceSource21;
     PriceSource internal immutable priceSource22;
     PriceSource internal immutable priceSource23;
-    PriceSource internal immutable priceSource24;
 
     uint256 internal immutable fixedPrice00;
     uint256 internal immutable fixedPrice01;
@@ -191,7 +185,6 @@ contract UniswapConfig {
     uint256 internal immutable fixedPrice21;
     uint256 internal immutable fixedPrice22;
     uint256 internal immutable fixedPrice23;
-    uint256 internal immutable fixedPrice24;
 
     address internal immutable uniswapMarket00;
     address internal immutable uniswapMarket01;
@@ -217,7 +210,6 @@ contract UniswapConfig {
     address internal immutable uniswapMarket21;
     address internal immutable uniswapMarket22;
     address internal immutable uniswapMarket23;
-    address internal immutable uniswapMarket24;
 
     address internal immutable reporter00;
     address internal immutable reporter01;
@@ -243,7 +235,6 @@ contract UniswapConfig {
     address internal immutable reporter21;
     address internal immutable reporter22;
     address internal immutable reporter23;
-    address internal immutable reporter24;
 
     uint256 internal immutable reporterMultiplier00;
     uint256 internal immutable reporterMultiplier01;
@@ -269,7 +260,6 @@ contract UniswapConfig {
     uint256 internal immutable reporterMultiplier21;
     uint256 internal immutable reporterMultiplier22;
     uint256 internal immutable reporterMultiplier23;
-    uint256 internal immutable reporterMultiplier24;
 
     bool internal immutable isUniswapReversed00;
     bool internal immutable isUniswapReversed01;
@@ -295,13 +285,12 @@ contract UniswapConfig {
     bool internal immutable isUniswapReversed21;
     bool internal immutable isUniswapReversed22;
     bool internal immutable isUniswapReversed23;
-    bool internal immutable isUniswapReversed24;
 
     /**
      * @notice Construct an immutable store of configs into the contract data
      * @param configs The configs for the supported assets
      */
-    constructor(TokenConfig[] memory configs) public {
+    constructor(TokenConfig[] memory configs) {
         require(configs.length <= maxTokens, "too many configs");
         numTokens = configs.length;
 
@@ -329,7 +318,6 @@ contract UniswapConfig {
         cToken21 = get(configs, 21).cToken;
         cToken22 = get(configs, 22).cToken;
         cToken23 = get(configs, 23).cToken;
-        cToken24 = get(configs, 24).cToken;
 
         underlying00 = get(configs, 0).underlying;
         underlying01 = get(configs, 1).underlying;
@@ -355,7 +343,6 @@ contract UniswapConfig {
         underlying21 = get(configs, 21).underlying;
         underlying22 = get(configs, 22).underlying;
         underlying23 = get(configs, 23).underlying;
-        underlying24 = get(configs, 24).underlying;
 
         symbolHash00 = get(configs, 0).symbolHash;
         symbolHash01 = get(configs, 1).symbolHash;
@@ -381,7 +368,6 @@ contract UniswapConfig {
         symbolHash21 = get(configs, 21).symbolHash;
         symbolHash22 = get(configs, 22).symbolHash;
         symbolHash23 = get(configs, 23).symbolHash;
-        symbolHash24 = get(configs, 24).symbolHash;
 
         baseUnit00 = get(configs, 0).baseUnit;
         baseUnit01 = get(configs, 1).baseUnit;
@@ -407,7 +393,6 @@ contract UniswapConfig {
         baseUnit21 = get(configs, 21).baseUnit;
         baseUnit22 = get(configs, 22).baseUnit;
         baseUnit23 = get(configs, 23).baseUnit;
-        baseUnit24 = get(configs, 24).baseUnit;
 
         priceSource00 = get(configs, 0).priceSource;
         priceSource01 = get(configs, 1).priceSource;
@@ -433,7 +418,6 @@ contract UniswapConfig {
         priceSource21 = get(configs, 21).priceSource;
         priceSource22 = get(configs, 22).priceSource;
         priceSource23 = get(configs, 23).priceSource;
-        priceSource24 = get(configs, 24).priceSource;
 
         fixedPrice00 = get(configs, 0).fixedPrice;
         fixedPrice01 = get(configs, 1).fixedPrice;
@@ -459,7 +443,6 @@ contract UniswapConfig {
         fixedPrice21 = get(configs, 21).fixedPrice;
         fixedPrice22 = get(configs, 22).fixedPrice;
         fixedPrice23 = get(configs, 23).fixedPrice;
-        fixedPrice24 = get(configs, 24).fixedPrice;
 
         uniswapMarket00 = get(configs, 0).uniswapMarket;
         uniswapMarket01 = get(configs, 1).uniswapMarket;
@@ -485,7 +468,6 @@ contract UniswapConfig {
         uniswapMarket21 = get(configs, 21).uniswapMarket;
         uniswapMarket22 = get(configs, 22).uniswapMarket;
         uniswapMarket23 = get(configs, 23).uniswapMarket;
-        uniswapMarket24 = get(configs, 24).uniswapMarket;
 
         reporter00 = get(configs, 0).reporter;
         reporter01 = get(configs, 1).reporter;
@@ -511,7 +493,6 @@ contract UniswapConfig {
         reporter21 = get(configs, 21).reporter;
         reporter22 = get(configs, 22).reporter;
         reporter23 = get(configs, 23).reporter;
-        reporter24 = get(configs, 24).reporter;
 
         reporterMultiplier00 = get(configs, 0).reporterMultiplier;
         reporterMultiplier01 = get(configs, 1).reporterMultiplier;
@@ -537,7 +518,6 @@ contract UniswapConfig {
         reporterMultiplier21 = get(configs, 21).reporterMultiplier;
         reporterMultiplier22 = get(configs, 22).reporterMultiplier;
         reporterMultiplier23 = get(configs, 23).reporterMultiplier;
-        reporterMultiplier24 = get(configs, 24).reporterMultiplier;
 
         isUniswapReversed00 = get(configs, 0).isUniswapReversed;
         isUniswapReversed01 = get(configs, 1).isUniswapReversed;
@@ -563,7 +543,6 @@ contract UniswapConfig {
         isUniswapReversed21 = get(configs, 21).isUniswapReversed;
         isUniswapReversed22 = get(configs, 22).isUniswapReversed;
         isUniswapReversed23 = get(configs, 23).isUniswapReversed;
-        isUniswapReversed24 = get(configs, 24).isUniswapReversed;
     }
 
     function get(TokenConfig[] memory configs, uint i) internal pure returns (TokenConfig memory) {
@@ -608,7 +587,6 @@ contract UniswapConfig {
         if (reporter == reporter21) return 21;
         if (reporter == reporter22) return 22;
         if (reporter == reporter23) return 23;
-        if (reporter == reporter24) return 24;
 
         return type(uint).max;
     }
@@ -638,9 +616,8 @@ contract UniswapConfig {
         if (cToken == cToken21) return 21;
         if (cToken == cToken22) return 22;
         if (cToken == cToken23) return 23;
-        if (cToken == cToken24) return 24;
 
-        return uint(-1);
+        return type(uint).max;
     }
 
     function getUnderlyingIndex(address underlying) internal view returns (uint) {
@@ -668,9 +645,8 @@ contract UniswapConfig {
         if (underlying == underlying21) return 21;
         if (underlying == underlying22) return 22;
         if (underlying == underlying23) return 23;
-        if (underlying == underlying24) return 24;
 
-        return uint(-1);
+        return type(uint).max;
     }
 
     function getSymbolHashIndex(bytes32 symbolHash) internal view returns (uint) {
@@ -698,9 +674,8 @@ contract UniswapConfig {
         if (symbolHash == symbolHash21) return 21;
         if (symbolHash == symbolHash22) return 22;
         if (symbolHash == symbolHash23) return 23;
-        if (symbolHash == symbolHash24) return 24;
 
-        return uint(-1);
+        return type(uint).max;
     }
 
     /**
@@ -737,7 +712,6 @@ contract UniswapConfig {
         if (i == 21) return TokenConfig({cToken: cToken21, underlying: underlying21, symbolHash: symbolHash21, baseUnit: baseUnit21, priceSource: priceSource21, fixedPrice: fixedPrice21, uniswapMarket: uniswapMarket21, reporter: reporter21, reporterMultiplier: reporterMultiplier21, isUniswapReversed: isUniswapReversed21});
         if (i == 22) return TokenConfig({cToken: cToken22, underlying: underlying22, symbolHash: symbolHash22, baseUnit: baseUnit22, priceSource: priceSource22, fixedPrice: fixedPrice22, uniswapMarket: uniswapMarket22, reporter: reporter22, reporterMultiplier: reporterMultiplier22, isUniswapReversed: isUniswapReversed22});
         if (i == 23) return TokenConfig({cToken: cToken23, underlying: underlying23, symbolHash: symbolHash23, baseUnit: baseUnit23, priceSource: priceSource23, fixedPrice: fixedPrice23, uniswapMarket: uniswapMarket23, reporter: reporter23, reporterMultiplier: reporterMultiplier23, isUniswapReversed: isUniswapReversed23});
-        if (i == 24) return TokenConfig({cToken: cToken24, underlying: underlying24, symbolHash: symbolHash24, baseUnit: baseUnit24, priceSource: priceSource24, fixedPrice: fixedPrice24, uniswapMarket: uniswapMarket24, reporter: reporter24, reporterMultiplier: reporterMultiplier24, isUniswapReversed: isUniswapReversed24});
     }
 
     /**
@@ -756,7 +730,7 @@ contract UniswapConfig {
      */
     function getTokenConfigByReporter(address reporter) public view returns (TokenConfig memory) {
         uint index = getReporterIndex(reporter);
-        if (index != uint(-1)) {
+        if (index != type(uint).max) {
             return getTokenConfig(index);
         }
 
@@ -770,7 +744,7 @@ contract UniswapConfig {
      */
     function getTokenConfigBySymbolHash(bytes32 symbolHash) public view returns (TokenConfig memory) {
         uint index = getSymbolHashIndex(symbolHash);
-        if (index != uint(-1)) {
+        if (index != type(uint).max) {
             return getTokenConfig(index);
         }
 
@@ -785,7 +759,7 @@ contract UniswapConfig {
      */
     function getTokenConfigByCToken(address cToken) public view returns (TokenConfig memory) {
         uint index = getCTokenIndex(cToken);
-        if (index != uint(-1)) {
+        if (index != type(uint).max) {
             return getTokenConfig(index);
         }
 
@@ -799,7 +773,7 @@ contract UniswapConfig {
      */
     function getTokenConfigByUnderlying(address underlying) public view returns (TokenConfig memory) {
         uint index = getUnderlyingIndex(underlying);
-        if (index != uint(-1)) {
+        if (index != type(uint).max) {
             return getTokenConfig(index);
         }
 
