@@ -46,7 +46,8 @@
     "deploy-test": "yarn hardhat run ./scripts/deploy-uav.js --network hardhat",
     "verify": "yarn hardhat verify --network mainnet --constructor-args ./configuration/parameters.js",
     "verify-manual": "yarn hardhat manual-verify",
-    "transfer": "yarn hardhat transfer-ownership --network mainnet --uav"
+    "transfer": "yarn hardhat transfer-ownership --network mainnet --uav",
+    "size-contracts": "yarn hardhat size-contracts"
   },
   "resolutions": {
     "**/ganache-core": "https://github.com/compound-finance/ganache-core.git#compound",
