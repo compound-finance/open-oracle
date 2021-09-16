@@ -126,7 +126,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
             uint256 /* currentRoundId */,
             int256 currentAnswer) external override returns (bool valid) {
 
-        // This will revert if no configs found for the msg.sender
+        // NOTE: We don't do any access control on msg.sender here. The access control is done in getTokenConfigByReporter,
+        // which will REVERT if an unauthorized address is passed.
         TokenConfig memory config = getTokenConfigByReporter(msg.sender);
         uint256 reportedPrice = convertReportedPrice(config, currentAnswer);
         uint256 anchorPrice = calculateAnchorPriceFromEthPrice(config);
