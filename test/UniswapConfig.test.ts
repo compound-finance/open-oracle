@@ -7,6 +7,9 @@ import { smock } from "@defi-wonderland/smock";
 
 use(smock.matchers);
 
+// Update this to the max number of tokens supported in UniswapConfig.sol
+const MAX_TOKENS = 35
+
 describe("UniswapConfig", () => {
   let signers: SignerWithAddress[];
   let deployer: SignerWithAddress;
@@ -104,7 +107,7 @@ describe("UniswapConfig", () => {
   });
 
   it("returns configs exactly as specified", async () => {
-    const symbols = Array(25)
+    const symbols = Array(MAX_TOKENS)
       .fill(0)
       .map((_, i) => String.fromCharCode("a".charCodeAt(0) + i));
     const configs = symbols.map((symbol, i) => {
@@ -161,7 +164,7 @@ describe("UniswapConfig", () => {
   });
 
   it("checks gas [ @skip-on-coverage ]", async () => {
-    const configs = Array(25)
+    const configs = Array(MAX_TOKENS)
       .fill(0)
       .map((_, i) => {
         const symbol = String.fromCharCode("a".charCodeAt(0) + i);
@@ -184,14 +187,14 @@ describe("UniswapConfig", () => {
     const tx9_ = await deployer.sendTransaction(tx9__);
     const tx9 = await tx9_.wait();
     expect(cfg9.underlying).to.equal(address(10));
-    expect(tx9.gasUsed).to.equal(22682);
+    expect(tx9.gasUsed).to.equal(23504);
 
     const cfg25 = await contract.getTokenConfig(24);
     const tx25__ = await contract.populateTransaction.getTokenConfig(24);
     const tx25_ = await deployer.sendTransaction(tx25__);
     const tx25 = await tx25_.wait();
     expect(cfg25.underlying).to.equal(address(25));
-    expect(tx25.gasUsed).to.equal(23072);
+    expect(tx25.gasUsed).to.equal(23494);
 
     const cfgY = await contract.getTokenConfigBySymbol("y");
     const txY__ = await contract.populateTransaction.getTokenConfigBySymbol(
@@ -200,7 +203,7 @@ describe("UniswapConfig", () => {
     const txY_ = await deployer.sendTransaction(txY__);
     const txY = await txY_.wait();
     expect(cfgY.underlying).to.equal(address(25));
-    expect(txY.gasUsed).to.equal(25276);
+    expect(txY.gasUsed).to.equal(25698);
 
     const cfgCT26 = await contract.getTokenConfigByUnderlying(address(25));
     const txCT26__ = await contract.populateTransaction.getTokenConfigByUnderlying(
@@ -209,7 +212,7 @@ describe("UniswapConfig", () => {
     const txCT26_ = await deployer.sendTransaction(txCT26__);
     const txCT26 = await txCT26_.wait();
     expect(cfgCT26.underlying).to.equal(address(25));
-    expect(txCT26.gasUsed).to.equal(25011);
+    expect(txCT26.gasUsed).to.equal(25433);
 
     const cfgR26 = await contract.getTokenConfigByReporter(address(24 + 51));
     const txR26__ = await contract.populateTransaction.getTokenConfigByReporter(
@@ -218,7 +221,7 @@ describe("UniswapConfig", () => {
     const txR26_ = await deployer.sendTransaction(txR26__);
     const txR26 = await txR26_.wait();
     expect(cfgR26.underlying).to.equal(address(25));
-    expect(txR26.gasUsed).to.equal(25056);
+    expect(txR26.gasUsed).to.equal(25478);
 
     const cfgU26 = await contract.getTokenConfigByUnderlying(address(25));
     const txU26__ =
@@ -228,6 +231,6 @@ describe("UniswapConfig", () => {
     const txU26_ = await deployer.sendTransaction(txU26__);
     const txU26 = await txU26_.wait();
     expect(cfgU26.underlying).to.equal(address(25));
-    expect(txU26.gasUsed).to.equal(25011);
+    expect(txU26.gasUsed).to.equal(25433);
   });
 });

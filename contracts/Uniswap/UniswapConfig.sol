@@ -30,7 +30,7 @@ contract UniswapConfig {
 
     /// @notice The max number of tokens this contract is hardcoded to support
     /// @dev Do not change this variable without updating all the fields throughout the contract.
-    uint public constant maxTokens = 28;
+    uint public constant maxTokens = 35;
 
     /// @notice The number of tokens this contract actually supports
     uint public immutable numTokens;
@@ -63,6 +63,13 @@ contract UniswapConfig {
     address internal immutable underlying25;
     address internal immutable underlying26;
     address internal immutable underlying27;
+    address internal immutable underlying28;
+    address internal immutable underlying29;
+    address internal immutable underlying30;
+    address internal immutable underlying31;
+    address internal immutable underlying32;
+    address internal immutable underlying33;
+    address internal immutable underlying34;
 
     bytes32 internal immutable symbolHash00;
     bytes32 internal immutable symbolHash01;
@@ -92,6 +99,13 @@ contract UniswapConfig {
     bytes32 internal immutable symbolHash25;
     bytes32 internal immutable symbolHash26;
     bytes32 internal immutable symbolHash27;
+    bytes32 internal immutable symbolHash28;
+    bytes32 internal immutable symbolHash29;
+    bytes32 internal immutable symbolHash30;
+    bytes32 internal immutable symbolHash31;
+    bytes32 internal immutable symbolHash32;
+    bytes32 internal immutable symbolHash33;
+    bytes32 internal immutable symbolHash34;
 
     uint256 internal immutable baseUnit00;
     uint256 internal immutable baseUnit01;
@@ -121,6 +135,13 @@ contract UniswapConfig {
     uint256 internal immutable baseUnit25;
     uint256 internal immutable baseUnit26;
     uint256 internal immutable baseUnit27;
+    uint256 internal immutable baseUnit28;
+    uint256 internal immutable baseUnit29;
+    uint256 internal immutable baseUnit30;
+    uint256 internal immutable baseUnit31;
+    uint256 internal immutable baseUnit32;
+    uint256 internal immutable baseUnit33;
+    uint256 internal immutable baseUnit34;
 
     PriceSource internal immutable priceSource00;
     PriceSource internal immutable priceSource01;
@@ -150,6 +171,13 @@ contract UniswapConfig {
     PriceSource internal immutable priceSource25;
     PriceSource internal immutable priceSource26;
     PriceSource internal immutable priceSource27;
+    PriceSource internal immutable priceSource28;
+    PriceSource internal immutable priceSource29;
+    PriceSource internal immutable priceSource30;
+    PriceSource internal immutable priceSource31;
+    PriceSource internal immutable priceSource32;
+    PriceSource internal immutable priceSource33;
+    PriceSource internal immutable priceSource34;
 
     uint256 internal immutable fixedPrice00;
     uint256 internal immutable fixedPrice01;
@@ -179,6 +207,13 @@ contract UniswapConfig {
     uint256 internal immutable fixedPrice25;
     uint256 internal immutable fixedPrice26;
     uint256 internal immutable fixedPrice27;
+    uint256 internal immutable fixedPrice28;
+    uint256 internal immutable fixedPrice29;
+    uint256 internal immutable fixedPrice30;
+    uint256 internal immutable fixedPrice31;
+    uint256 internal immutable fixedPrice32;
+    uint256 internal immutable fixedPrice33;
+    uint256 internal immutable fixedPrice34;
 
     address internal immutable uniswapMarket00;
     address internal immutable uniswapMarket01;
@@ -208,6 +243,13 @@ contract UniswapConfig {
     address internal immutable uniswapMarket25;
     address internal immutable uniswapMarket26;
     address internal immutable uniswapMarket27;
+    address internal immutable uniswapMarket28;
+    address internal immutable uniswapMarket29;
+    address internal immutable uniswapMarket30;
+    address internal immutable uniswapMarket31;
+    address internal immutable uniswapMarket32;
+    address internal immutable uniswapMarket33;
+    address internal immutable uniswapMarket34;
 
     address internal immutable reporter00;
     address internal immutable reporter01;
@@ -237,6 +279,13 @@ contract UniswapConfig {
     address internal immutable reporter25;
     address internal immutable reporter26;
     address internal immutable reporter27;
+    address internal immutable reporter28;
+    address internal immutable reporter29;
+    address internal immutable reporter30;
+    address internal immutable reporter31;
+    address internal immutable reporter32;
+    address internal immutable reporter33;
+    address internal immutable reporter34;
 
     uint256 internal immutable reporterMultiplier00;
     uint256 internal immutable reporterMultiplier01;
@@ -266,35 +315,17 @@ contract UniswapConfig {
     uint256 internal immutable reporterMultiplier25;
     uint256 internal immutable reporterMultiplier26;
     uint256 internal immutable reporterMultiplier27;
+    uint256 internal immutable reporterMultiplier28;
+    uint256 internal immutable reporterMultiplier29;
+    uint256 internal immutable reporterMultiplier30;
+    uint256 internal immutable reporterMultiplier31;
+    uint256 internal immutable reporterMultiplier32;
+    uint256 internal immutable reporterMultiplier33;
+    uint256 internal immutable reporterMultiplier34;
 
-    bool internal immutable isUniswapReversed00;
-    bool internal immutable isUniswapReversed01;
-    bool internal immutable isUniswapReversed02;
-    bool internal immutable isUniswapReversed03;
-    bool internal immutable isUniswapReversed04;
-    bool internal immutable isUniswapReversed05;
-    bool internal immutable isUniswapReversed06;
-    bool internal immutable isUniswapReversed07;
-    bool internal immutable isUniswapReversed08;
-    bool internal immutable isUniswapReversed09;
-    bool internal immutable isUniswapReversed10;
-    bool internal immutable isUniswapReversed11;
-    bool internal immutable isUniswapReversed12;
-    bool internal immutable isUniswapReversed13;
-    bool internal immutable isUniswapReversed14;
-    bool internal immutable isUniswapReversed15;
-    bool internal immutable isUniswapReversed16;
-    bool internal immutable isUniswapReversed17;
-    bool internal immutable isUniswapReversed18;
-    bool internal immutable isUniswapReversed19;
-    bool internal immutable isUniswapReversed20;
-    bool internal immutable isUniswapReversed21;
-    bool internal immutable isUniswapReversed22;
-    bool internal immutable isUniswapReversed23;
-    bool internal immutable isUniswapReversed24;
-    bool internal immutable isUniswapReversed25;
-    bool internal immutable isUniswapReversed26;
-    bool internal immutable isUniswapReversed27;
+    // Contract bytecode size optimisation:
+    // Each bit i stores a bool, corresponding to the ith config.
+    uint64 internal immutable isUniswapReversed;
 
     /**
      * @notice Construct an immutable store of configs into the contract data
@@ -332,6 +363,13 @@ contract UniswapConfig {
         underlying25 = get(configs, 25).underlying;
         underlying26 = get(configs, 26).underlying;
         underlying27 = get(configs, 27).underlying;
+        underlying28 = get(configs, 28).underlying;
+        underlying29 = get(configs, 29).underlying;
+        underlying30 = get(configs, 30).underlying;
+        underlying31 = get(configs, 31).underlying;
+        underlying32 = get(configs, 32).underlying;
+        underlying33 = get(configs, 33).underlying;
+        underlying34 = get(configs, 34).underlying;
 
         symbolHash00 = get(configs, 0).symbolHash;
         symbolHash01 = get(configs, 1).symbolHash;
@@ -361,6 +399,13 @@ contract UniswapConfig {
         symbolHash25 = get(configs, 25).symbolHash;
         symbolHash26 = get(configs, 26).symbolHash;
         symbolHash27 = get(configs, 27).symbolHash;
+        symbolHash28 = get(configs, 28).symbolHash;
+        symbolHash29 = get(configs, 29).symbolHash;
+        symbolHash30 = get(configs, 30).symbolHash;
+        symbolHash31 = get(configs, 31).symbolHash;
+        symbolHash32 = get(configs, 32).symbolHash;
+        symbolHash33 = get(configs, 33).symbolHash;
+        symbolHash34 = get(configs, 34).symbolHash;
 
         baseUnit00 = get(configs, 0).baseUnit;
         baseUnit01 = get(configs, 1).baseUnit;
@@ -390,6 +435,13 @@ contract UniswapConfig {
         baseUnit25 = get(configs, 25).baseUnit;
         baseUnit26 = get(configs, 26).baseUnit;
         baseUnit27 = get(configs, 27).baseUnit;
+        baseUnit28 = get(configs, 28).baseUnit;
+        baseUnit29 = get(configs, 29).baseUnit;
+        baseUnit30 = get(configs, 30).baseUnit;
+        baseUnit31 = get(configs, 31).baseUnit;
+        baseUnit32 = get(configs, 32).baseUnit;
+        baseUnit33 = get(configs, 33).baseUnit;
+        baseUnit34 = get(configs, 34).baseUnit;
 
         priceSource00 = get(configs, 0).priceSource;
         priceSource01 = get(configs, 1).priceSource;
@@ -419,6 +471,13 @@ contract UniswapConfig {
         priceSource25 = get(configs, 25).priceSource;
         priceSource26 = get(configs, 26).priceSource;
         priceSource27 = get(configs, 27).priceSource;
+        priceSource28 = get(configs, 28).priceSource;
+        priceSource29 = get(configs, 29).priceSource;
+        priceSource30 = get(configs, 30).priceSource;
+        priceSource31 = get(configs, 31).priceSource;
+        priceSource32 = get(configs, 32).priceSource;
+        priceSource33 = get(configs, 33).priceSource;
+        priceSource34 = get(configs, 34).priceSource;
 
         fixedPrice00 = get(configs, 0).fixedPrice;
         fixedPrice01 = get(configs, 1).fixedPrice;
@@ -448,6 +507,13 @@ contract UniswapConfig {
         fixedPrice25 = get(configs, 25).fixedPrice;
         fixedPrice26 = get(configs, 26).fixedPrice;
         fixedPrice27 = get(configs, 27).fixedPrice;
+        fixedPrice28 = get(configs, 28).fixedPrice;
+        fixedPrice29 = get(configs, 29).fixedPrice;
+        fixedPrice30 = get(configs, 30).fixedPrice;
+        fixedPrice31 = get(configs, 31).fixedPrice;
+        fixedPrice32 = get(configs, 32).fixedPrice;
+        fixedPrice33 = get(configs, 33).fixedPrice;
+        fixedPrice34 = get(configs, 34).fixedPrice;
 
         uniswapMarket00 = get(configs, 0).uniswapMarket;
         uniswapMarket01 = get(configs, 1).uniswapMarket;
@@ -477,6 +543,13 @@ contract UniswapConfig {
         uniswapMarket25 = get(configs, 25).uniswapMarket;
         uniswapMarket26 = get(configs, 26).uniswapMarket;
         uniswapMarket27 = get(configs, 27).uniswapMarket;
+        uniswapMarket28 = get(configs, 28).uniswapMarket;
+        uniswapMarket29 = get(configs, 29).uniswapMarket;
+        uniswapMarket30 = get(configs, 30).uniswapMarket;
+        uniswapMarket31 = get(configs, 31).uniswapMarket;
+        uniswapMarket32 = get(configs, 32).uniswapMarket;
+        uniswapMarket33 = get(configs, 33).uniswapMarket;
+        uniswapMarket34 = get(configs, 34).uniswapMarket;
 
         reporter00 = get(configs, 0).reporter;
         reporter01 = get(configs, 1).reporter;
@@ -506,6 +579,13 @@ contract UniswapConfig {
         reporter25 = get(configs, 25).reporter;
         reporter26 = get(configs, 26).reporter;
         reporter27 = get(configs, 27).reporter;
+        reporter28 = get(configs, 28).reporter;
+        reporter29 = get(configs, 29).reporter;
+        reporter30 = get(configs, 30).reporter;
+        reporter31 = get(configs, 31).reporter;
+        reporter32 = get(configs, 32).reporter;
+        reporter33 = get(configs, 33).reporter;
+        reporter34 = get(configs, 34).reporter;
 
         reporterMultiplier00 = get(configs, 0).reporterMultiplier;
         reporterMultiplier01 = get(configs, 1).reporterMultiplier;
@@ -535,35 +615,22 @@ contract UniswapConfig {
         reporterMultiplier25 = get(configs, 25).reporterMultiplier;
         reporterMultiplier26 = get(configs, 26).reporterMultiplier;
         reporterMultiplier27 = get(configs, 27).reporterMultiplier;
+        reporterMultiplier28 = get(configs, 28).reporterMultiplier;
+        reporterMultiplier29 = get(configs, 29).reporterMultiplier;
+        reporterMultiplier30 = get(configs, 30).reporterMultiplier;
+        reporterMultiplier31 = get(configs, 31).reporterMultiplier;
+        reporterMultiplier32 = get(configs, 32).reporterMultiplier;
+        reporterMultiplier33 = get(configs, 33).reporterMultiplier;
+        reporterMultiplier34 = get(configs, 34).reporterMultiplier;
 
-        isUniswapReversed00 = get(configs, 0).isUniswapReversed;
-        isUniswapReversed01 = get(configs, 1).isUniswapReversed;
-        isUniswapReversed02 = get(configs, 2).isUniswapReversed;
-        isUniswapReversed03 = get(configs, 3).isUniswapReversed;
-        isUniswapReversed04 = get(configs, 4).isUniswapReversed;
-        isUniswapReversed05 = get(configs, 5).isUniswapReversed;
-        isUniswapReversed06 = get(configs, 6).isUniswapReversed;
-        isUniswapReversed07 = get(configs, 7).isUniswapReversed;
-        isUniswapReversed08 = get(configs, 8).isUniswapReversed;
-        isUniswapReversed09 = get(configs, 9).isUniswapReversed;
-        isUniswapReversed10 = get(configs, 10).isUniswapReversed;
-        isUniswapReversed11 = get(configs, 11).isUniswapReversed;
-        isUniswapReversed12 = get(configs, 12).isUniswapReversed;
-        isUniswapReversed13 = get(configs, 13).isUniswapReversed;
-        isUniswapReversed14 = get(configs, 14).isUniswapReversed;
-        isUniswapReversed15 = get(configs, 15).isUniswapReversed;
-        isUniswapReversed16 = get(configs, 16).isUniswapReversed;
-        isUniswapReversed17 = get(configs, 17).isUniswapReversed;
-        isUniswapReversed18 = get(configs, 18).isUniswapReversed;
-        isUniswapReversed19 = get(configs, 19).isUniswapReversed;
-        isUniswapReversed20 = get(configs, 20).isUniswapReversed;
-        isUniswapReversed21 = get(configs, 21).isUniswapReversed;
-        isUniswapReversed22 = get(configs, 22).isUniswapReversed;
-        isUniswapReversed23 = get(configs, 23).isUniswapReversed;
-        isUniswapReversed24 = get(configs, 24).isUniswapReversed;
-        isUniswapReversed25 = get(configs, 25).isUniswapReversed;
-        isUniswapReversed26 = get(configs, 26).isUniswapReversed;
-        isUniswapReversed27 = get(configs, 27).isUniswapReversed;
+        TokenConfig memory config;
+        uint64 isUniswapReversed_ = 0;
+        for (uint i = 0; i < configs.length; i++) {
+            config = configs[i];
+            isUniswapReversed_ |=
+                uint64(config.isUniswapReversed ? 1 : 0) << uint64(i);
+        }
+        isUniswapReversed = isUniswapReversed_;
     }
 
     function get(TokenConfig[] memory configs, uint i) internal pure returns (TokenConfig memory) {
@@ -611,6 +678,13 @@ contract UniswapConfig {
         if (reporter == reporter25) return 25;
         if (reporter == reporter26) return 26;
         if (reporter == reporter27) return 27;
+        if (reporter == reporter28) return 28;
+        if (reporter == reporter29) return 29;
+        if (reporter == reporter30) return 30;
+        if (reporter == reporter31) return 31;
+        if (reporter == reporter32) return 32;
+        if (reporter == reporter33) return 33;
+        if (reporter == reporter34) return 34;
 
         return type(uint).max;
     }
@@ -644,6 +718,13 @@ contract UniswapConfig {
         if (underlying == underlying25) return 25;
         if (underlying == underlying26) return 26;
         if (underlying == underlying27) return 27;
+        if (underlying == underlying28) return 28;
+        if (underlying == underlying29) return 29;
+        if (underlying == underlying30) return 30;
+        if (underlying == underlying31) return 31;
+        if (underlying == underlying32) return 32;
+        if (underlying == underlying33) return 33;
+        if (underlying == underlying34) return 34;
 
         return type(uint).max;
     }
@@ -677,6 +758,13 @@ contract UniswapConfig {
         if (symbolHash == symbolHash25) return 25;
         if (symbolHash == symbolHash26) return 26;
         if (symbolHash == symbolHash27) return 27;
+        if (symbolHash == symbolHash28) return 28;
+        if (symbolHash == symbolHash29) return 29;
+        if (symbolHash == symbolHash30) return 30;
+        if (symbolHash == symbolHash31) return 31;
+        if (symbolHash == symbolHash32) return 32;
+        if (symbolHash == symbolHash33) return 33;
+        if (symbolHash == symbolHash34) return 34;
 
         return type(uint).max;
     }
@@ -689,36 +777,377 @@ contract UniswapConfig {
     function getTokenConfig(uint i) public view returns (TokenConfig memory) {
         require(i < numTokens, "token config not found");
 
-        if (i == 0) return TokenConfig({underlying: underlying00, symbolHash: symbolHash00, baseUnit: baseUnit00, priceSource: priceSource00, fixedPrice: fixedPrice00, uniswapMarket: uniswapMarket00, reporter: reporter00, reporterMultiplier: reporterMultiplier00, isUniswapReversed: isUniswapReversed00});
-        if (i == 1) return TokenConfig({underlying: underlying01, symbolHash: symbolHash01, baseUnit: baseUnit01, priceSource: priceSource01, fixedPrice: fixedPrice01, uniswapMarket: uniswapMarket01, reporter: reporter01, reporterMultiplier: reporterMultiplier01, isUniswapReversed: isUniswapReversed01});
-        if (i == 2) return TokenConfig({underlying: underlying02, symbolHash: symbolHash02, baseUnit: baseUnit02, priceSource: priceSource02, fixedPrice: fixedPrice02, uniswapMarket: uniswapMarket02, reporter: reporter02, reporterMultiplier: reporterMultiplier02, isUniswapReversed: isUniswapReversed02});
-        if (i == 3) return TokenConfig({underlying: underlying03, symbolHash: symbolHash03, baseUnit: baseUnit03, priceSource: priceSource03, fixedPrice: fixedPrice03, uniswapMarket: uniswapMarket03, reporter: reporter03, reporterMultiplier: reporterMultiplier03, isUniswapReversed: isUniswapReversed03});
-        if (i == 4) return TokenConfig({underlying: underlying04, symbolHash: symbolHash04, baseUnit: baseUnit04, priceSource: priceSource04, fixedPrice: fixedPrice04, uniswapMarket: uniswapMarket04, reporter: reporter04, reporterMultiplier: reporterMultiplier04, isUniswapReversed: isUniswapReversed04});
-        if (i == 5) return TokenConfig({underlying: underlying05, symbolHash: symbolHash05, baseUnit: baseUnit05, priceSource: priceSource05, fixedPrice: fixedPrice05, uniswapMarket: uniswapMarket05, reporter: reporter05, reporterMultiplier: reporterMultiplier05, isUniswapReversed: isUniswapReversed05});
-        if (i == 6) return TokenConfig({underlying: underlying06, symbolHash: symbolHash06, baseUnit: baseUnit06, priceSource: priceSource06, fixedPrice: fixedPrice06, uniswapMarket: uniswapMarket06, reporter: reporter06, reporterMultiplier: reporterMultiplier06, isUniswapReversed: isUniswapReversed06});
-        if (i == 7) return TokenConfig({underlying: underlying07, symbolHash: symbolHash07, baseUnit: baseUnit07, priceSource: priceSource07, fixedPrice: fixedPrice07, uniswapMarket: uniswapMarket07, reporter: reporter07, reporterMultiplier: reporterMultiplier07, isUniswapReversed: isUniswapReversed07});
-        if (i == 8) return TokenConfig({underlying: underlying08, symbolHash: symbolHash08, baseUnit: baseUnit08, priceSource: priceSource08, fixedPrice: fixedPrice08, uniswapMarket: uniswapMarket08, reporter: reporter08, reporterMultiplier: reporterMultiplier08, isUniswapReversed: isUniswapReversed08});
-        if (i == 9) return TokenConfig({underlying: underlying09, symbolHash: symbolHash09, baseUnit: baseUnit09, priceSource: priceSource09, fixedPrice: fixedPrice09, uniswapMarket: uniswapMarket09, reporter: reporter09, reporterMultiplier: reporterMultiplier09, isUniswapReversed: isUniswapReversed09});
+        address underlying;
+        bytes32 symbolHash;
+        uint256 baseUnit;
+        PriceSource priceSource;
+        uint256 fixedPrice;
+        address uniswapMarket;
+        address reporter;
+        uint256 reporterMultiplier;
+        if (i == 0) {
+            underlying = underlying00;
+            symbolHash = symbolHash00;
+            baseUnit = baseUnit00;
+            priceSource = priceSource00;
+            fixedPrice = fixedPrice00;
+            uniswapMarket = uniswapMarket00;
+            reporter = reporter00;
+            reporterMultiplier = reporterMultiplier00;
+        }
+        if (i == 1) {
+            underlying = underlying01;
+            symbolHash = symbolHash01;
+            baseUnit = baseUnit01;
+            priceSource = priceSource01;
+            fixedPrice = fixedPrice01;
+            uniswapMarket = uniswapMarket01;
+            reporter = reporter01;
+            reporterMultiplier = reporterMultiplier01;
+        }
+        if (i == 2) {
+            underlying = underlying02;
+            symbolHash = symbolHash02;
+            baseUnit = baseUnit02;
+            priceSource = priceSource02;
+            fixedPrice = fixedPrice02;
+            uniswapMarket = uniswapMarket02;
+            reporter = reporter02;
+            reporterMultiplier = reporterMultiplier02;
+        }
+        if (i == 3) {
+            underlying = underlying03;
+            symbolHash = symbolHash03;
+            baseUnit = baseUnit03;
+            priceSource = priceSource03;
+            fixedPrice = fixedPrice03;
+            uniswapMarket = uniswapMarket03;
+            reporter = reporter03;
+            reporterMultiplier = reporterMultiplier03;
+        }
+        if (i == 4) {
+            underlying = underlying04;
+            symbolHash = symbolHash04;
+            baseUnit = baseUnit04;
+            priceSource = priceSource04;
+            fixedPrice = fixedPrice04;
+            uniswapMarket = uniswapMarket04;
+            reporter = reporter04;
+            reporterMultiplier = reporterMultiplier04;
+        }
+        if (i == 5) {
+            underlying = underlying05;
+            symbolHash = symbolHash05;
+            baseUnit = baseUnit05;
+            priceSource = priceSource05;
+            fixedPrice = fixedPrice05;
+            uniswapMarket = uniswapMarket05;
+            reporter = reporter05;
+            reporterMultiplier = reporterMultiplier05;
+        }
+        if (i == 6) {
+            underlying = underlying06;
+            symbolHash = symbolHash06;
+            baseUnit = baseUnit06;
+            priceSource = priceSource06;
+            fixedPrice = fixedPrice06;
+            uniswapMarket = uniswapMarket06;
+            reporter = reporter06;
+            reporterMultiplier = reporterMultiplier06;
+        }
+        if (i == 7) {
+            underlying = underlying07;
+            symbolHash = symbolHash07;
+            baseUnit = baseUnit07;
+            priceSource = priceSource07;
+            fixedPrice = fixedPrice07;
+            uniswapMarket = uniswapMarket07;
+            reporter = reporter07;
+            reporterMultiplier = reporterMultiplier07;
+        }
+        if (i == 8) {
+            underlying = underlying08;
+            symbolHash = symbolHash08;
+            baseUnit = baseUnit08;
+            priceSource = priceSource08;
+            fixedPrice = fixedPrice08;
+            uniswapMarket = uniswapMarket08;
+            reporter = reporter08;
+            reporterMultiplier = reporterMultiplier08;
+        }
+        if (i == 9) {
+            underlying = underlying09;
+            symbolHash = symbolHash09;
+            baseUnit = baseUnit09;
+            priceSource = priceSource09;
+            fixedPrice = fixedPrice09;
+            uniswapMarket = uniswapMarket09;
+            reporter = reporter09;
+            reporterMultiplier = reporterMultiplier09;
+        }
+        if (i == 10) {
+            underlying = underlying10;
+            symbolHash = symbolHash10;
+            baseUnit = baseUnit10;
+            priceSource = priceSource10;
+            fixedPrice = fixedPrice10;
+            uniswapMarket = uniswapMarket10;
+            reporter = reporter10;
+            reporterMultiplier = reporterMultiplier10;
+        }
+        if (i == 11) {
+            underlying = underlying11;
+            symbolHash = symbolHash11;
+            baseUnit = baseUnit11;
+            priceSource = priceSource11;
+            fixedPrice = fixedPrice11;
+            uniswapMarket = uniswapMarket11;
+            reporter = reporter11;
+            reporterMultiplier = reporterMultiplier11;
+        }
+        if (i == 12) {
+            underlying = underlying12;
+            symbolHash = symbolHash12;
+            baseUnit = baseUnit12;
+            priceSource = priceSource12;
+            fixedPrice = fixedPrice12;
+            uniswapMarket = uniswapMarket12;
+            reporter = reporter12;
+            reporterMultiplier = reporterMultiplier12;
+        }
+        if (i == 13) {
+            underlying = underlying13;
+            symbolHash = symbolHash13;
+            baseUnit = baseUnit13;
+            priceSource = priceSource13;
+            fixedPrice = fixedPrice13;
+            uniswapMarket = uniswapMarket13;
+            reporter = reporter13;
+            reporterMultiplier = reporterMultiplier13;
+        }
+        if (i == 14) {
+            underlying = underlying14;
+            symbolHash = symbolHash14;
+            baseUnit = baseUnit14;
+            priceSource = priceSource14;
+            fixedPrice = fixedPrice14;
+            uniswapMarket = uniswapMarket14;
+            reporter = reporter14;
+            reporterMultiplier = reporterMultiplier14;
+        }
+        if (i == 15) {
+            underlying = underlying15;
+            symbolHash = symbolHash15;
+            baseUnit = baseUnit15;
+            priceSource = priceSource15;
+            fixedPrice = fixedPrice15;
+            uniswapMarket = uniswapMarket15;
+            reporter = reporter15;
+            reporterMultiplier = reporterMultiplier15;
+        }
+        if (i == 16) {
+            underlying = underlying16;
+            symbolHash = symbolHash16;
+            baseUnit = baseUnit16;
+            priceSource = priceSource16;
+            fixedPrice = fixedPrice16;
+            uniswapMarket = uniswapMarket16;
+            reporter = reporter16;
+            reporterMultiplier = reporterMultiplier16;
+        }
+        if (i == 17) {
+            underlying = underlying17;
+            symbolHash = symbolHash17;
+            baseUnit = baseUnit17;
+            priceSource = priceSource17;
+            fixedPrice = fixedPrice17;
+            uniswapMarket = uniswapMarket17;
+            reporter = reporter17;
+            reporterMultiplier = reporterMultiplier17;
+        }
+        if (i == 18) {
+            underlying = underlying18;
+            symbolHash = symbolHash18;
+            baseUnit = baseUnit18;
+            priceSource = priceSource18;
+            fixedPrice = fixedPrice18;
+            uniswapMarket = uniswapMarket18;
+            reporter = reporter18;
+            reporterMultiplier = reporterMultiplier18;
+        }
+        if (i == 19) {
+            underlying = underlying19;
+            symbolHash = symbolHash19;
+            baseUnit = baseUnit19;
+            priceSource = priceSource19;
+            fixedPrice = fixedPrice19;
+            uniswapMarket = uniswapMarket19;
+            reporter = reporter19;
+            reporterMultiplier = reporterMultiplier19;
+        }
+        if (i == 20) {
+            underlying = underlying20;
+            symbolHash = symbolHash20;
+            baseUnit = baseUnit20;
+            priceSource = priceSource20;
+            fixedPrice = fixedPrice20;
+            uniswapMarket = uniswapMarket20;
+            reporter = reporter20;
+            reporterMultiplier = reporterMultiplier20;
+        }
+        if (i == 21) {
+            underlying = underlying21;
+            symbolHash = symbolHash21;
+            baseUnit = baseUnit21;
+            priceSource = priceSource21;
+            fixedPrice = fixedPrice21;
+            uniswapMarket = uniswapMarket21;
+            reporter = reporter21;
+            reporterMultiplier = reporterMultiplier21;
+        }
+        if (i == 22) {
+            underlying = underlying22;
+            symbolHash = symbolHash22;
+            baseUnit = baseUnit22;
+            priceSource = priceSource22;
+            fixedPrice = fixedPrice22;
+            uniswapMarket = uniswapMarket22;
+            reporter = reporter22;
+            reporterMultiplier = reporterMultiplier22;
+        }
+        if (i == 23) {
+            underlying = underlying23;
+            symbolHash = symbolHash23;
+            baseUnit = baseUnit23;
+            priceSource = priceSource23;
+            fixedPrice = fixedPrice23;
+            uniswapMarket = uniswapMarket23;
+            reporter = reporter23;
+            reporterMultiplier = reporterMultiplier23;
+        }
+        if (i == 24) {
+            underlying = underlying24;
+            symbolHash = symbolHash24;
+            baseUnit = baseUnit24;
+            priceSource = priceSource24;
+            fixedPrice = fixedPrice24;
+            uniswapMarket = uniswapMarket24;
+            reporter = reporter24;
+            reporterMultiplier = reporterMultiplier24;
+        }
+        if (i == 25) {
+            underlying = underlying25;
+            symbolHash = symbolHash25;
+            baseUnit = baseUnit25;
+            priceSource = priceSource25;
+            fixedPrice = fixedPrice25;
+            uniswapMarket = uniswapMarket25;
+            reporter = reporter25;
+            reporterMultiplier = reporterMultiplier25;
+        }
+        if (i == 26) {
+            underlying = underlying26;
+            symbolHash = symbolHash26;
+            baseUnit = baseUnit26;
+            priceSource = priceSource26;
+            fixedPrice = fixedPrice26;
+            uniswapMarket = uniswapMarket26;
+            reporter = reporter26;
+            reporterMultiplier = reporterMultiplier26;
+        }
+        if (i == 27) {
+            underlying = underlying27;
+            symbolHash = symbolHash27;
+            baseUnit = baseUnit27;
+            priceSource = priceSource27;
+            fixedPrice = fixedPrice27;
+            uniswapMarket = uniswapMarket27;
+            reporter = reporter27;
+            reporterMultiplier = reporterMultiplier27;
+        }
+        if (i == 28) {
+            underlying = underlying28;
+            symbolHash = symbolHash28;
+            baseUnit = baseUnit28;
+            priceSource = priceSource28;
+            fixedPrice = fixedPrice28;
+            uniswapMarket = uniswapMarket28;
+            reporter = reporter28;
+            reporterMultiplier = reporterMultiplier28;
+        }
+        if (i == 29) {
+            underlying = underlying29;
+            symbolHash = symbolHash29;
+            baseUnit = baseUnit29;
+            priceSource = priceSource29;
+            fixedPrice = fixedPrice29;
+            uniswapMarket = uniswapMarket29;
+            reporter = reporter29;
+            reporterMultiplier = reporterMultiplier29;
+        }
+        if (i == 30) {
+            underlying = underlying30;
+            symbolHash = symbolHash30;
+            baseUnit = baseUnit30;
+            priceSource = priceSource30;
+            fixedPrice = fixedPrice30;
+            uniswapMarket = uniswapMarket30;
+            reporter = reporter30;
+            reporterMultiplier = reporterMultiplier30;
+        }
+        if (i == 31) {
+            underlying = underlying31;
+            symbolHash = symbolHash31;
+            baseUnit = baseUnit31;
+            priceSource = priceSource31;
+            fixedPrice = fixedPrice31;
+            uniswapMarket = uniswapMarket31;
+            reporter = reporter31;
+            reporterMultiplier = reporterMultiplier31;
+        }
+        if (i == 32) {
+            underlying = underlying32;
+            symbolHash = symbolHash32;
+            baseUnit = baseUnit32;
+            priceSource = priceSource32;
+            fixedPrice = fixedPrice32;
+            uniswapMarket = uniswapMarket32;
+            reporter = reporter32;
+            reporterMultiplier = reporterMultiplier32;
+        }
+        if (i == 33) {
+            underlying = underlying33;
+            symbolHash = symbolHash33;
+            baseUnit = baseUnit33;
+            priceSource = priceSource33;
+            fixedPrice = fixedPrice33;
+            uniswapMarket = uniswapMarket33;
+            reporter = reporter33;
+            reporterMultiplier = reporterMultiplier33;
+        }
+        if (i == 34) {
+            underlying = underlying34;
+            symbolHash = symbolHash34;
+            baseUnit = baseUnit34;
+            priceSource = priceSource34;
+            fixedPrice = fixedPrice34;
+            uniswapMarket = uniswapMarket34;
+            reporter = reporter34;
+            reporterMultiplier = reporterMultiplier34;
+        }
 
-        if (i == 10) return TokenConfig({underlying: underlying10, symbolHash: symbolHash10, baseUnit: baseUnit10, priceSource: priceSource10, fixedPrice: fixedPrice10, uniswapMarket: uniswapMarket10, reporter: reporter10, reporterMultiplier: reporterMultiplier10, isUniswapReversed: isUniswapReversed10});
-        if (i == 11) return TokenConfig({underlying: underlying11, symbolHash: symbolHash11, baseUnit: baseUnit11, priceSource: priceSource11, fixedPrice: fixedPrice11, uniswapMarket: uniswapMarket11, reporter: reporter11, reporterMultiplier: reporterMultiplier11, isUniswapReversed: isUniswapReversed11});
-        if (i == 12) return TokenConfig({underlying: underlying12, symbolHash: symbolHash12, baseUnit: baseUnit12, priceSource: priceSource12, fixedPrice: fixedPrice12, uniswapMarket: uniswapMarket12, reporter: reporter12, reporterMultiplier: reporterMultiplier12, isUniswapReversed: isUniswapReversed12});
-        if (i == 13) return TokenConfig({underlying: underlying13, symbolHash: symbolHash13, baseUnit: baseUnit13, priceSource: priceSource13, fixedPrice: fixedPrice13, uniswapMarket: uniswapMarket13, reporter: reporter13, reporterMultiplier: reporterMultiplier13, isUniswapReversed: isUniswapReversed13});
-        if (i == 14) return TokenConfig({underlying: underlying14, symbolHash: symbolHash14, baseUnit: baseUnit14, priceSource: priceSource14, fixedPrice: fixedPrice14, uniswapMarket: uniswapMarket14, reporter: reporter14, reporterMultiplier: reporterMultiplier14, isUniswapReversed: isUniswapReversed14});
-        if (i == 15) return TokenConfig({underlying: underlying15, symbolHash: symbolHash15, baseUnit: baseUnit15, priceSource: priceSource15, fixedPrice: fixedPrice15, uniswapMarket: uniswapMarket15, reporter: reporter15, reporterMultiplier: reporterMultiplier15, isUniswapReversed: isUniswapReversed15});
-        if (i == 16) return TokenConfig({underlying: underlying16, symbolHash: symbolHash16, baseUnit: baseUnit16, priceSource: priceSource16, fixedPrice: fixedPrice16, uniswapMarket: uniswapMarket16, reporter: reporter16, reporterMultiplier: reporterMultiplier16, isUniswapReversed: isUniswapReversed16});
-        if (i == 17) return TokenConfig({underlying: underlying17, symbolHash: symbolHash17, baseUnit: baseUnit17, priceSource: priceSource17, fixedPrice: fixedPrice17, uniswapMarket: uniswapMarket17, reporter: reporter17, reporterMultiplier: reporterMultiplier17, isUniswapReversed: isUniswapReversed17});
-        if (i == 18) return TokenConfig({underlying: underlying18, symbolHash: symbolHash18, baseUnit: baseUnit18, priceSource: priceSource18, fixedPrice: fixedPrice18, uniswapMarket: uniswapMarket18, reporter: reporter18, reporterMultiplier: reporterMultiplier18, isUniswapReversed: isUniswapReversed18});
-        if (i == 19) return TokenConfig({underlying: underlying19, symbolHash: symbolHash19, baseUnit: baseUnit19, priceSource: priceSource19, fixedPrice: fixedPrice19, uniswapMarket: uniswapMarket19, reporter: reporter19, reporterMultiplier: reporterMultiplier19, isUniswapReversed: isUniswapReversed19});
-
-        if (i == 20) return TokenConfig({underlying: underlying20, symbolHash: symbolHash20, baseUnit: baseUnit20, priceSource: priceSource20, fixedPrice: fixedPrice20, uniswapMarket: uniswapMarket20, reporter: reporter20, reporterMultiplier: reporterMultiplier20, isUniswapReversed: isUniswapReversed20});
-        if (i == 21) return TokenConfig({underlying: underlying21, symbolHash: symbolHash21, baseUnit: baseUnit21, priceSource: priceSource21, fixedPrice: fixedPrice21, uniswapMarket: uniswapMarket21, reporter: reporter21, reporterMultiplier: reporterMultiplier21, isUniswapReversed: isUniswapReversed21});
-        if (i == 22) return TokenConfig({underlying: underlying22, symbolHash: symbolHash22, baseUnit: baseUnit22, priceSource: priceSource22, fixedPrice: fixedPrice22, uniswapMarket: uniswapMarket22, reporter: reporter22, reporterMultiplier: reporterMultiplier22, isUniswapReversed: isUniswapReversed22});
-        if (i == 23) return TokenConfig({underlying: underlying23, symbolHash: symbolHash23, baseUnit: baseUnit23, priceSource: priceSource23, fixedPrice: fixedPrice23, uniswapMarket: uniswapMarket23, reporter: reporter23, reporterMultiplier: reporterMultiplier23, isUniswapReversed: isUniswapReversed23});
-        if (i == 24) return TokenConfig({underlying: underlying24, symbolHash: symbolHash24, baseUnit: baseUnit24, priceSource: priceSource24, fixedPrice: fixedPrice24, uniswapMarket: uniswapMarket24, reporter: reporter24, reporterMultiplier: reporterMultiplier24, isUniswapReversed: isUniswapReversed24});
-        if (i == 25) return TokenConfig({underlying: underlying25, symbolHash: symbolHash25, baseUnit: baseUnit25, priceSource: priceSource25, fixedPrice: fixedPrice25, uniswapMarket: uniswapMarket25, reporter: reporter25, reporterMultiplier: reporterMultiplier25, isUniswapReversed: isUniswapReversed25});
-        if (i == 26) return TokenConfig({underlying: underlying26, symbolHash: symbolHash26, baseUnit: baseUnit26, priceSource: priceSource26, fixedPrice: fixedPrice26, uniswapMarket: uniswapMarket26, reporter: reporter26, reporterMultiplier: reporterMultiplier26, isUniswapReversed: isUniswapReversed26});
-        if (i == 27) return TokenConfig({underlying: underlying27, symbolHash: symbolHash27, baseUnit: baseUnit27, priceSource: priceSource27, fixedPrice: fixedPrice27, uniswapMarket: uniswapMarket27, reporter: reporter27, reporterMultiplier: reporterMultiplier27, isUniswapReversed: isUniswapReversed27});
+        return TokenConfig({
+            underlying: underlying,
+            symbolHash: symbolHash,
+            baseUnit: baseUnit,
+            priceSource: priceSource,
+            fixedPrice: fixedPrice,
+            uniswapMarket: uniswapMarket,
+            reporter: reporter,
+            reporterMultiplier: reporterMultiplier,
+            isUniswapReversed:
+                ((isUniswapReversed >> i) & uint256(1)) == 1 ? true : false
+        });
     }
 
     /**
