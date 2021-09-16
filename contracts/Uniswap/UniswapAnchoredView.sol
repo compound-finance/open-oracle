@@ -117,7 +117,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
 
     /**
      * @notice This is called by the reporter whenever a new price is posted on-chain
-     * @dev called by AccessControlledOffChainAggregator
+     * @dev called by AccessControlledOffchainAggregator
      * @param currentAnswer the price
      * @return valid bool
      */
