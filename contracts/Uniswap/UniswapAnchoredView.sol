@@ -103,7 +103,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @return Price denominated in USD, with 18 decimals, for the given cToken address
      */
     function getUnderlyingPrice(address cToken) external view returns (uint) {
-        TokenConfig memory config = getTokenConfigByCToken(cToken);
+        TokenConfig memory config = getTokenConfigByUnderlying(CErc20(cToken).underlying());
         // Comptroller needs prices in the format: ${raw price} * 1e36 / baseUnit
         // The baseUnit of an asset is the amount of the smallest denomination of that asset per whole.
         // For example, the baseUnit of ETH is 1e18.
