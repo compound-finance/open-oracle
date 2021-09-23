@@ -2,6 +2,7 @@ name: Solidity
 on: [push]
 jobs:
   solidity_coverage:
+    environment: ci
     name: Solidity Test Coverage
     runs-on: ubuntu-latest
     steps:
@@ -35,6 +36,7 @@ jobs:
 
   solidity_test:
     name: Solidity Tests
+    environment: ci
     runs-on: ubuntu-latest
     steps:
       - name: Setup node
