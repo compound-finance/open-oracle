@@ -28,6 +28,9 @@ jobs:
       - run: yarn install --frozen-lockfile
       - name: Run coverage
         run: yarn run coverage
+        env:
+          MAINNET_PK: ${{ secrets.MAINNET_PK }}
+          MAINNET_URL: ${{ secrets.MAINNET_URL }}
         continue-on-error: true
 
   solidity_test:
@@ -57,3 +60,6 @@ jobs:
       - run: yarn install --frozen-lockfile
       - name: Run tests
         run: yarn run test
+        env:
+          MAINNET_PK: ${{ secrets.MAINNET_PK }}
+          MAINNET_URL: ${{ secrets.MAINNET_URL }}
