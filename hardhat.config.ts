@@ -91,6 +91,9 @@ const hardhatUserConfig: HardhatUserConfig = {
     runOnCompile: true,
     disambiguatePaths: false,
   },
+  mocha: {
+    timeout: 60000,
+  }
 };
 
 module.exports = hardhatUserConfig;
