@@ -7,6 +7,9 @@ import { smock } from "@defi-wonderland/smock";
 
 use(smock.matchers);
 
+// Update this to the max number of tokens supported in UniswapConfig.sol
+const MAX_TOKENS = 35
+
 describe("UniswapConfig", () => {
   let signers: SignerWithAddress[];
   let deployer: SignerWithAddress;
@@ -31,7 +34,6 @@ describe("UniswapConfig", () => {
 
     const contract = await new UniswapConfig__factory(deployer).deploy([
       {
-        cToken: address(1),
         underlying: address(0),
         symbolHash: keccak256("ETH"),
         baseUnit: uint(1e18),
@@ -43,7 +45,6 @@ describe("UniswapConfig", () => {
         isUniswapReversed: false,
       },
       {
-        cToken: address(2),
         underlying: address(3),
         symbolHash: keccak256("BTC"),
         baseUnit: uint(1e18),
@@ -55,7 +56,6 @@ describe("UniswapConfig", () => {
         isUniswapReversed: true,
       },
       {
-        cToken: unlistedButUnderlying.address,
         underlying: address(4),
         symbolHash: keccak256("REP"),
         baseUnit: uint(1e18),
@@ -75,10 +75,10 @@ describe("UniswapConfig", () => {
     const cfgBTC = await contract.getTokenConfigBySymbol("BTC");
     const cfgR8 = await contract.getTokenConfigByReporter(address(8));
     const cfgR9 = await contract.getTokenConfigByReporter(address(9));
-    const cfgCT0 = await contract.getTokenConfigByCToken(address(1));
-    const cfgCT1 = await contract.getTokenConfigByCToken(address(2));
-    const cfgU2 = await contract.getTokenConfigByCToken(
-      unlistedButUnderlying.address
+    const cfgCT0 = await contract.getTokenConfigByUnderlying(address(0));
+    const cfgCT1 = await contract.getTokenConfigByUnderlying(address(3));
+    const cfgU2 = await contract.getTokenConfigByUnderlying(
+      address(4)
     );
     expect(cfg0).to.deep.equal(cfgETH);
     expect(cfgETH).to.deep.equal(cfgR8);
@@ -99,20 +99,19 @@ describe("UniswapConfig", () => {
       contract.getTokenConfigByReporter(address(1))
     ).to.be.revertedWith("token config not found");
     await expect(
-      contract.getTokenConfigByCToken(address(3))
-    ).to.be.revertedWith("revert"); // not a ctoken
+      contract.getTokenConfigByUnderlying(address(1))
+    ).to.be.revertedWith("revert"); // not a cToken
     await expect(
-      contract.getTokenConfigByCToken(unlistedNorUnderlying.address)
+      contract.getTokenConfigByUnderlying(unlistedNorUnderlying.address)
     ).to.be.revertedWith("token config not found");
   });
 
   it("returns configs exactly as specified", async () => {
-    const symbols = Array(25)
+    const symbols = Array(MAX_TOKENS)
       .fill(0)
       .map((_, i) => String.fromCharCode("a".charCodeAt(0) + i));
     const configs = symbols.map((symbol, i) => {
       return {
-        cToken: address(i + 1),
         underlying: address(i),
         symbolHash: keccak256(symbol),
         baseUnit: uint(i + 49),
@@ -130,9 +129,6 @@ describe("UniswapConfig", () => {
       configs.map(async (config, i) => {
         const cfgByIndex = await contract.getTokenConfig(i);
         const cfgBySymbol = await contract.getTokenConfigBySymbol(symbols[i]);
-        const cfgByCToken = await contract.getTokenConfigByCToken(
-          address(i + 1)
-        );
         const cfgByCReporter = await contract.getTokenConfigByReporter(
           address(i + 51)
         );
@@ -140,7 +136,6 @@ describe("UniswapConfig", () => {
           address(i)
         );
         expect({
-          cToken: cfgByIndex.cToken,
           underlying: cfgByIndex.underlying,
           symbolHash: cfgByIndex.symbolHash,
           baseUnit: cfgByIndex.baseUnit,
@@ -151,7 +146,6 @@ describe("UniswapConfig", () => {
           reporterMultiplier: cfgByIndex.reporterMultiplier,
           isUniswapReversed: cfgByIndex.isUniswapReversed,
         }).to.deep.equal({
-          cToken: config.cToken,
           underlying: config.underlying,
           symbolHash: config.symbolHash,
           baseUnit: config.baseUnit,
@@ -163,20 +157,18 @@ describe("UniswapConfig", () => {
           isUniswapReversed: config.isUniswapReversed,
         });
         expect(cfgByIndex).to.deep.equal(cfgBySymbol);
-        expect(cfgBySymbol).to.deep.equal(cfgByCToken);
-        expect(cfgByCToken).to.deep.equal(cfgByCReporter);
+        expect(cfgBySymbol).to.deep.equal(cfgByCReporter);
         expect(cfgByUnderlying).to.deep.equal(cfgBySymbol);
       })
     );
   });
 
   it("checks gas [ @skip-on-coverage ]", async () => {
-    const configs = Array(25)
+    const configs = Array(MAX_TOKENS)
       .fill(0)
       .map((_, i) => {
         const symbol = String.fromCharCode("a".charCodeAt(0) + i);
         return {
-          cToken: address(i),
           underlying: address(i + 1),
           symbolHash: keccak256(symbol),
           baseUnit: uint(i + 49),
@@ -195,14 +187,14 @@ describe("UniswapConfig", () => {
     const tx9_ = await deployer.sendTransaction(tx9__);
     const tx9 = await tx9_.wait();
     expect(cfg9.underlying).to.equal(address(10));
-    expect(tx9.gasUsed).to.equal(22979);
+    expect(tx9.gasUsed).to.equal(23504);
 
     const cfg25 = await contract.getTokenConfig(24);
     const tx25__ = await contract.populateTransaction.getTokenConfig(24);
     const tx25_ = await deployer.sendTransaction(tx25__);
     const tx25 = await tx25_.wait();
     expect(cfg25.underlying).to.equal(address(25));
-    expect(tx25.gasUsed).to.equal(23369);
+    expect(tx25.gasUsed).to.equal(23494);
 
     const cfgY = await contract.getTokenConfigBySymbol("y");
     const txY__ = await contract.populateTransaction.getTokenConfigBySymbol(
@@ -210,19 +202,17 @@ describe("UniswapConfig", () => {
     );
     const txY_ = await deployer.sendTransaction(txY__);
     const txY = await txY_.wait();
-    expect(cfgY.cToken).to.equal(address(24));
     expect(cfgY.underlying).to.equal(address(25));
-    expect(txY.gasUsed).to.equal(25577);
+    expect(txY.gasUsed).to.equal(25698);
 
-    const cfgCT26 = await contract.getTokenConfigByCToken(address(24));
-    const txCT26__ = await contract.populateTransaction.getTokenConfigByCToken(
-      address(24)
+    const cfgCT26 = await contract.getTokenConfigByUnderlying(address(25));
+    const txCT26__ = await contract.populateTransaction.getTokenConfigByUnderlying(
+      address(25)
     );
     const txCT26_ = await deployer.sendTransaction(txCT26__);
     const txCT26 = await txCT26_.wait();
-    expect(cfgCT26.cToken).to.equal(address(24));
     expect(cfgCT26.underlying).to.equal(address(25));
-    expect(txCT26.gasUsed).to.equal(25450);
+    expect(txCT26.gasUsed).to.equal(25433);
 
     const cfgR26 = await contract.getTokenConfigByReporter(address(24 + 51));
     const txR26__ = await contract.populateTransaction.getTokenConfigByReporter(
@@ -230,9 +220,8 @@ describe("UniswapConfig", () => {
     );
     const txR26_ = await deployer.sendTransaction(txR26__);
     const txR26 = await txR26_.wait();
-    expect(cfgR26.cToken).to.equal(address(24));
     expect(cfgR26.underlying).to.equal(address(25));
-    expect(txR26.gasUsed).to.equal(25362);
+    expect(txR26.gasUsed).to.equal(25478);
 
     const cfgU26 = await contract.getTokenConfigByUnderlying(address(25));
     const txU26__ =
@@ -241,8 +230,7 @@ describe("UniswapConfig", () => {
       );
     const txU26_ = await deployer.sendTransaction(txU26__);
     const txU26 = await txU26_.wait();
-    expect(cfgU26.cToken).to.equal(address(24));
     expect(cfgU26.underlying).to.equal(address(25));
-    expect(txU26.gasUsed).to.equal(25384);
+    expect(txU26.gasUsed).to.equal(25433);
   });
 });

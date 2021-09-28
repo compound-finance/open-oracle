@@ -66,11 +66,11 @@ const hardhatUserConfig: HardhatUserConfig = {
     },
   },
   solidity: {
-    version: "0.6.12",
+    version: "0.8.7",
     settings: {
       optimizer: {
         enabled: true,
-        runs: 100,
+        runs: 200,
       },
       outputSelection: {
         "*": {
@@ -91,6 +91,9 @@ const hardhatUserConfig: HardhatUserConfig = {
     runOnCompile: true,
     disambiguatePaths: false,
   },
+  mocha: {
+    timeout: 60000,
+  }
 };
 
 module.exports = hardhatUserConfig;

@@ -28,13 +28,13 @@ const FIXED_ETH_AMOUNT = 0.005e18;
 interface CTokenConfig {
   [key: string]: {
     addr: string;
+    underlying: string;
     reporter: MockChainlinkOCRAggregator;
   };
 }
 
 // struct TokenConfig from UniswapConfig.sol; not exported by Typechain
 interface TokenConfig {
-  cToken: string;
   underlying: string;
   symbolHash: string; // bytes32
   baseUnit: BigNumberish;
@@ -79,54 +79,47 @@ async function setup({ isMockedView }: SetupOptions) {
     "0xcbcdf9626bc03e24f779434178a73a0b4bad62ed"
   );
 
-  const mockEthReporter = await new MockChainlinkOCRAggregator__factory(
-    deployer
-  ).deploy();
-  const mockDaiReporter = await new MockChainlinkOCRAggregator__factory(
-    deployer
-  ).deploy();
-  const mockRepReporter = await new MockChainlinkOCRAggregator__factory(
-    deployer
-  ).deploy();
-  const mockBtcReporter = await new MockChainlinkOCRAggregator__factory(
-    deployer
-  ).deploy();
-
-  const dummyReporter = await new MockChainlinkOCRAggregator__factory(
-    deployer
-  ).deploy();
-  const cToken: CTokenConfig = {
-    ETH: {
-      addr: address(1),
-      reporter: mockEthReporter,
-    },
-    DAI: {
-      addr: address(2),
-      reporter: mockDaiReporter,
-    },
-    REP: {
-      addr: address(3),
-      reporter: mockRepReporter,
-    },
-    USDT: {
-      addr: address(4),
-      reporter: dummyReporter,
-    },
-    SAI: {
-      addr: address(5),
-      reporter: dummyReporter,
-    },
-    WBTC: {
-      addr: address(6),
-      reporter: mockBtcReporter,
-    },
-  };
+  // Create mock CTokens with mock underlying ERC-20s
+  const cTokenSymbols = ["ETH", "DAI", "REP", "USDT", "SAI", "WBTC"];
+  const cToken: CTokenConfig = (
+    await Promise.all(
+      cTokenSymbols.map(async (symbol, i) => {
+        const fakeCToken = await smock.fake([
+          {
+            type: "function",
+            name: "underlying",
+            stateMutability: "view",
+            outputs: [{ type: "address", name: "underlying" }],
+          },
+        ]);
+        const fakeErc20 = await smock.fake([]);
+        fakeCToken.underlying.returns(() => {
+          // return another mock token as the underlying
+          return fakeErc20.address;
+        });
+        return {
+          symbol,
+          addr: fakeCToken.address,
+          underlying: fakeErc20.address,
+          reporter: await new MockChainlinkOCRAggregator__factory(
+            deployer
+          ).deploy(),
+        };
+      })
+    )
+  ).reduce<CTokenConfig>((obj, curr) => {
+    obj[curr.symbol] = {
+      addr: curr.addr,
+      underlying: curr.underlying,
+      reporter: curr.reporter,
+    };
+    return obj;
+  }, {});
 
   const dummyAddress = address(0);
   const tokenConfigs: TokenConfig[] = [
     {
-      cToken: cToken.ETH.addr,
-      underlying: dummyAddress,
+      underlying: cToken.ETH.underlying,
       symbolHash: keccak256("ETH"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -137,8 +130,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: true,
     },
     {
-      cToken: cToken.DAI.addr,
-      underlying: dummyAddress,
+      underlying: cToken.DAI.underlying,
       symbolHash: keccak256("DAI"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -149,8 +141,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: false,
     },
     {
-      cToken: cToken.REP.addr,
-      underlying: dummyAddress,
+      underlying: cToken.REP.underlying,
       symbolHash: keccak256("REPv2"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -161,8 +152,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: false,
     },
     {
-      cToken: cToken.USDT.addr,
-      underlying: dummyAddress,
+      underlying: cToken.USDT.underlying,
       symbolHash: keccak256("USDT"),
       baseUnit: uint(1e6),
       priceSource: PriceSource.FIXED_USD,
@@ -173,8 +163,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: false,
     },
     {
-      cToken: cToken.SAI.addr,
-      underlying: dummyAddress,
+      underlying: cToken.SAI.underlying,
       symbolHash: keccak256("SAI"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.FIXED_ETH,
@@ -185,8 +174,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: false,
     },
     {
-      cToken: cToken.WBTC.addr,
-      underlying: dummyAddress,
+      underlying: cToken.WBTC.underlying,
       symbolHash: keccak256("BTC"),
       baseUnit: uint(1e8),
       priceSource: PriceSource.REPORTER,
@@ -216,16 +204,12 @@ async function setup({ isMockedView }: SetupOptions) {
   }
 
   // Set the UAV to validate against for each mock reporter
-  const mockReporters = [
-    mockEthReporter,
-    mockDaiReporter,
-    mockRepReporter,
-    mockBtcReporter,
-  ];
   await Promise.all(
-    mockReporters.map((reporter) =>
-      reporter.setUniswapAnchoredView(uniswapAnchoredView.address)
-    )
+    Object.values(cToken)
+      .map((c) => c.reporter)
+      .map((reporter) =>
+        reporter.setUniswapAnchoredView(uniswapAnchoredView.address)
+      )
   );
 
   return {
@@ -637,7 +621,6 @@ describe("UniswapAnchoredView", () => {
       const tokenConfigs: TokenConfig[] = [
         // Set dummy address as a uniswap market address
         {
-          cToken: address(1),
           underlying: dummyAddress,
           symbolHash: keccak256("ETH"),
           baseUnit: uint(1e18),
@@ -649,7 +632,6 @@ describe("UniswapAnchoredView", () => {
           isUniswapReversed: true,
         },
         {
-          cToken: address(2),
           underlying: dummyAddress,
           symbolHash: keccak256("DAI"),
           baseUnit: uint(1e18),
@@ -661,7 +643,6 @@ describe("UniswapAnchoredView", () => {
           isUniswapReversed: false,
         },
         {
-          cToken: address(3),
           underlying: dummyAddress,
           symbolHash: keccak256("REP"),
           baseUnit: uint(1e18),
@@ -688,7 +669,6 @@ describe("UniswapAnchoredView", () => {
       const dummyAddress = address(0);
       const tokenConfigs1: TokenConfig[] = [
         {
-          cToken: address(2),
           underlying: dummyAddress,
           symbolHash: keccak256("USDT"),
           baseUnit: uint(1e18),
@@ -710,7 +690,6 @@ describe("UniswapAnchoredView", () => {
 
       const tokenConfigs2: TokenConfig[] = [
         {
-          cToken: address(2),
           underlying: dummyAddress,
           symbolHash: keccak256("USDT"),
           baseUnit: uint(1e18),
@@ -762,7 +741,7 @@ describe("UniswapAnchoredView", () => {
       await expect(
         uniswapAnchoredView
           .connect(signers[1])
-          .updateFailover(keccak256("ETH"), true)
+          .activateFailover(keccak256("ETH"))
       ).to.be.revertedWith("Only callable by owner");
     });
 
@@ -774,17 +753,16 @@ describe("UniswapAnchoredView", () => {
       // Check that failoverActive variable is properly set
       const response1 = await uniswapAnchoredView.prices(bytes32EthSymbolHash);
       expect(response1.failoverActive).to.equal(false);
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
       const response2 = await uniswapAnchoredView.prices(bytes32EthSymbolHash);
       expect(response2.failoverActive).to.equal(true);
 
       const emittedEvents = await uniswapAnchoredView.queryFilter(
-        uniswapAnchoredView.filters.FailoverUpdated(null, null)
+        uniswapAnchoredView.filters.FailoverActivated(null)
       );
       // Check that event is emitted
       expect(emittedEvents.length).to.equal(1);
       expect(emittedEvents[0].args.symbolHash).to.equal(keccak256("ETH"));
-      expect(emittedEvents[0].args.status).to.equal(true);
     });
 
     it("basic scenario, return failover price after failover is activated", async () => {
@@ -801,7 +779,7 @@ describe("UniswapAnchoredView", () => {
       expect(ethPrice1).to.equal(expectedEth1);
 
       // Failover ETH
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
 
       // Check that ETH (which was failed over) = uniswap TWAP prices
       // 1. Get UniV3 TWAP from pool
@@ -845,7 +823,7 @@ describe("UniswapAnchoredView", () => {
       expect(ethPrice1).to.equal(expectedEth1);
 
       // Failover ETH
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
 
       // Check that ETH (which was failed over) = uniswap TWAP prices
       // 1. Get UniV3 TWAP from pool
@@ -896,7 +874,7 @@ describe("UniswapAnchoredView", () => {
       await expect(
         uniswapAnchoredView
           .connect(signers[1])
-          .updateFailover(keccak256("ETH"), false)
+          .deactivateFailover(keccak256("ETH"))
       ).to.be.revertedWith("Only callable by owner");
     });
 
@@ -905,26 +883,24 @@ describe("UniswapAnchoredView", () => {
       const response1 = await uniswapAnchoredView.prices(keccak256("ETH"));
       expect(response1.failoverActive).to.equal(false);
       // Activate & check
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
       const response2 = await uniswapAnchoredView.prices(keccak256("ETH"));
       expect(response2.failoverActive).to.equal(true);
       // De-activate & check
-      const deactivateTx = await uniswapAnchoredView.updateFailover(
-        keccak256("ETH"),
-        false
+      const deactivateTx = await uniswapAnchoredView.deactivateFailover(
+        keccak256("ETH")
       );
       const response3 = await uniswapAnchoredView.prices(keccak256("ETH"));
       expect(response3.failoverActive).to.equal(false);
 
       // Check that event is emitted
       const emittedEvents = await uniswapAnchoredView.queryFilter(
-        uniswapAnchoredView.filters.FailoverUpdated(null, null),
+        uniswapAnchoredView.filters.FailoverDeactivated(null),
         deactivateTx.blockNumber,
         deactivateTx.blockNumber
       );
       expect(emittedEvents.length).to.equal(1);
       expect(emittedEvents[0].args.symbolHash).to.equal(keccak256("ETH"));
-      expect(emittedEvents[0].args.status).to.equal(false);
     });
 
     it("basic scenario, return reporter price after failover is deactivated", async () => {
@@ -941,7 +917,7 @@ describe("UniswapAnchoredView", () => {
       expect(ethPrice1).to.equal(expectedEth1);
 
       // Failover ETH
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), true);
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
 
       // Check that ETH (which was failed over) = uniswap TWAP prices
       // 1. Get UniV3 TWAP from pool
@@ -971,7 +947,7 @@ describe("UniswapAnchoredView", () => {
       expect(ethPrice2).to.equal(BigNumber.from(expectedEth2.toString()));
 
       // deactivate failover for eth
-      await uniswapAnchoredView.updateFailover(keccak256("ETH"), false);
+      await uniswapAnchoredView.deactivateFailover(keccak256("ETH"));
       await reporter.validate(3960e8);
 
       const ethPrice3 = await uniswapAnchoredView.getUnderlyingPrice(

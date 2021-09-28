@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.6.12;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.7;
 
 // From: https://github.com/Uniswap/uniswap-v3-core
 
@@ -73,7 +72,7 @@ library FullMath {
         // Factor powers of two out of denominator
         // Compute largest power of two divisor of denominator.
         // Always >= 1.
-        uint256 twos = -denominator & denominator;
+        uint256 twos = denominator & (~denominator + 1);
         // Divide denominator by power of two
         assembly {
             denominator := div(denominator, twos)
@@ -145,7 +144,7 @@ library TickMath {
         uint256 absTick = tick < 0
             ? uint256(-int256(tick))
             : uint256(int256(tick));
-        require(absTick <= uint256(MAX_TICK), "T");
+        require(absTick <= uint256(uint24(MAX_TICK)), "T");
 
         uint256 ratio = absTick & 0x1 != 0
             ? 0xfffcb933bd6fad37aa2d162d1a594001
