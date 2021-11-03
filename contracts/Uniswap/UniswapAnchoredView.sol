@@ -128,10 +128,10 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     /**
-     * @notice Get the underlying price of a cToken
+     * @notice Get the underlying price of a cToken, in the format expected by the Comptroller.
      * @dev Implements the PriceOracle interface for Compound v2.
      * @param cToken The cToken address for price retrieval
-     * @return Price denominated in USD, with 18 decimals, for the given cToken address
+     * @return Price denominated in USD for the given cToken address, in the format expected by the Comptroller.
      */
     function getUnderlyingPrice(address cToken) external view returns (uint) {
         TokenConfig memory config = getTokenConfigByCToken(cToken);
