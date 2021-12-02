@@ -1165,12 +1165,7 @@ contract UniswapConfig {
      * @return The config object
      */
     function getTokenConfigByReporter(address reporter) public view returns (TokenConfig memory) {
-        uint index = getReporterIndex(reporter);
-        if (index != type(uint).max) {
-            return getTokenConfig(index);
-        }
-
-        revert("token config not found");
+        return getTokenConfig(getReporterIndex(reporter));
     }
 
     /**
@@ -1179,12 +1174,7 @@ contract UniswapConfig {
      * @return The config object
      */
     function getTokenConfigBySymbolHash(bytes32 symbolHash) public view returns (TokenConfig memory) {
-        uint index = getSymbolHashIndex(symbolHash);
-        if (index != type(uint).max) {
-            return getTokenConfig(index);
-        }
-
-        revert("token config not found");
+        return getTokenConfig(getSymbolHashIndex(symbolHash));
     }
 
     /**
@@ -1193,11 +1183,6 @@ contract UniswapConfig {
      * @return The config object
      */
     function getTokenConfigByUnderlying(address underlying) public view returns (TokenConfig memory) {
-        uint index = getUnderlyingIndex(underlying);
-        if (index != type(uint).max) {
-            return getTokenConfig(index);
-        }
-
-        revert("token config not found");
+        return getTokenConfig(getUnderlyingIndex(underlying));
     }
 }
