@@ -794,8 +794,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket00;
             reporter = reporter00;
             reporterMultiplier = reporterMultiplier00;
-        }
-        if (i == 1) {
+        } else if (i == 1) {
             underlying = underlying01;
             symbolHash = symbolHash01;
             baseUnit = baseUnit01;
@@ -804,8 +803,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket01;
             reporter = reporter01;
             reporterMultiplier = reporterMultiplier01;
-        }
-        if (i == 2) {
+        } else if (i == 2) {
             underlying = underlying02;
             symbolHash = symbolHash02;
             baseUnit = baseUnit02;
@@ -814,8 +812,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket02;
             reporter = reporter02;
             reporterMultiplier = reporterMultiplier02;
-        }
-        if (i == 3) {
+        } else if (i == 3) {
             underlying = underlying03;
             symbolHash = symbolHash03;
             baseUnit = baseUnit03;
@@ -824,8 +821,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket03;
             reporter = reporter03;
             reporterMultiplier = reporterMultiplier03;
-        }
-        if (i == 4) {
+        } else if (i == 4) {
             underlying = underlying04;
             symbolHash = symbolHash04;
             baseUnit = baseUnit04;
@@ -834,8 +830,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket04;
             reporter = reporter04;
             reporterMultiplier = reporterMultiplier04;
-        }
-        if (i == 5) {
+        } else if (i == 5) {
             underlying = underlying05;
             symbolHash = symbolHash05;
             baseUnit = baseUnit05;
@@ -844,8 +839,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket05;
             reporter = reporter05;
             reporterMultiplier = reporterMultiplier05;
-        }
-        if (i == 6) {
+        } else if (i == 6) {
             underlying = underlying06;
             symbolHash = symbolHash06;
             baseUnit = baseUnit06;
@@ -854,8 +848,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket06;
             reporter = reporter06;
             reporterMultiplier = reporterMultiplier06;
-        }
-        if (i == 7) {
+        } else if (i == 7) {
             underlying = underlying07;
             symbolHash = symbolHash07;
             baseUnit = baseUnit07;
@@ -864,8 +857,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket07;
             reporter = reporter07;
             reporterMultiplier = reporterMultiplier07;
-        }
-        if (i == 8) {
+        } else if (i == 8) {
             underlying = underlying08;
             symbolHash = symbolHash08;
             baseUnit = baseUnit08;
@@ -874,8 +866,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket08;
             reporter = reporter08;
             reporterMultiplier = reporterMultiplier08;
-        }
-        if (i == 9) {
+        } else if (i == 9) {
             underlying = underlying09;
             symbolHash = symbolHash09;
             baseUnit = baseUnit09;
@@ -884,8 +875,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket09;
             reporter = reporter09;
             reporterMultiplier = reporterMultiplier09;
-        }
-        if (i == 10) {
+        } else if (i == 10) {
             underlying = underlying10;
             symbolHash = symbolHash10;
             baseUnit = baseUnit10;
@@ -894,8 +884,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket10;
             reporter = reporter10;
             reporterMultiplier = reporterMultiplier10;
-        }
-        if (i == 11) {
+        } else if (i == 11) {
             underlying = underlying11;
             symbolHash = symbolHash11;
             baseUnit = baseUnit11;
@@ -904,8 +893,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket11;
             reporter = reporter11;
             reporterMultiplier = reporterMultiplier11;
-        }
-        if (i == 12) {
+        } else if (i == 12) {
             underlying = underlying12;
             symbolHash = symbolHash12;
             baseUnit = baseUnit12;
@@ -914,8 +902,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket12;
             reporter = reporter12;
             reporterMultiplier = reporterMultiplier12;
-        }
-        if (i == 13) {
+        } else if (i == 13) {
             underlying = underlying13;
             symbolHash = symbolHash13;
             baseUnit = baseUnit13;
@@ -924,8 +911,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket13;
             reporter = reporter13;
             reporterMultiplier = reporterMultiplier13;
-        }
-        if (i == 14) {
+        } else if (i == 14) {
             underlying = underlying14;
             symbolHash = symbolHash14;
             baseUnit = baseUnit14;
@@ -934,8 +920,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket14;
             reporter = reporter14;
             reporterMultiplier = reporterMultiplier14;
-        }
-        if (i == 15) {
+        } else if (i == 15) {
             underlying = underlying15;
             symbolHash = symbolHash15;
             baseUnit = baseUnit15;
@@ -944,8 +929,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket15;
             reporter = reporter15;
             reporterMultiplier = reporterMultiplier15;
-        }
-        if (i == 16) {
+        } else if (i == 16) {
             underlying = underlying16;
             symbolHash = symbolHash16;
             baseUnit = baseUnit16;
@@ -954,8 +938,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket16;
             reporter = reporter16;
             reporterMultiplier = reporterMultiplier16;
-        }
-        if (i == 17) {
+        } else if (i == 17) {
             underlying = underlying17;
             symbolHash = symbolHash17;
             baseUnit = baseUnit17;
@@ -964,8 +947,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket17;
             reporter = reporter17;
             reporterMultiplier = reporterMultiplier17;
-        }
-        if (i == 18) {
+        } else if (i == 18) {
             underlying = underlying18;
             symbolHash = symbolHash18;
             baseUnit = baseUnit18;
@@ -974,8 +956,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket18;
             reporter = reporter18;
             reporterMultiplier = reporterMultiplier18;
-        }
-        if (i == 19) {
+        } else if (i == 19) {
             underlying = underlying19;
             symbolHash = symbolHash19;
             baseUnit = baseUnit19;
@@ -984,8 +965,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket19;
             reporter = reporter19;
             reporterMultiplier = reporterMultiplier19;
-        }
-        if (i == 20) {
+        } else if (i == 20) {
             underlying = underlying20;
             symbolHash = symbolHash20;
             baseUnit = baseUnit20;
@@ -994,8 +974,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket20;
             reporter = reporter20;
             reporterMultiplier = reporterMultiplier20;
-        }
-        if (i == 21) {
+        } else if (i == 21) {
             underlying = underlying21;
             symbolHash = symbolHash21;
             baseUnit = baseUnit21;
@@ -1004,8 +983,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket21;
             reporter = reporter21;
             reporterMultiplier = reporterMultiplier21;
-        }
-        if (i == 22) {
+        } else if (i == 22) {
             underlying = underlying22;
             symbolHash = symbolHash22;
             baseUnit = baseUnit22;
@@ -1014,8 +992,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket22;
             reporter = reporter22;
             reporterMultiplier = reporterMultiplier22;
-        }
-        if (i == 23) {
+        } else if (i == 23) {
             underlying = underlying23;
             symbolHash = symbolHash23;
             baseUnit = baseUnit23;
@@ -1024,8 +1001,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket23;
             reporter = reporter23;
             reporterMultiplier = reporterMultiplier23;
-        }
-        if (i == 24) {
+        } else if (i == 24) {
             underlying = underlying24;
             symbolHash = symbolHash24;
             baseUnit = baseUnit24;
@@ -1034,8 +1010,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket24;
             reporter = reporter24;
             reporterMultiplier = reporterMultiplier24;
-        }
-        if (i == 25) {
+        } else if (i == 25) {
             underlying = underlying25;
             symbolHash = symbolHash25;
             baseUnit = baseUnit25;
@@ -1044,8 +1019,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket25;
             reporter = reporter25;
             reporterMultiplier = reporterMultiplier25;
-        }
-        if (i == 26) {
+        } else if (i == 26) {
             underlying = underlying26;
             symbolHash = symbolHash26;
             baseUnit = baseUnit26;
@@ -1054,8 +1028,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket26;
             reporter = reporter26;
             reporterMultiplier = reporterMultiplier26;
-        }
-        if (i == 27) {
+        } else if (i == 27) {
             underlying = underlying27;
             symbolHash = symbolHash27;
             baseUnit = baseUnit27;
@@ -1064,8 +1037,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket27;
             reporter = reporter27;
             reporterMultiplier = reporterMultiplier27;
-        }
-        if (i == 28) {
+        } else if (i == 28) {
             underlying = underlying28;
             symbolHash = symbolHash28;
             baseUnit = baseUnit28;
@@ -1074,8 +1046,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket28;
             reporter = reporter28;
             reporterMultiplier = reporterMultiplier28;
-        }
-        if (i == 29) {
+        } else if (i == 29) {
             underlying = underlying29;
             symbolHash = symbolHash29;
             baseUnit = baseUnit29;
@@ -1084,8 +1055,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket29;
             reporter = reporter29;
             reporterMultiplier = reporterMultiplier29;
-        }
-        if (i == 30) {
+        } else if (i == 30) {
             underlying = underlying30;
             symbolHash = symbolHash30;
             baseUnit = baseUnit30;
@@ -1094,8 +1064,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket30;
             reporter = reporter30;
             reporterMultiplier = reporterMultiplier30;
-        }
-        if (i == 31) {
+        } else if (i == 31) {
             underlying = underlying31;
             symbolHash = symbolHash31;
             baseUnit = baseUnit31;
@@ -1104,8 +1073,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket31;
             reporter = reporter31;
             reporterMultiplier = reporterMultiplier31;
-        }
-        if (i == 32) {
+        } else if (i == 32) {
             underlying = underlying32;
             symbolHash = symbolHash32;
             baseUnit = baseUnit32;
@@ -1114,8 +1082,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket32;
             reporter = reporter32;
             reporterMultiplier = reporterMultiplier32;
-        }
-        if (i == 33) {
+        } else if (i == 33) {
             underlying = underlying33;
             symbolHash = symbolHash33;
             baseUnit = baseUnit33;
@@ -1124,8 +1091,7 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket33;
             reporter = reporter33;
             reporterMultiplier = reporterMultiplier33;
-        }
-        if (i == 34) {
+        } else if (i == 34) {
             underlying = underlying34;
             symbolHash = symbolHash34;
             baseUnit = baseUnit34;
