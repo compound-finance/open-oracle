@@ -91,9 +91,11 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     function priceInternal(TokenConfig memory config) internal view returns (uint) {
-        if (config.priceSource == PriceSource.REPORTER) return prices[config.symbolHash].price;
-        if (config.priceSource == PriceSource.FIXED_USD) return config.fixedPrice;
-        if (config.priceSource == PriceSource.FIXED_ETH) {
+        if (config.priceSource == PriceSource.REPORTER) {
+            return prices[config.symbolHash].price;
+        } else if (config.priceSource == PriceSource.FIXED_USD) {
+            return config.fixedPrice;
+        } else { // config.priceSource == PriceSource.FIXED_ETH
             uint usdPerEth = prices[ethHash].price;
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
             return usdPerEth * config.fixedPrice / ethBaseUnit;
