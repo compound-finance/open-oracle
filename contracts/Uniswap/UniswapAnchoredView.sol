@@ -252,10 +252,26 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
     function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual view returns (uint) {
-        uint256 twap = getUniswapTwap(config);
+        // `getUniswapTwap(config)`
+        //      -> TWAP between the baseUnits of Uniswap pair (scaled to 1e18)
+        // `twap * config.baseUnit`
+        //      -> price of 1 token relative to `baseUnit` of the other token (scaled to 1e18)
+        uint twap = getUniswapTwap(config);
 
-        uint rawUniswapPriceMantissa = twap;
-        uint unscaledPriceMantissa = rawUniswapPriceMantissa * conversionFactor;
+        // `unscaledPriceMantissa * config.baseUnit / expScale`
+        //      -> price of 1 token relative to baseUnit of the other token (scaled to 1)
+        uint unscaledPriceMantissa = twap * conversionFactor;
+
+        // Adjust twap according to the units of the non-ETH asset
+        // 1. In the case of ETH, we would have to scale by 1e6 / USDC_UNITS, but since baseUnit2 is 1e6 (USDC), it cancels
+        // 2. In the case of non-ETH tokens
+        //  a. `getUniswapTwap(config)` handles "reversed" token pairs, so `twap` will always be Token/ETH TWAP.
+        //  b. conversionFactor = ETH price * 1e6
+        //      unscaledPriceMantissa = twap{token/ETH} * expScale * conversionFactor
+        //      so ->
+        //      anchorPrice = (twap * tokenBaseUnit / ethBaseUnit) * ETH_price * 1e6
+        //                  = twap * conversionFactor * tokenBaseUnit / ethBaseUnit
+        //                  = unscaledPriceMantissa / expScale * tokenBaseUnit / ethBaseUnit
         uint anchorPrice = unscaledPriceMantissa * config.baseUnit / ethBaseUnit / expScale;
 
         return anchorPrice;
