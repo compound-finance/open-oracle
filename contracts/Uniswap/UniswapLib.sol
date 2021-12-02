@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.7;
+pragma solidity =0.8.7;
 
 // From: https://github.com/Uniswap/uniswap-v3-core
 
