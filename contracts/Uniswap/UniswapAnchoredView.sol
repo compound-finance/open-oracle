@@ -75,6 +75,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
                 prices[symbolHash].price = 1;
             } else {
                 require(uniswapMarket == address(0), "only reported prices utilize an anchor");
+                require(config.reporter == address(0), "only reported prices utilize a reporter");
             }
         }
     }
