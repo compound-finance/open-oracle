@@ -1112,7 +1112,7 @@ contract UniswapConfig {
             reporter: reporter,
             reporterMultiplier: reporterMultiplier,
             isUniswapReversed:
-                ((isUniswapReversed >> i) & uint256(1)) == 1 ? true : false
+                ((isUniswapReversed >> i) & uint256(1)) == 1
         });
     }
 
