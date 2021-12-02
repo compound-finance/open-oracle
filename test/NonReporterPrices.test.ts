@@ -40,7 +40,7 @@ describe("UniswapAnchoredView", () => {
       priceSource: PriceSource.FIXED_USD,
       fixedPrice: uint(1e6),
       uniswapMarket: address(0),
-      reporter: address(5),
+      reporter: address(0),
       reporterMultiplier: uint(1e16),
       isUniswapReversed: false,
     };
@@ -52,7 +52,7 @@ describe("UniswapAnchoredView", () => {
       priceSource: PriceSource.FIXED_USD,
       fixedPrice: uint(1e6),
       uniswapMarket: address(0),
-      reporter: address(6),
+      reporter: address(0),
       reporterMultiplier: uint(1e16),
       isUniswapReversed: false,
     };
@@ -74,7 +74,7 @@ describe("UniswapAnchoredView", () => {
       priceSource: PriceSource.FIXED_ETH,
       fixedPrice: uint(5285551943761727),
       uniswapMarket: address(0),
-      reporter: address(1),
+      reporter: address(0),
       reporterMultiplier: uint(1e16),
       isUniswapReversed: false,
     };
@@ -111,7 +111,7 @@ describe("UniswapAnchoredView", () => {
       priceSource: PriceSource.FIXED_ETH,
       fixedPrice: uint(5285551943761727),
       uniswapMarket: address(0),
-      reporter: address(1),
+      reporter: address(0),
       reporterMultiplier: uint(1e16),
       isUniswapReversed: false,
     };
@@ -131,7 +131,7 @@ describe("UniswapAnchoredView", () => {
       priceSource: PriceSource.FIXED_ETH,
       fixedPrice: 14,
       uniswapMarket: address(112),
-      reporter: address(1),
+      reporter: address(0),
       reporterMultiplier: uint(1e16),
       isUniswapReversed: true,
     };
@@ -143,7 +143,7 @@ describe("UniswapAnchoredView", () => {
       priceSource: PriceSource.FIXED_ETH,
       fixedPrice: uint(5285551943761727),
       uniswapMarket: address(0),
-      reporter: address(1),
+      reporter: address(0),
       reporterMultiplier: uint(1e16),
       isUniswapReversed: false,
     };
