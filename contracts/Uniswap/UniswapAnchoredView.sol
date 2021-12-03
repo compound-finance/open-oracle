@@ -170,8 +170,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @return anchorPrice uint
      */
     function calculateAnchorPriceFromEthPrice(TokenConfig memory config) internal view returns (uint anchorPrice) {
-        uint ethPrice = fetchEthPrice();
         require(config.priceSource == PriceSource.REPORTER, "only reporter prices get posted");
+        uint ethPrice = fetchEthPrice();
         if (config.symbolHash == ethHash) {
             anchorPrice = ethPrice;
         } else {
