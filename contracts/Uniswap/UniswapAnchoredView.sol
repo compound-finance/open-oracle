@@ -202,7 +202,10 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     /**
-     * @dev Fetches the latest TWAP from the UniV3 pool tick, over the last anchor period.
+     * @dev Fetches the latest TWATP from the UniV3 pool oracle, over the last anchor period.
+     *      Note that the TWATP (time-weighted average tick-price) is not equivalent to the TWAP,
+     *      as ticks are logarithmic. The TWATP returned by this function will usually
+     *      be lower than the TWAP.
      */
     function getUniswapTwap(TokenConfig memory config) internal view returns (uint256) {
         uint32 anchorPeriod_ = anchorPeriod;
