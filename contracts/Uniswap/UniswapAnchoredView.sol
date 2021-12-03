@@ -26,7 +26,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     uint public immutable lowerBoundAnchorRatio;
 
     /// @notice The minimum amount of time in seconds required for the old uniswap price accumulator to be replaced
-    uint public immutable anchorPeriod;
+    uint32 public immutable anchorPeriod;
 
     /// @notice Official prices by symbol hash
     mapping(bytes32 => PriceData) public prices;
@@ -55,9 +55,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @param configs The static token configurations which define what prices are supported and how
      */
     constructor(uint anchorToleranceMantissa_,
-                uint anchorPeriod_,
+                uint32 anchorPeriod_,
                 TokenConfig[] memory configs) UniswapConfig(configs) {
-
         anchorPeriod = anchorPeriod_;
 
         // Allow the tolerance to be whatever the deployer chooses, but prevent under/overflow (and prices from being 0)
@@ -206,7 +205,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @dev Fetches the latest TWAP from the UniV3 pool tick, over the last anchor period.
      */
     function getUniswapTwap(TokenConfig memory config) internal view returns (uint256) {
-        uint32 anchorPeriod_ = uint32(anchorPeriod); // overflow is expected
+        uint32 anchorPeriod_ = anchorPeriod;
         uint32[] memory secondsAgos = new uint32[](2);
         secondsAgos[0] = anchorPeriod_;
         secondsAgos[1] = 0;
