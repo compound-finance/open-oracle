@@ -236,9 +236,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         uint256 twapX96 = FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
 
         // Scale up to a common precision (expScale), then down-scale from Q96.
-        uint256 twap = FullMath.mulDiv(expScale, twapX96, FixedPoint96.Q96);
-
-        return twap;
+        return FullMath.mulDiv(expScale, twapX96, FixedPoint96.Q96);
     }
 
     /**
