@@ -325,7 +325,7 @@ contract UniswapConfig {
 
     // Contract bytecode size optimisation:
     // Each bit i stores a bool, corresponding to the ith config.
-    uint64 internal immutable isUniswapReversed;
+    uint256 internal immutable isUniswapReversed;
 
     /**
      * @notice Construct an immutable store of configs into the contract data
@@ -686,11 +686,11 @@ contract UniswapConfig {
         reporter34 = config.reporter;
         reporterMultiplier34 = config.reporterMultiplier;
 
-        uint64 isUniswapReversed_ = 0;
-        for (uint i = 0; i < configs.length; i++) {
+        uint256 isUniswapReversed_ = 0;
+        for (uint256 i = 0; i < configs.length; i++) {
             config = configs[i];
             isUniswapReversed_ |=
-                uint64(config.isUniswapReversed ? 1 : 0) << uint64(i);
+                uint256(config.isUniswapReversed ? 1 : 0) << i;
         }
         isUniswapReversed = isUniswapReversed_;
     }
