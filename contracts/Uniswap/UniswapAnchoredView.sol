@@ -97,7 +97,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         } else { // config.priceSource == PriceSource.FIXED_ETH
             uint usdPerEth = prices[ethHash].price;
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-            return usdPerEth * config.fixedPrice / ethBaseUnit;
+            return FullMath.mulDiv(usdPerEth, config.fixedPrice, ethBaseUnit);
         }
     }
 
@@ -113,7 +113,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         // The baseUnit of an asset is the amount of the smallest denomination of that asset per whole.
         // For example, the baseUnit of ETH is 1e18.
         // Since the prices in this view have 6 decimals, we must scale them by 1e(36 - 6)/baseUnit
-        return 1e30 * priceInternal(config) / (config.baseUnit);
+        return FullMath.mulDiv(1e30, priceInternal(config), config.baseUnit);
     }
 
     /**
@@ -188,14 +188,14 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     function convertReportedPrice(TokenConfig memory config, int256 reportedPrice) internal pure returns (uint256) {
         require(reportedPrice >= 0, "Reported price cannot be negative");
         uint256 unsignedPrice = uint256(reportedPrice);
-        uint256 convertedPrice = unsignedPrice * config.reporterMultiplier / config.baseUnit;
+        uint256 convertedPrice = FullMath.mulDiv(unsignedPrice, config.reporterMultiplier, config.baseUnit);
         return convertedPrice;
     }
 
 
     function isWithinAnchor(uint reporterPrice, uint anchorPrice) internal view returns (bool) {
         if (reporterPrice > 0) {
-            uint anchorRatio = anchorPrice * 100e16 / reporterPrice;
+            uint anchorRatio = FullMath.mulDiv(anchorPrice, 100e16, reporterPrice);
             return anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
         }
         return false;
