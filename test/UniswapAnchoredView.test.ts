@@ -158,7 +158,7 @@ async function setup({ isMockedView }: SetupOptions) {
       priceSource: PriceSource.FIXED_USD,
       fixedPrice: uint(1e6),
       uniswapMarket: dummyAddress,
-      reporter: cToken.USDT.reporter.address,
+      reporter: address(0),
       reporterMultiplier: uint(1e16),
       isUniswapReversed: false,
     },
@@ -169,7 +169,7 @@ async function setup({ isMockedView }: SetupOptions) {
       priceSource: PriceSource.FIXED_ETH,
       fixedPrice: uint(FIXED_ETH_AMOUNT),
       uniswapMarket: dummyAddress,
-      reporter: cToken.SAI.reporter.address,
+      reporter: address(0),
       reporterMultiplier: uint(1e16),
       isUniswapReversed: false,
     },
@@ -675,7 +675,7 @@ describe("UniswapAnchoredView", () => {
           priceSource: PriceSource.FIXED_USD,
           fixedPrice: 0,
           uniswapMarket: address(5),
-          reporter: cToken.ETH.reporter.address,
+          reporter: address(0),
           reporterMultiplier: uint(1e16),
           isUniswapReversed: false,
         },
@@ -708,6 +708,53 @@ describe("UniswapAnchoredView", () => {
           tokenConfigs2
         )
       ).to.be.revertedWith("only reported prices utilize an anchor");
+    });
+
+    it("should fail if non-reporter price utilizes a reporter", async () => {
+      const anchorMantissa = exp(1, 17);
+
+      const dummyAddress = address(0);
+      const tokenConfigs1: TokenConfig[] = [
+        {
+          underlying: dummyAddress,
+          symbolHash: keccak256("USDT"),
+          baseUnit: uint(1e18),
+          priceSource: PriceSource.FIXED_USD,
+          fixedPrice: 0,
+          uniswapMarket: address(0),
+          reporter: cToken.USDT.reporter.address,
+          reporterMultiplier: uint(1e16),
+          isUniswapReversed: false,
+        },
+      ];
+      await expect(
+        new UniswapAnchoredView__factory(deployer).deploy(
+          anchorMantissa,
+          30,
+          tokenConfigs1
+        )
+      ).to.be.revertedWith("only reported prices utilize a reporter");
+
+      const tokenConfigs2: TokenConfig[] = [
+        {
+          underlying: dummyAddress,
+          symbolHash: keccak256("USDT"),
+          baseUnit: uint(1e18),
+          priceSource: PriceSource.FIXED_ETH,
+          fixedPrice: 0,
+          uniswapMarket: address(0),
+          reporter: cToken.USDT.reporter.address,
+          reporterMultiplier: uint(1e16),
+          isUniswapReversed: false,
+        },
+      ];
+      await expect(
+        new UniswapAnchoredView__factory(deployer).deploy(
+          anchorMantissa,
+          30,
+          tokenConfigs2
+        )
+      ).to.be.revertedWith("only reported prices utilize a reporter");
     });
 
     it("basic scenario, successfully initialize initial state", async () => {
