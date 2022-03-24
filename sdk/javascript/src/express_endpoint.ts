@@ -35,8 +35,8 @@ export function endpoint(
   privateKey: string,
   getter: (now: UnixT) => Promise<[UnixT, Pairs]>,
   filter: (pairs: Pairs, query: Query) => Pairs = Filters.symbols,
-  kind: string = 'prices',
-  path: string = `/${kind}.json`
+  kind = 'prices',
+  path = `/${kind}.json`
 ): express.Application {
   return express()
     .get(path, async (req, res) => {
