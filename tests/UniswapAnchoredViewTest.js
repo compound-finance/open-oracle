@@ -18,11 +18,7 @@ async function setup({isMockedView, freeze}) {
   const anchorPeriod = 60;
   const timestamp = Math.floor(Date.now() / 1000);
 
-  if (freeze) {
-    await sendRPC(web3, 'evm_freezeTime', [timestamp]);
-  } else {
-    await sendRPC(web3, 'evm_mine', [timestamp]);
-  }
+  await (freeze ? sendRPC(web3, 'evm_freezeTime', [timestamp]) : sendRPC(web3, 'evm_mine', [timestamp]));
 
   const mockPair = await deploy("MockUniswapTokenPair", [
     fixed(1.8e12),
@@ -53,11 +49,7 @@ async function setup({isMockedView, freeze}) {
   ];
 
   let uniswapAnchoredView;
-  if (isMockedView) {
-    uniswapAnchoredView = await deploy('MockUniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, anchorPeriod, tokenConfigs]);
-  } else {
-    uniswapAnchoredView = await deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, anchorPeriod, tokenConfigs]);
-  }
+  uniswapAnchoredView = await (isMockedView ? deploy('MockUniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, anchorPeriod, tokenConfigs]) : deploy('UniswapAnchoredView', [priceData._address, reporter.address, anchorMantissa, anchorPeriod, tokenConfigs]));
 
   async function postPrices(timestamp, prices2dArr, symbols, signer=reporter) {
     let {
