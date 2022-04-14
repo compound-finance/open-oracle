@@ -32,7 +32,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     mapping(bytes32 => PriceData) public prices;
 
     /// @notice The event emitted when new prices are posted but the stored price is not updated due to the anchor
-    event PriceGuarded(bytes32 indexed symbolHash, uint reporter, uint anchor);
+    event PriceGuarded(bytes32 indexed symbolHash, uint reporterPrice, uint anchorPrice);
 
     /// @notice The event emitted when the stored price is updated
     event PriceUpdated(bytes32 indexed symbolHash, uint price);
