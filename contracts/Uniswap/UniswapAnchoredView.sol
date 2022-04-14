@@ -25,7 +25,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     /// @notice The lowest ratio of the new price to the anchor price that will still trigger the price to be updated
     uint public immutable lowerBoundAnchorRatio;
 
-    /// @notice The minimum amount of time in seconds required for the old uniswap price accumulator to be replaced
+    /// @notice The minimum amount of time in seconds required for the old Uniswap price accumulator to be replaced
     uint32 public immutable anchorPeriod;
 
     /// @notice Official prices by symbol hash
@@ -46,12 +46,12 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     bytes32 constant internal ethHash = keccak256(abi.encodePacked("ETH"));
 
     /**
-     * @notice Construct a uniswap anchored view for a set of token configurations
+     * @notice Construct a Uniswap anchored view for a set of token configurations
      * @dev Note that to avoid immature TWAPs, the system must run for at least a single anchorPeriod before using.
      *      NOTE: Reported prices are set to 1 during construction. We assume that this contract will not be voted in by
      *      governance until prices have been updated through `validate` for each TokenConfig.
-     * @param anchorToleranceMantissa_ The percentage tolerance that the reporter may deviate from the uniswap anchor
-     * @param anchorPeriod_ The minimum amount of time required for the old uniswap price accumulator to be replaced
+     * @param anchorToleranceMantissa_ The percentage tolerance that the reporter may deviate from the Uniswap anchor
+     * @param anchorPeriod_ The minimum amount of time required for the old Uniswap price accumulator to be replaced
      * @param configs The static token configurations which define what prices are supported and how
      */
     constructor(uint anchorToleranceMantissa_,
@@ -241,15 +241,15 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     }
 
     /**
-     * @dev Fetches the current eth/usd price from uniswap, with 6 decimals of precision.
-     *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
+     * @dev Fetches the current eth/usd price from Uniswap, with 6 decimals of precision.
+     *  Conversion factor is 1e18 for eth/usdc market, since we decode Uniswap price statically with 18 decimals.
      */
     function fetchEthPrice() internal view returns (uint) {
         return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), ETH_BASE_UNIT);
     }
 
     /**
-     * @dev Fetches the current token/usd price from uniswap, with 6 decimals of precision.
+     * @dev Fetches the current token/usd price from Uniswap, with 6 decimals of precision.
      * @param conversionFactor 1e18 if seeking the ETH price, and a 6 decimal ETH-USDC price in the case of other assets
      */
     function fetchAnchorPrice(TokenConfig memory config, uint conversionFactor) internal virtual view returns (uint) {

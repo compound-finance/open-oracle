@@ -324,7 +324,7 @@ contract UniswapConfig {
     uint256 internal immutable reporterMultiplier33;
     uint256 internal immutable reporterMultiplier34;
 
-    // Contract bytecode size optimisation:
+    // Contract bytecode size optimization:
     // Each bit i stores a bool, corresponding to the ith config.
     uint256 internal immutable isUniswapReversed;
 
