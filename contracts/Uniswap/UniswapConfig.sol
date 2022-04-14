@@ -2,9 +2,7 @@
 
 pragma solidity =0.8.7;
 
-interface CErc20 {
-    function underlying() external view returns (address);
-}
+import { CErc20 } from "./CErc20.sol";
 
 contract UniswapConfig {
     /// @notice The maximum integer possible
