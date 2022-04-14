@@ -43,7 +43,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     /// @notice The event emitted when failover is deactivated
     event FailoverDeactivated(bytes32 indexed symbolHash);
 
-    bytes32 constant ethHash = keccak256(abi.encodePacked("ETH"));
+    bytes32 constant internal ethHash = keccak256(abi.encodePacked("ETH"));
 
     /**
      * @notice Construct a uniswap anchored view for a set of token configurations
