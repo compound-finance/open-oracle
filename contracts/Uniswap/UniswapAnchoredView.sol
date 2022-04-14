@@ -283,6 +283,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      */
     function activateFailover(bytes32 symbolHash) external onlyOwner() {
         require(!prices[symbolHash].failoverActive, "Already activated");
+        TokenConfig memory config = getTokenConfigBySymbolHash(symbolHash);
+        require(config.priceSource == PriceSource.REPORTER, "not reporter");
         prices[symbolHash].failoverActive = true;
         emit FailoverActivated(symbolHash);
         pokeFailedOverPrice(symbolHash);
