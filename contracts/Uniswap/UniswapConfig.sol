@@ -31,10 +31,10 @@ contract UniswapConfig {
 
     /// @notice The max number of tokens this contract is hardcoded to support
     /// @dev Do not change this variable without updating all the fields throughout the contract.
-    uint public constant maxTokens = 35;
+    uint256 public constant maxTokens = 35;
 
     /// @notice The number of tokens this contract actually supports
-    uint public immutable numTokens;
+    uint256 public immutable numTokens;
 
     address internal immutable underlying00;
     address internal immutable underlying01;
@@ -696,7 +696,7 @@ contract UniswapConfig {
         isUniswapReversed = isUniswapReversed_;
     }
 
-    function get(TokenConfig[] memory configs, uint i) internal pure returns (TokenConfig memory) {
+    function get(TokenConfig[] memory configs, uint256 i) internal pure returns (TokenConfig memory) {
         if (i < configs.length)
             return configs[i];
         return TokenConfig({
@@ -837,7 +837,7 @@ contract UniswapConfig {
      * @param i The index of the config to get
      * @return The config object
      */
-    function getTokenConfig(uint i) public view returns (TokenConfig memory) {
+    function getTokenConfig(uint256 i) public view returns (TokenConfig memory) {
         require(i < numTokens, "token config not found");
 
         address underlying;
