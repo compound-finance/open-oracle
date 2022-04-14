@@ -14,10 +14,10 @@ struct PriceData {
 
 contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Ownable {
     /// @notice The number of wei in 1 ETH
-    uint public constant ethBaseUnit = 1e18;
+    uint public constant ETH_BASE_UNIT = 1e18;
 
     /// @notice A common scaling factor to maintain precision
-    uint public constant expScale = 1e18;
+    uint public constant EXP_SCALE = 1e18;
 
     /// @notice The highest ratio of the new price to the anchor price that will still trigger the price to be updated
     uint public immutable upperBoundAnchorRatio;
@@ -60,8 +60,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         anchorPeriod = anchorPeriod_;
 
         // Allow the tolerance to be whatever the deployer chooses, but prevent under/overflow (and prices from being 0)
-        upperBoundAnchorRatio = anchorToleranceMantissa_ > type(uint).max - 100e16 ? type(uint).max : 100e16 + anchorToleranceMantissa_;
-        lowerBoundAnchorRatio = anchorToleranceMantissa_ < 100e16 ? 100e16 - anchorToleranceMantissa_ : 1;
+        upperBoundAnchorRatio = anchorToleranceMantissa_ > type(uint).max - ETH_BASE_UNIT ? type(uint).max : ETH_BASE_UNIT + anchorToleranceMantissa_;
+        lowerBoundAnchorRatio = anchorToleranceMantissa_ < ETH_BASE_UNIT ? ETH_BASE_UNIT - anchorToleranceMantissa_ : 1;
 
         for (uint i = 0; i < configs.length; i++) {
             TokenConfig memory config = configs[i];
@@ -97,7 +97,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         } else { // config.priceSource == PriceSource.FIXED_ETH
             uint usdPerEth = prices[ethHash].price;
             require(usdPerEth > 0, "ETH price not set, cannot convert to dollars");
-            return FullMath.mulDiv(usdPerEth, config.fixedPrice, ethBaseUnit);
+            return FullMath.mulDiv(usdPerEth, config.fixedPrice, ETH_BASE_UNIT);
         }
     }
 
@@ -195,7 +195,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
 
     function isWithinAnchor(uint reporterPrice, uint anchorPrice) internal view returns (bool) {
         if (reporterPrice > 0) {
-            uint anchorRatio = FullMath.mulDiv(anchorPrice, 100e16, reporterPrice);
+            uint anchorRatio = FullMath.mulDiv(anchorPrice, ETH_BASE_UNIT, reporterPrice);
             return anchorRatio <= upperBoundAnchorRatio && anchorRatio >= lowerBoundAnchorRatio;
         }
         return false;
@@ -236,8 +236,8 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         // so after this mulDiv, the resulting TWAP is still in Q96 fixed precision.
         uint256 twapX96 = FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
 
-        // Scale up to a common precision (expScale), then down-scale from Q96.
-        return FullMath.mulDiv(expScale, twapX96, FixedPoint96.Q96);
+        // Scale up to a common precision (EXP_SCALE), then down-scale from Q96.
+        return FullMath.mulDiv(EXP_SCALE, twapX96, FixedPoint96.Q96);
     }
 
     /**
@@ -245,7 +245,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      *  Conversion factor is 1e18 for eth/usdc market, since we decode uniswap price statically with 18 decimals.
      */
     function fetchEthPrice() internal view returns (uint) {
-        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), ethBaseUnit);
+        return fetchAnchorPrice(getTokenConfigBySymbolHash(ethHash), ETH_BASE_UNIT);
     }
 
     /**
@@ -259,7 +259,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         //      -> price of 1 token relative to `baseUnit` of the other token (scaled to 1e18)
         uint twap = getUniswapTwap(config);
 
-        // `unscaledPriceMantissa * config.baseUnit / expScale`
+        // `unscaledPriceMantissa * config.baseUnit / EXP_SCALE`
         //      -> price of 1 token relative to baseUnit of the other token (scaled to 1)
         uint unscaledPriceMantissa = twap * conversionFactor;
 
@@ -268,12 +268,12 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         // 2. In the case of non-ETH tokens
         //  a. `getUniswapTwap(config)` handles "reversed" token pairs, so `twap` will always be Token/ETH TWAP.
         //  b. conversionFactor = ETH price * 1e6
-        //      unscaledPriceMantissa = twap{token/ETH} * expScale * conversionFactor
+        //      unscaledPriceMantissa = twap{token/ETH} * EXP_SCALE * conversionFactor
         //      so ->
-        //      anchorPrice = (twap * tokenBaseUnit / ethBaseUnit) * ETH_price * 1e6
-        //                  = twap * conversionFactor * tokenBaseUnit / ethBaseUnit
-        //                  = unscaledPriceMantissa / expScale * tokenBaseUnit / ethBaseUnit
-        uint anchorPrice = unscaledPriceMantissa * config.baseUnit / ethBaseUnit / expScale;
+        //      anchorPrice = (twap * tokenBaseUnit / ETH_BASE_UNIT) * ETH_price * 1e6
+        //                  = twap * conversionFactor * tokenBaseUnit / ETH_BASE_UNIT
+        //                  = unscaledPriceMantissa / EXP_SCALE * tokenBaseUnit / ETH_BASE_UNIT
+        uint anchorPrice = unscaledPriceMantissa * config.baseUnit / ETH_BASE_UNIT / EXP_SCALE;
 
         return anchorPrice;
     }

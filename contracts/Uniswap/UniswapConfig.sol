@@ -7,6 +7,9 @@ interface CErc20 {
 }
 
 contract UniswapConfig {
+    /// @notice The maximum integer possible
+    uint256 public constant MAX_INTEGER = type(uint256).max;
+
     /// @dev Describe how to interpret the fixedPrice in the TokenConfig.
     enum PriceSource {
         FIXED_ETH, /// implies the fixedPrice is a constant multiple of the ETH price (which varies)
@@ -748,7 +751,7 @@ contract UniswapConfig {
         if (reporter == reporter33) return 33;
         if (reporter == reporter34) return 34;
 
-        return type(uint).max;
+        return MAX_INTEGER;
     }
 
     function getUnderlyingIndex(address underlying) internal view returns (uint) {
