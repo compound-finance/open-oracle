@@ -213,7 +213,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         secondsAgos[0] = anchorPeriod_;
         secondsAgos[1] = 0;
         (int56[] memory tickCumulatives, ) = IUniswapV3Pool(config.uniswapMarket).observe(secondsAgos);
-
+        
         int56 anchorPeriod__ = int56(uint56(anchorPeriod_));
         require(anchorPeriod__ > 0, "Anchor period must be >0");
         int56 timeWeightedAverageTickS56 = (tickCumulatives[1] - tickCumulatives[0]) / anchorPeriod__;
@@ -222,6 +222,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
                 timeWeightedAverageTickS56 <= TickMath.MAX_TICK,
             "Calculated TWAP outside possible tick range"
         );
+        require(timeWeightedAverageTickS56 < type(int24).max, "timeWeightedAverageTick above max");
         int24 timeWeightedAverageTick = int24(timeWeightedAverageTickS56);
         if (config.isUniswapReversed) {
             // If the reverse price is desired, inverse the tick
