@@ -337,7 +337,6 @@ contract UniswapConfig {
         numTokens = configs.length;
 
         TokenConfig memory config = get(configs, 0);
-        config = get(configs, 0);
         underlying00 = config.underlying;
         symbolHash00 = config.symbolHash;
         baseUnit00 = config.baseUnit;
@@ -687,11 +686,11 @@ contract UniswapConfig {
         reporter34 = config.reporter;
         reporterMultiplier34 = config.reporterMultiplier;
 
-        uint256 isUniswapReversed_ = 0;
-        for (uint256 i = 0; i < configs.length; i++) {
+        uint256 isUniswapReversed_;
+        uint256 numTokenConfigs = configs.length;
+        for (uint256 i = 0; i < numTokenConfigs; i++) {
             config = configs[i];
-            isUniswapReversed_ |=
-                uint256(config.isUniswapReversed ? 1 : 0) << i;
+            if (config.isUniswapReversed) isUniswapReversed_ |= uint256(1) << i;
         }
         isUniswapReversed = isUniswapReversed_;
     }

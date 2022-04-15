@@ -57,6 +57,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
     constructor(uint256 anchorToleranceMantissa_,
                 uint32 anchorPeriod_,
                 TokenConfig[] memory configs) UniswapConfig(configs) {
+        require(anchorPeriod_ > 0, "Anchor period must be >0");
         anchorPeriod = anchorPeriod_;
 
         // Allow the tolerance to be whatever the deployer chooses, but prevent under/overflow (and prices from being 0)
@@ -84,7 +85,7 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
      * @param symbol The symbol to fetch the price of
      * @return Price denominated in USD, with 6 decimals
      */
-    function price(string memory symbol) external view returns (uint) {
+    function price(string calldata symbol) external view returns (uint) {
         TokenConfig memory config = getTokenConfigBySymbol(symbol);
         return priceInternal(config);
     }
@@ -211,11 +212,9 @@ contract UniswapAnchoredView is AggregatorValidatorInterface, UniswapConfig, Own
         uint32 anchorPeriod_ = anchorPeriod;
         uint32[] memory secondsAgos = new uint32[](2);
         secondsAgos[0] = anchorPeriod_;
-        secondsAgos[1] = 0;
         (int56[] memory tickCumulatives, ) = IUniswapV3Pool(config.uniswapMarket).observe(secondsAgos);
         
         int56 anchorPeriod__ = int56(uint56(anchorPeriod_));
-        require(anchorPeriod__ > 0, "Anchor period must be >0");
         int56 timeWeightedAverageTickS56 = (tickCumulatives[1] - tickCumulatives[0]) / anchorPeriod__;
         require(
             timeWeightedAverageTickS56 >= TickMath.MIN_TICK &&
