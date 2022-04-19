@@ -79,7 +79,8 @@ contract UniswapAnchoredView is
             ? ETH_BASE_UNIT - anchorToleranceMantissa_
             : 1;
 
-        for (uint256 i = 0; i < configs.length; i++) {
+        uint256 numConfigs = configs.length;
+        for (uint256 i = 0; i < numConfigs; i++) {
             TokenConfig memory config = configs[i];
             require(config.baseUnit > 0, "baseUnit not >0");
             address uniswapMarket = config.uniswapMarket;
