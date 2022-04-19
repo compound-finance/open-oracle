@@ -463,7 +463,7 @@ describe("UniswapAnchoredView", () => {
       await reporter.setUniswapAnchoredView(uniswapAnchoredView.address);
 
       await expect(reporter.validate(95)).to.be.revertedWith(
-        "token config not found"
+        "Not found"
       );
     });
   });
@@ -611,7 +611,7 @@ describe("UniswapAnchoredView", () => {
           30,
           tokenConfigs
         )
-      ).to.be.revertedWith("baseUnit must be greater than zero");
+      ).to.be.revertedWith("baseUnit not >0");
     });
 
     it("should fail if uniswap market is not defined", async () => {
@@ -660,7 +660,7 @@ describe("UniswapAnchoredView", () => {
           30,
           tokenConfigs
         )
-      ).to.be.revertedWith("reported prices must have an anchor");
+      ).to.be.revertedWith("No anchor");
     });
 
     it("should fail if non-reporter price utilizes an anchor", async () => {
@@ -686,7 +686,7 @@ describe("UniswapAnchoredView", () => {
           30,
           tokenConfigs1
         )
-      ).to.be.revertedWith("only reported prices utilize an anchor");
+      ).to.be.revertedWith("Doesnt need anchor");
 
       const tokenConfigs2: TokenConfig[] = [
         {
@@ -707,7 +707,7 @@ describe("UniswapAnchoredView", () => {
           30,
           tokenConfigs2
         )
-      ).to.be.revertedWith("only reported prices utilize an anchor");
+      ).to.be.revertedWith("Doesnt need anchor");
     });
 
     it("should fail if non-reporter price utilizes a reporter", async () => {
@@ -733,7 +733,7 @@ describe("UniswapAnchoredView", () => {
           30,
           tokenConfigs1
         )
-      ).to.be.revertedWith("only reported prices utilize a reporter");
+      ).to.be.revertedWith("Doesnt need reporter");
 
       const tokenConfigs2: TokenConfig[] = [
         {
@@ -754,7 +754,7 @@ describe("UniswapAnchoredView", () => {
           30,
           tokenConfigs2
         )
-      ).to.be.revertedWith("only reported prices utilize a reporter");
+      ).to.be.revertedWith("Doesnt need reporter");
     });
 
     it("basic scenario, successfully initialize initial state", async () => {
@@ -796,7 +796,7 @@ describe("UniswapAnchoredView", () => {
       await expect(
         uniswapAnchoredView
           .activateFailover(keccak256("SAI"))
-      ).to.be.revertedWith("not reporter");
+      ).to.be.revertedWith("Not reporter");
     })
 
     it("basic scenario, sets failoverActive and emits FailoverUpdated event with correct args", async () => {

@@ -84,7 +84,7 @@ describe("UniswapAnchoredView", () => {
       [SAI]
     );
     expect(oracle.price("SAI")).to.be.revertedWith(
-      "ETH price not set, cannot convert to dollars"
+      "ETH price not set"
     );
   });
 
@@ -117,7 +117,7 @@ describe("UniswapAnchoredView", () => {
     };
     expect(
       new UniswapAnchoredView__factory(deployer).deploy(0, 60, [ETH, SAI])
-    ).to.be.revertedWith("reported prices must have an anchor");
+    ).to.be.revertedWith("No anchor");
     // }
   });
 
@@ -149,7 +149,7 @@ describe("UniswapAnchoredView", () => {
     };
     expect(
       new UniswapAnchoredView__factory(deployer).deploy(0, 60, [ETH, SAI])
-    ).to.be.revertedWith("only reported prices utilize an anchor");
+    ).to.be.revertedWith("Doesnt need anchor");
     // }
   });
 
