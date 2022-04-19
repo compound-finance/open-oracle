@@ -1217,7 +1217,7 @@ contract UniswapConfig {
         view
         returns (TokenConfig memory)
     {
-        return getTokenConfigBySymbolHash(keccak256(abi.encodePacked(symbol)));
+        return getTokenConfigBySymbolHash(keccak256(bytes(symbol)));
     }
 
     /**

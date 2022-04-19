@@ -201,7 +201,7 @@ describe("UniswapConfig", () => {
     const txY_ = await deployer.sendTransaction(txY__);
     const txY = await txY_.wait();
     expect(cfgY.underlying).to.equal(address(25));
-    expect(txY.gasUsed).to.equal(25386);
+    expect(txY.gasUsed).to.equal(25125);
 
     const cfgCT26 = await contract.getTokenConfigByUnderlying(address(25));
     const txCT26__ =
