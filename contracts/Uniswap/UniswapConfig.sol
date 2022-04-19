@@ -2,7 +2,7 @@
 
 pragma solidity =0.8.7;
 
-import { CErc20 } from "./CErc20.sol";
+import {CErc20} from "./CErc20.sol";
 
 contract UniswapConfig {
     /// @notice The maximum integer possible
@@ -12,7 +12,7 @@ contract UniswapConfig {
     enum PriceSource {
         FIXED_ETH, /// implies the fixedPrice is a constant multiple of the ETH price (which varies)
         FIXED_USD, /// implies the fixedPrice is a constant multiple of the USD price (which is 1)
-        REPORTER   /// implies the price is set by the reporter
+        REPORTER /// implies the price is set by the reporter
     }
 
     /// @dev Describe how the USD price should be determined for an asset.
@@ -333,7 +333,7 @@ contract UniswapConfig {
      * @param configs The configs for the supported assets
      */
     constructor(TokenConfig[] memory configs) {
-        require(configs.length <= maxTokens, "too many configs");
+        require(configs.length <= maxTokens, "Too many");
         numTokens = configs.length;
 
         TokenConfig memory config = get(configs, 0);
@@ -695,23 +695,31 @@ contract UniswapConfig {
         isUniswapReversed = isUniswapReversed_;
     }
 
-    function get(TokenConfig[] memory configs, uint256 i) internal pure returns (TokenConfig memory) {
-        if (i < configs.length)
-            return configs[i];
-        return TokenConfig({
-            underlying: address(0),
-            symbolHash: bytes32(0),
-            baseUnit: uint256(0),
-            priceSource: PriceSource(0),
-            fixedPrice: uint256(0),
-            uniswapMarket: address(0),
-            reporter: address(0),
-            reporterMultiplier: uint256(0),
-            isUniswapReversed: false
-        });
+    function get(TokenConfig[] memory configs, uint256 i)
+        internal
+        pure
+        returns (TokenConfig memory)
+    {
+        if (i < configs.length) return configs[i];
+        return
+            TokenConfig({
+                underlying: address(0),
+                symbolHash: bytes32(0),
+                baseUnit: uint256(0),
+                priceSource: PriceSource(0),
+                fixedPrice: uint256(0),
+                uniswapMarket: address(0),
+                reporter: address(0),
+                reporterMultiplier: uint256(0),
+                isUniswapReversed: false
+            });
     }
 
-    function getReporterIndex(address reporter) internal view returns(uint) {
+    function getReporterIndex(address reporter)
+        internal
+        view
+        returns (uint256)
+    {
         if (reporter == reporter00) return 0;
         if (reporter == reporter01) return 1;
         if (reporter == reporter02) return 2;
@@ -751,7 +759,11 @@ contract UniswapConfig {
         return MAX_INTEGER;
     }
 
-    function getUnderlyingIndex(address underlying) internal view returns (uint) {
+    function getUnderlyingIndex(address underlying)
+        internal
+        view
+        returns (uint256)
+    {
         if (underlying == underlying00) return 0;
         if (underlying == underlying01) return 1;
         if (underlying == underlying02) return 2;
@@ -788,10 +800,14 @@ contract UniswapConfig {
         if (underlying == underlying33) return 33;
         if (underlying == underlying34) return 34;
 
-        return type(uint).max;
+        return type(uint256).max;
     }
 
-    function getSymbolHashIndex(bytes32 symbolHash) internal view returns (uint) {
+    function getSymbolHashIndex(bytes32 symbolHash)
+        internal
+        view
+        returns (uint256)
+    {
         if (symbolHash == symbolHash00) return 0;
         if (symbolHash == symbolHash01) return 1;
         if (symbolHash == symbolHash02) return 2;
@@ -828,7 +844,7 @@ contract UniswapConfig {
         if (symbolHash == symbolHash33) return 33;
         if (symbolHash == symbolHash34) return 34;
 
-        return type(uint).max;
+        return type(uint256).max;
     }
 
     /**
@@ -836,8 +852,12 @@ contract UniswapConfig {
      * @param i The index of the config to get
      * @return The config object
      */
-    function getTokenConfig(uint256 i) public view returns (TokenConfig memory) {
-        require(i < numTokens, "token config not found");
+    function getTokenConfig(uint256 i)
+        public
+        view
+        returns (TokenConfig memory)
+    {
+        require(i < numTokens, "Not found");
 
         address underlying;
         bytes32 symbolHash;
@@ -1164,18 +1184,18 @@ contract UniswapConfig {
             reporterMultiplier = reporterMultiplier34;
         }
 
-        return TokenConfig({
-            underlying: underlying,
-            symbolHash: symbolHash,
-            baseUnit: baseUnit,
-            priceSource: priceSource,
-            fixedPrice: fixedPrice,
-            uniswapMarket: uniswapMarket,
-            reporter: reporter,
-            reporterMultiplier: reporterMultiplier,
-            isUniswapReversed:
-                ((isUniswapReversed >> i) & uint256(1)) == 1
-        });
+        return
+            TokenConfig({
+                underlying: underlying,
+                symbolHash: symbolHash,
+                baseUnit: baseUnit,
+                priceSource: priceSource,
+                fixedPrice: fixedPrice,
+                uniswapMarket: uniswapMarket,
+                reporter: reporter,
+                reporterMultiplier: reporterMultiplier,
+                isUniswapReversed: ((isUniswapReversed >> i) & uint256(1)) == 1
+            });
     }
 
     /**
@@ -1183,7 +1203,11 @@ contract UniswapConfig {
      * @param symbol The symbol of the config to get
      * @return The config object
      */
-    function getTokenConfigBySymbol(string memory symbol) public view returns (TokenConfig memory) {
+    function getTokenConfigBySymbol(string memory symbol)
+        public
+        view
+        returns (TokenConfig memory)
+    {
         return getTokenConfigBySymbolHash(keccak256(abi.encodePacked(symbol)));
     }
 
@@ -1192,7 +1216,11 @@ contract UniswapConfig {
      * @param reporter The address of the reporter of the config to get
      * @return The config object
      */
-    function getTokenConfigByReporter(address reporter) public view returns (TokenConfig memory) {
+    function getTokenConfigByReporter(address reporter)
+        public
+        view
+        returns (TokenConfig memory)
+    {
         return getTokenConfig(getReporterIndex(reporter));
     }
 
@@ -1201,7 +1229,11 @@ contract UniswapConfig {
      * @param symbolHash The keccack256 of the symbol of the config to get
      * @return The config object
      */
-    function getTokenConfigBySymbolHash(bytes32 symbolHash) public view returns (TokenConfig memory) {
+    function getTokenConfigBySymbolHash(bytes32 symbolHash)
+        public
+        view
+        returns (TokenConfig memory)
+    {
         return getTokenConfig(getSymbolHashIndex(symbolHash));
     }
 
@@ -1210,7 +1242,11 @@ contract UniswapConfig {
      * @param underlying The address of the underlying asset of the config to get
      * @return The config object
      */
-    function getTokenConfigByUnderlying(address underlying) public view returns (TokenConfig memory) {
+    function getTokenConfigByUnderlying(address underlying)
+        public
+        view
+        returns (TokenConfig memory)
+    {
         return getTokenConfig(getUnderlyingIndex(underlying));
     }
 }
