@@ -29,7 +29,7 @@ contract UniswapAnchoredView is
     /// @notice The lowest ratio of the new price to the anchor price that will still trigger the price to be updated
     uint256 public immutable lowerBoundAnchorRatio;
 
-    /// @notice The minimum amount of time in seconds required for the old Uniswap price accumulator to be replaced
+    /// @notice The time interval to search for TWAPs when calling the Uniswap V3 observe function
     uint32 public immutable anchorPeriod;
 
     /// @notice Official prices by symbol hash

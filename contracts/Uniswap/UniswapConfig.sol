@@ -18,14 +18,23 @@ contract UniswapConfig {
     /// @dev Describe how the USD price should be determined for an asset.
     ///  There should be 1 TokenConfig object for each supported asset, passed in the constructor.
     struct TokenConfig {
+        // The address of the underlying market token. For this `LINK` market configuration, this would be the address of the `LINK` token.
         address underlying;
+        // The bytes32 hash of the underlying symbol.
         bytes32 symbolHash;
+        // The number of smallest units of measurement in a single whole unit.
         uint256 baseUnit;
+        // Where price is coming from.  Refer to README for more information
         PriceSource priceSource;
+        // The fixed price multiple of either ETH or USD, depending on the `priceSource`. If `priceSource` is `reporter`, this is unused.
         uint256 fixedPrice;
+        // The address of the pool being used as the anchor for this market.
         address uniswapMarket;
+        // The address of the `ValidatorProxy` acting as the reporter
         address reporter;
+        // Prices reported by a `ValidatorProxy` must be transformed to 6 decimals for the UAV.  This is the multiplier to convert the reported price to 6dp
         uint256 reporterMultiplier;
+        // True if the pair on Uniswap is defined as ETH / X
         bool isUniswapReversed;
     }
 
