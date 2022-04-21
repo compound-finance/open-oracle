@@ -1212,7 +1212,7 @@ contract UniswapConfig {
      * @param symbol The symbol of the config to get
      * @return The config object
      */
-    function getTokenConfigBySymbol(string memory symbol)
+    function getTokenConfigBySymbol(string calldata symbol)
         public
         view
         returns (TokenConfig memory)
