@@ -51,7 +51,7 @@ contract UniswapAnchoredView is
     /// @notice The event emitted when failover is deactivated
     event FailoverDeactivated(bytes32 indexed symbolHash);
 
-    bytes32 internal constant ethHash = keccak256("ETH");
+    bytes32 internal constant ETH_HASH = keccak256("ETH");
 
     /**
      * @notice Construct a Uniswap anchored view for a set of token configurations
@@ -117,7 +117,7 @@ contract UniswapAnchoredView is
             return config.fixedPrice;
         } else {
             // config.priceSource == PriceSource.FIXED_ETH
-            uint256 usdPerEth = prices[ethHash].price;
+            uint256 usdPerEth = prices[ETH_HASH].price;
             require(usdPerEth > 0, "ETH price not set");
             return FullMath.mulDiv(usdPerEth, config.fixedPrice, ETH_BASE_UNIT);
         }
@@ -205,7 +205,7 @@ contract UniswapAnchoredView is
     {
         require(config.priceSource == PriceSource.REPORTER, "Reporter only");
         uint256 ethPrice = fetchEthPrice();
-        if (config.symbolHash == ethHash) {
+        if (config.symbolHash == ETH_HASH) {
             anchorPrice = ethPrice;
         } else {
             anchorPrice = fetchAnchorPrice(config, ethPrice);
@@ -310,7 +310,7 @@ contract UniswapAnchoredView is
     function fetchEthPrice() internal view returns (uint256) {
         return
             fetchAnchorPrice(
-                getTokenConfigBySymbolHash(ethHash),
+                getTokenConfigBySymbolHash(ETH_HASH),
                 ETH_BASE_UNIT
             );
     }

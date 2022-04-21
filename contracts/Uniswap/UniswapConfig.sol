@@ -40,7 +40,7 @@ contract UniswapConfig {
 
     /// @notice The max number of tokens this contract is hardcoded to support
     /// @dev Do not change this variable without updating all the fields throughout the contract.
-    uint256 public constant maxTokens = 35;
+    uint256 public constant MAX_TOKENS = 35;
 
     /// @notice The number of tokens this contract actually supports
     uint256 public immutable numTokens;
@@ -342,7 +342,7 @@ contract UniswapConfig {
      * @param configs The configs for the supported assets
      */
     constructor(TokenConfig[] memory configs) {
-        require(configs.length <= maxTokens, "Too many");
+        require(configs.length <= MAX_TOKENS, "Too many");
         numTokens = configs.length;
 
         TokenConfig memory config = get(configs, 0);
