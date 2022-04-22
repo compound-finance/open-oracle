@@ -58,7 +58,7 @@ TYPE: `bytes32`
 The bytes32 hash of the underlying symbol. For the `LINK` market configuration, this would be `0x921a3539bcb764c889432630877414523e7fbca00c211bc787aeae69e2e3a779`, calculated using:
 
 ```javascript
-keccak256(abi.encodePacked("LINK"))
+keccak256("LINK")
 ```
 
 ## baseUnit

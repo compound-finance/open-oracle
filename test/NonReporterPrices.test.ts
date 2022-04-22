@@ -58,7 +58,7 @@ describe("UniswapAnchoredView", () => {
     };
     const oracle = await new UniswapAnchoredView__factory(deployer).deploy(
       0,
-      0,
+      60,
       [USDC, USDT]
     );
     expect(await oracle.price("USDC")).to.equal(uint(1e6));
@@ -80,11 +80,11 @@ describe("UniswapAnchoredView", () => {
     };
     const oracle = await new UniswapAnchoredView__factory(deployer).deploy(
       0,
-      0,
+      60,
       [SAI]
     );
     expect(oracle.price("SAI")).to.be.revertedWith(
-      "ETH price not set, cannot convert to dollars"
+      "ETH price not set"
     );
   });
 
@@ -116,8 +116,8 @@ describe("UniswapAnchoredView", () => {
       isUniswapReversed: false,
     };
     expect(
-      new UniswapAnchoredView__factory(deployer).deploy(0, 0, [ETH, SAI])
-    ).to.be.revertedWith("reported prices must have an anchor");
+      new UniswapAnchoredView__factory(deployer).deploy(0, 60, [ETH, SAI])
+    ).to.be.revertedWith("No anchor");
     // }
   });
 
@@ -148,8 +148,8 @@ describe("UniswapAnchoredView", () => {
       isUniswapReversed: false,
     };
     expect(
-      new UniswapAnchoredView__factory(deployer).deploy(0, 0, [ETH, SAI])
-    ).to.be.revertedWith("only reported prices utilize an anchor");
+      new UniswapAnchoredView__factory(deployer).deploy(0, 60, [ETH, SAI])
+    ).to.be.revertedWith("Doesnt need anchor");
     // }
   });
 

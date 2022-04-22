@@ -88,20 +88,20 @@ describe("UniswapConfig", () => {
     expect(cfgU2).to.deep.equal(cfg2);
 
     await expect(contract.getTokenConfig(3)).to.be.revertedWith(
-      "token config not found"
+      "Not found"
     );
     await expect(contract.getTokenConfigBySymbol("COMP")).to.be.revertedWith(
-      "token config not found"
+      "Not found"
     );
     await expect(
       contract.getTokenConfigByReporter(address(1))
-    ).to.be.revertedWith("token config not found");
+    ).to.be.revertedWith("Not found");
     await expect(
       contract.getTokenConfigByUnderlying(address(1))
     ).to.be.revertedWith("revert"); // not a cToken
     await expect(
       contract.getTokenConfigByUnderlying(unlistedNorUnderlying.address)
-    ).to.be.revertedWith("token config not found");
+    ).to.be.revertedWith("Not found");
   });
 
   it("returns configs exactly as specified", async () => {
@@ -201,7 +201,7 @@ describe("UniswapConfig", () => {
     const txY_ = await deployer.sendTransaction(txY__);
     const txY = await txY_.wait();
     expect(cfgY.underlying).to.equal(address(25));
-    expect(txY.gasUsed).to.equal(25386);
+    expect(txY.gasUsed).to.equal(25070);
 
     const cfgCT26 = await contract.getTokenConfigByUnderlying(address(25));
     const txCT26__ =
@@ -211,7 +211,7 @@ describe("UniswapConfig", () => {
     const txCT26_ = await deployer.sendTransaction(txCT26__);
     const txCT26 = await txCT26_.wait();
     expect(cfgCT26.underlying).to.equal(address(25));
-    expect(txCT26.gasUsed).to.equal(25121);
+    expect(txCT26.gasUsed).to.equal(25188);
 
     const cfgR26 = await contract.getTokenConfigByReporter(address(24 + 51));
     const txR26__ = await contract.populateTransaction.getTokenConfigByReporter(
@@ -230,6 +230,6 @@ describe("UniswapConfig", () => {
     const txU26_ = await deployer.sendTransaction(txU26__);
     const txU26 = await txU26_.wait();
     expect(cfgU26.underlying).to.equal(address(25));
-    expect(txU26.gasUsed).to.equal(25121);
+    expect(txU26.gasUsed).to.equal(25188);
   });
 });

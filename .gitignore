@@ -12,6 +12,7 @@ junit.xml
 coverage/*
 .saddle_history
 coverage.json
+.env
 
 # Hardhat
 cache
