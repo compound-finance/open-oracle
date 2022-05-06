@@ -132,5 +132,27 @@ module.exports = {
         { file: "~/.ethereum/mainnet" }                   // Load from given file with contents as the private key (e.g. 0x...)
       ]
     }
+  },
+  get_network_file: (network) => {
+    return null;
+  },
+  read_network_file: (network) => {
+    const fs = require('fs');
+    const path = require('path');
+    const util = require('util');
+
+    const networkFile = path.join(process.cwd(), 'compound-config', 'networks', `${network}.json`);
+    return util.promisify(fs.readFile)(networkFile).then((json) => {
+      const contracts = JSON.parse(json)['Contracts'] || {};
+
+      return Object.fromEntries(Object.entries(contracts).map(([contract, address]) => {
+        const mapper = {
+          PriceFeed: 'UniswapAnchoredView',
+          PriceData: 'OpenOraclePriceData'
+        };
+
+        return [mapper[contract] || contract, address];
+      }));
+    });
   }
 };
