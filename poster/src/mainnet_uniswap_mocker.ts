@@ -53,7 +53,7 @@ async function mockUniswapTokenPair(symbol: string, senderKey: string, pairs, ga
   const cumulativePrice0 = cumulatives[0];
   const cumulativePrice1 = cumulatives[1];
 
-  console.log(`Mocking uniswap token pair for ${symbol} with results--> ${reserve0} ${reserve1} ${blockTimestampLast} ${cumulativePrice0} ${cumulativePrice1}`);
+  
 
   const functionSig = "update(uint112,uint112,uint32,uint256,uint256)";
   const trxData = buildTrxData(reserve0, reserve1, blockTimestampLast, cumulativePrice0, cumulativePrice1, functionSig);

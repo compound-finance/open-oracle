@@ -32,14 +32,14 @@ const RETRIES = 3;
 const GAS_PRICE_ADJUSTMENT = 1.2; // Increase gas price by this percentage each retry
 const GAS_ADJUSTMENT = 1.5; // Increase gas limit by this percentage each retry
 
-async function postWithRetries(transaction: TransactionConfig, signerKey: string, web3: Web3, retries: number = RETRIES, attempt: number = 0) {
-  console.log(`Running Open Price Feed Poster${attempt > 0 ? ` [attempt ${attempt}]` : ''}...`);
+async function postWithRetries(transaction: TransactionConfig, signerKey: string, web3: Web3, retries: number = RETRIES, attempt = 0) {
+  
 
   signerKey = ensureHex(signerKey, 'private key');
 
   let pubKey = web3.eth.accounts.privateKeyToAccount(signerKey)
 
-  console.log(`Posting from account: ${pubKey.address}`);
+  
 
   let nonce = await web3.eth.getTransactionCount(pubKey.address)
   transaction.nonce = nonce

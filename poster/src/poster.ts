@@ -55,8 +55,8 @@ export async function main(
       gas: gastEstimateAdjusted
     };
 
-    console.log(`Posting...`);
-    console.log(feedItems);
+    
+    
 
     return await postWithRetries(trx, senderKey, web3);
   }
@@ -110,7 +110,7 @@ export async function filterPayloads(
 
   feedItems
     .forEach(({source, symbol, price, prev}) => {
-      console.log(`Setting Price: source=${source}, symbol=${symbol}, price=${price}, prev_price=${prev}`);
+      
     });
 
   return feedItems;

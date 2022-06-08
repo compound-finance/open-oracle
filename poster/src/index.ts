@@ -43,13 +43,13 @@ async function run() {
     }
   });
 
-  console.log(`Posting with price deltas = `, price_deltas);
+  
 
   // parameters only for testnets that mock uniswap mainnet
   const mocked_world = parsed['testnet-world'];
   const testnet_pairs = JSON.parse(parsed['testnet-uniswap-pairs'] || '{}');
   const mainnet_pairs = JSON.parse(parsed['mainnet-uniswap-pairs'] || '{}');
-  console.log(`Configuring using testnet and mainnet uniswap pairs:`, testnet_pairs, mainnet_pairs);
+  
   const pairs = {testnet: {}, mainnet: {}};
   if (mocked_world) {
     assets.forEach(asset => {
@@ -90,10 +90,10 @@ async function run() {
 }
 
 run().catch((e) => {
-  console.error(`Error encountered: ${e}`);
-  console.error(e);
-  console.log(e.stack)
-  console.log
+  
+  
+  
+  
 
   let error_log = {
     message: "Price run failed",

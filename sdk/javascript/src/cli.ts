@@ -39,7 +39,7 @@ async function start(
   const fn: any = await import(Path.join(process.cwd(), script));
   app.use(endpoint(privateKey, fn.default, Filters[filter], kind, path));
   app.listen(port, function () {
-    console.log(`Reporter listening on port ${port}. Try running "curl http://localhost:${port}${path}"`);
+    
   });
 }
 
