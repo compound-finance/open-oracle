@@ -194,7 +194,7 @@ module.exports = [
       priceSource: "2",
       fixedPrice: "0",
       uniswapMarket: "0x73a6a761fe483ba19debb8f56ac5bbf14c0cdad1",
-      reporter: "0x875acA7030B75b5D8cB59c913910a7405337dFf7",
+      reporter: "0x1A6aA40170118bAf36BAc82214DC5681Af69b0cF",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
     },
