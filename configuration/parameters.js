@@ -232,7 +232,7 @@ module.exports = [
       baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "xxx",
+      uniswapMarket: "0xdf50Fbde8180c8785842C8E316EBe06F542D3443",
       reporter: "0xDe2Fa230d4C05ec0337D7b4fc10e16f5663044B0",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
