@@ -225,6 +225,19 @@ module.exports = [
       isUniswapReversed: false
     },
     {
+      // "NAME": "FEI",
+      cToken: "0x7713DD9Ca933848F6819F38B8352D9A15EA73F67",
+      underlying: "0x956F47F50A910163D8BF957Cf5846D573E7f87CA",
+      symbolHash: "0x58c46f3a00a69ae5a5ce163895c14f8f5b7791333af9fe6e7a73618cb5460913",
+      baseUnit: "1000000000000000000",
+      priceSource: "2",
+      fixedPrice: "0",
+      uniswapMarket: "xxx",
+      reporter: "0xDe2Fa230d4C05ec0337D7b4fc10e16f5663044B0",
+      reporterMultiplier: "10000000000000000",
+      isUniswapReversed: false
+    },
+    {
       // "NAME": "WBTC",
       cToken: "0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
       underlying: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
