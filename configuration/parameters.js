@@ -194,7 +194,7 @@ module.exports = [
       priceSource: "2",
       fixedPrice: "0",
       uniswapMarket: "0x73a6a761fe483ba19debb8f56ac5bbf14c0cdad1",
-      reporter: "0x875acA7030B75b5D8cB59c913910a7405337dFf7",
+      reporter: "0x1A6aA40170118bAf36BAc82214DC5681Af69b0cF",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
     },
@@ -221,6 +221,19 @@ module.exports = [
       fixedPrice: "0",
       uniswapMarket: "0x04916039b1f59d9745bf6e0a21f191d1e0a84287",
       reporter: "0xBa4319741782151D2B1df4799d757892EFda4165",
+      reporterMultiplier: "10000000000000000",
+      isUniswapReversed: false
+    },
+    {
+      // "NAME": "FEI",
+      cToken: "0x7713DD9Ca933848F6819F38B8352D9A15EA73F67",
+      underlying: "0x956F47F50A910163D8BF957Cf5846D573E7f87CA",
+      symbolHash: "0x58c46f3a00a69ae5a5ce163895c14f8f5b7791333af9fe6e7a73618cb5460913",
+      baseUnit: "1000000000000000000",
+      priceSource: "2",
+      fixedPrice: "0",
+      uniswapMarket: "0xdf50Fbde8180c8785842C8E316EBe06F542D3443",
+      reporter: "0xDe2Fa230d4C05ec0337D7b4fc10e16f5663044B0",
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
     },
