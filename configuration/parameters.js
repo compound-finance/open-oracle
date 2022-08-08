@@ -225,6 +225,32 @@ module.exports = [
       isUniswapReversed: false
     },
     {
+      // "NAME": "WBTC",
+      cToken: "0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
+      underlying: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      symbolHash: "0xe98e2830be1a7e4156d656a7505e65d08c67660dc618072422e9c78053c261e9",
+      baseUnit: "100000000",
+      priceSource: "2",
+      fixedPrice: "0",
+      uniswapMarket: "0xcbcdf9626bc03e24f779434178a73a0b4bad62ed",
+      reporter: "0x4846efc15CC725456597044e6267ad0b3B51353E",
+      reporterMultiplier: "1000000",
+      isUniswapReversed: false
+    },
+    {
+      // "NAME": "USDP",
+      cToken: "0x041171993284df560249B57358F931D9eB7b925D",
+      underlying: "0x8E870D67F660D95d5be530380D0eC0bd388289E1",
+      symbolHash: "0xe6ce7ecb96a43fc15fb4020f93c37885612803dd74366bb6815e4f607ac3ca20",
+      baseUnit: "1000000000000000000",
+      priceSource: "1",
+      fixedPrice: "1000000",
+      uniswapMarket: "0x0000000000000000000000000000000000000000",
+      reporter: "0x0000000000000000000000000000000000000000",
+      reporterMultiplier: "1",
+      isUniswapReversed: false
+    },
+    {
       // "NAME": "FEI",
       cToken: "0x7713DD9Ca933848F6819F38B8352D9A15EA73F67",
       underlying: "0x956F47F50A910163D8BF957Cf5846D573E7f87CA",
@@ -238,16 +264,16 @@ module.exports = [
       isUniswapReversed: false
     },
     {
-      // "NAME": "WBTC",
-      cToken: "0xC11b1268C1A384e55C48c2391d8d480264A3A7F4",
-      underlying: "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
-      symbolHash: "0xe98e2830be1a7e4156d656a7505e65d08c67660dc618072422e9c78053c261e9",
-      baseUnit: "100000000",
+      // "NAME": "MATIC",
+      cToken: "0x944dd1c7ce133b75880cee913d513f8c07312393",
+      underlying: "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0",
+      symbolHash: "0xa6a7de01e8b7ba6a4a61c782a73188d808fc1f3cf5743fadb68a02ed884b594f",
+      baseUnit: "1000000000000000000",
       priceSource: "2",
       fixedPrice: "0",
-      uniswapMarket: "0xcbcdf9626bc03e24f779434178a73a0b4bad62ed",
-      reporter: "0x4846efc15CC725456597044e6267ad0b3B51353E",
-      reporterMultiplier: "1000000",
+      uniswapMarket: "0x290A6a7460B308ee3F19023D2D00dE604bcf5B42",
+      reporter: "0x44750a79ae69D5E9bC1651E099DFFE1fb8611AbA",
+      reporterMultiplier: "10000000000000000",
       isUniswapReversed: false
     }
   ]
