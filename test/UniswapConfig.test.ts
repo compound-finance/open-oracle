@@ -34,6 +34,7 @@ describe("UniswapConfig", () => {
 
     const contract = await new UniswapConfig__factory(deployer).deploy([
       {
+        cToken: address(10),
         underlying: address(0),
         symbolHash: keccak256("ETH"),
         baseUnit: uint(1e18),
@@ -45,6 +46,7 @@ describe("UniswapConfig", () => {
         isUniswapReversed: false,
       },
       {
+        cToken: address(11),
         underlying: address(3),
         symbolHash: keccak256("BTC"),
         baseUnit: uint(1e18),
@@ -56,6 +58,7 @@ describe("UniswapConfig", () => {
         isUniswapReversed: true,
       },
       {
+        cToken: address(12),
         underlying: address(4),
         symbolHash: keccak256("REP"),
         baseUnit: uint(1e18),
@@ -87,9 +90,7 @@ describe("UniswapConfig", () => {
     expect(cfg0).not.to.deep.equal(cfg1);
     expect(cfgU2).to.deep.equal(cfg2);
 
-    await expect(contract.getTokenConfig(3)).to.be.revertedWith(
-      "Not found"
-    );
+    await expect(contract.getTokenConfig(3)).to.be.revertedWith("Not found");
     await expect(contract.getTokenConfigBySymbol("COMP")).to.be.revertedWith(
       "Not found"
     );
@@ -110,6 +111,7 @@ describe("UniswapConfig", () => {
       .map((_, i) => String.fromCharCode("a".charCodeAt(0) + i));
     const configs = symbols.map((symbol, i) => {
       return {
+        cToken: address(i),
         underlying: address(i),
         symbolHash: keccak256(symbol),
         baseUnit: uint(i + 49),
@@ -167,7 +169,8 @@ describe("UniswapConfig", () => {
       .map((_, i) => {
         const symbol = String.fromCharCode("a".charCodeAt(0) + i);
         return {
-          underlying: address(i + 1),
+          cToken: address(i + 1),
+          underlying: address(i + 2),
           symbolHash: keccak256(symbol),
           baseUnit: uint(i + 49),
           priceSource: 0,
