@@ -134,9 +134,7 @@ contract UniswapAnchoredView is
         view
         returns (uint256)
     {
-        TokenConfig memory config = getTokenConfigByUnderlying(
-            CErc20(cToken).underlying()
-        );
+        TokenConfig memory config = getTokenConfigByCToken(cToken);
         // Comptroller needs prices in the format: ${raw price} * 1e36 / baseUnit
         // The baseUnit of an asset is the amount of the smallest denomination of that asset per whole.
         // For example, the baseUnit of ETH is 1e18.

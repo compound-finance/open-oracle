@@ -462,13 +462,11 @@ describe("UniswapAnchoredView", () => {
       ).deploy();
       await reporter.setUniswapAnchoredView(uniswapAnchoredView.address);
 
-      await expect(reporter.validate(95)).to.be.revertedWith(
-        "Not found"
-      );
+      await expect(reporter.validate(95)).to.be.revertedWith("Not found");
     });
   });
 
-  describe("getUnderlyingPrice", () => {
+  describe.only("getUnderlyingPrice", () => {
     // everything must return 1e36 - underlying units
 
     beforeEach(async () => {
@@ -794,10 +792,9 @@ describe("UniswapAnchoredView", () => {
 
     it("reverts if trying to activate failover for a non reporter price", async () => {
       await expect(
-        uniswapAnchoredView
-          .activateFailover(keccak256("SAI"))
+        uniswapAnchoredView.activateFailover(keccak256("SAI"))
       ).to.be.revertedWith("Not reporter");
-    })
+    });
 
     it("basic scenario, sets failoverActive and emits FailoverUpdated event with correct args", async () => {
       const bytes32EthSymbolHash = ethers.utils.hexZeroPad(
