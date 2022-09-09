@@ -8,7 +8,7 @@ import { smock } from "@defi-wonderland/smock";
 use(smock.matchers);
 
 // Update this to the max number of tokens supported in UniswapConfig.sol
-const MAX_TOKENS = 35;
+const MAX_TOKENS = 29;
 
 describe("UniswapConfig", () => {
   let signers: SignerWithAddress[];

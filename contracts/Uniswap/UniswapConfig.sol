@@ -321,6 +321,10 @@ contract UniswapConfig {
     // Each bit i stores a bool, corresponding to the ith config.
     uint256 internal immutable isUniswapReversed;
 
+    /// @notice This error is thrown when the cToken address
+    /// is not set in the contract.
+    error CTokenAddressNotFound(address cToken);
+
     /**
      * @notice Construct an immutable store of configs into the contract data
      * @param configs The configs for the supported assets
@@ -792,7 +796,7 @@ contract UniswapConfig {
         return type(uint256).max;
     }
 
-    function getCTokenIndex(address cToken) internal view returns (int256) {
+    function getCTokenIndex(address cToken) internal view returns (uint256) {
         if (cToken == cToken00) return 0;
         if (cToken == cToken01) return 1;
         if (cToken == cToken02) return 2;
@@ -823,7 +827,7 @@ contract UniswapConfig {
         if (cToken == cToken27) return 27;
         if (cToken == cToken28) return 28;
 
-        return -1;
+        return type(uint256).max;
     }
 
     /**
@@ -1203,16 +1207,16 @@ contract UniswapConfig {
         view
         returns (TokenConfig memory)
     {
-        int256 index = getCTokenIndex(cToken);
-        if (index >= 0) {
+        uint256 index = getCTokenIndex(cToken);
+        if (index == type(uint256).max) {
             return getTokenConfig(uint256(index));
         }
-
-        return getTokenConfigByUnderlying(CErc20(cToken).underlying());
+        revert CTokenAddressNotFound(cToken);
     }
 
     /**
      * @notice Get the config for an underlying asset
+     * @dev The underlying address of ETH is the zero address
      * @param underlying The address of the underlying asset of the config to get
      * @return The config object
      */
