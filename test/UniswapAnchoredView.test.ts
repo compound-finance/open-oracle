@@ -477,7 +477,7 @@ describe("UniswapAnchoredView", () => {
     });
   });
 
-  describe.only("getUnderlyingPrice", () => {
+  describe("getUnderlyingPrice", () => {
     // everything must return 1e36 - underlying units
 
     beforeEach(async () => {
