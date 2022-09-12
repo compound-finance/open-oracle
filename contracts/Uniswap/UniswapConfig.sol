@@ -823,7 +823,7 @@ contract UniswapConfig {
         if (cToken == cToken27) return 27;
         if (cToken == cToken28) return 28;
 
-        return type(uint256).max;
+        return MAX_INTEGER;
     }
 
     /**
