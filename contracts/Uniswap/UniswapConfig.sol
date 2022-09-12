@@ -321,10 +321,6 @@ contract UniswapConfig {
     // Each bit i stores a bool, corresponding to the ith config.
     uint256 internal immutable isUniswapReversed;
 
-    /// @notice This error is thrown when the cToken address
-    /// is not set in the contract.
-    error CTokenAddressNotFound(address cToken);
-
     /**
      * @notice Construct an immutable store of configs into the contract data
      * @param configs The configs for the supported assets
@@ -1208,10 +1204,7 @@ contract UniswapConfig {
         returns (TokenConfig memory)
     {
         uint256 index = getCTokenIndex(cToken);
-        if (index == type(uint256).max) {
-            return getTokenConfig(uint256(index));
-        }
-        revert CTokenAddressNotFound(cToken);
+        return getTokenConfig(index);
     }
 
     /**
