@@ -2,8 +2,6 @@
 
 pragma solidity =0.8.7;
 
-import {CErc20} from "./CErc20.sol";
-
 contract UniswapConfig {
     /// @notice The maximum integer possible
     uint256 public constant MAX_INTEGER = type(uint256).max;
@@ -1194,7 +1192,6 @@ contract UniswapConfig {
 
     /**
      * @notice Get the config for the cToken
-     * @dev If a config for the cToken is not found, falls back to searching for the underlying.
      * @param cToken The address of the cToken of the config to get
      * @return The config object
      */
@@ -1203,8 +1200,7 @@ contract UniswapConfig {
         view
         returns (TokenConfig memory)
     {
-        uint256 index = getCTokenIndex(cToken);
-        return getTokenConfig(index);
+        return getTokenConfig(getCTokenIndex(cToken));
     }
 
     /**
