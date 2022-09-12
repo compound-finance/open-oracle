@@ -109,6 +109,24 @@ Use the UAV address as a positional parameter in the same way as the verify step
 yarn transfer <UAV_ADDRESS>
 ```
 
+## Verify Proposed UAV Prices
+
+We need to verify that the newly deployed UAV is functioning correctly before a new proposal is submitted to upgrade the existing UAV. A simple
+way to do this is to verify that both the existing and new UAVs returns the same price when the `getUnderlyingPrice` function is called for each of the configured cTokens. This verification
+can be done by running the following command.
+
+```
+yarn verify-uav --production PRODUCTION_UAV_ADDR --proposed PROPOSED_UAV_ADDR
+```
+
+Sample successful verification output
+
+```
+Proposed UAV at 0xAd47d5A59B6d1Ca4DC3EbD53693fdA7d7449f165 passed all checks with the production UAV at 0x65c816077c29b557bee980ae3cc2dce80204a0c5!
+```
+
+The script will fail if the proposed UAV contract either reverts or returns a different price from the production UAV contract.
+
 ## Common Issues
 
 ### Failure to deploy
