@@ -751,7 +751,7 @@ contract UniswapConfig {
         if (underlying == underlying27) return 27;
         if (underlying == underlying28) return 28;
 
-        return type(uint256).max;
+        return MAX_INTEGER;
     }
 
     function getSymbolHashIndex(bytes32 symbolHash)
@@ -789,7 +789,7 @@ contract UniswapConfig {
         if (symbolHash == symbolHash27) return 27;
         if (symbolHash == symbolHash28) return 28;
 
-        return type(uint256).max;
+        return MAX_INTEGER;
     }
 
     function getCTokenIndex(address cToken) internal view returns (uint256) {
