@@ -2,8 +2,6 @@
 
 pragma solidity =0.8.7;
 
-import {CErc20} from "./CErc20.sol";
-
 contract UniswapConfig {
     /// @notice The maximum integer possible
     uint256 public constant MAX_INTEGER = type(uint256).max;
@@ -18,6 +16,8 @@ contract UniswapConfig {
     /// @dev Describe how the USD price should be determined for an asset.
     ///  There should be 1 TokenConfig object for each supported asset, passed in the constructor.
     struct TokenConfig {
+        // The address of the Compound Token
+        address cToken;
         // The address of the underlying market token. For this `LINK` market configuration, this would be the address of the `LINK` token.
         address underlying;
         // The bytes32 hash of the underlying symbol.
@@ -40,10 +40,40 @@ contract UniswapConfig {
 
     /// @notice The max number of tokens this contract is hardcoded to support
     /// @dev Do not change this variable without updating all the fields throughout the contract.
-    uint256 public constant MAX_TOKENS = 35;
+    uint256 public constant MAX_TOKENS = 29;
 
     /// @notice The number of tokens this contract actually supports
     uint256 public immutable numTokens;
+
+    address internal immutable cToken00;
+    address internal immutable cToken01;
+    address internal immutable cToken02;
+    address internal immutable cToken03;
+    address internal immutable cToken04;
+    address internal immutable cToken05;
+    address internal immutable cToken06;
+    address internal immutable cToken07;
+    address internal immutable cToken08;
+    address internal immutable cToken09;
+    address internal immutable cToken10;
+    address internal immutable cToken11;
+    address internal immutable cToken12;
+    address internal immutable cToken13;
+    address internal immutable cToken14;
+    address internal immutable cToken15;
+    address internal immutable cToken16;
+    address internal immutable cToken17;
+    address internal immutable cToken18;
+    address internal immutable cToken19;
+    address internal immutable cToken20;
+    address internal immutable cToken21;
+    address internal immutable cToken22;
+    address internal immutable cToken23;
+    address internal immutable cToken24;
+    address internal immutable cToken25;
+    address internal immutable cToken26;
+    address internal immutable cToken27;
+    address internal immutable cToken28;
 
     address internal immutable underlying00;
     address internal immutable underlying01;
@@ -74,12 +104,6 @@ contract UniswapConfig {
     address internal immutable underlying26;
     address internal immutable underlying27;
     address internal immutable underlying28;
-    address internal immutable underlying29;
-    address internal immutable underlying30;
-    address internal immutable underlying31;
-    address internal immutable underlying32;
-    address internal immutable underlying33;
-    address internal immutable underlying34;
 
     bytes32 internal immutable symbolHash00;
     bytes32 internal immutable symbolHash01;
@@ -110,12 +134,6 @@ contract UniswapConfig {
     bytes32 internal immutable symbolHash26;
     bytes32 internal immutable symbolHash27;
     bytes32 internal immutable symbolHash28;
-    bytes32 internal immutable symbolHash29;
-    bytes32 internal immutable symbolHash30;
-    bytes32 internal immutable symbolHash31;
-    bytes32 internal immutable symbolHash32;
-    bytes32 internal immutable symbolHash33;
-    bytes32 internal immutable symbolHash34;
 
     uint256 internal immutable baseUnit00;
     uint256 internal immutable baseUnit01;
@@ -146,12 +164,6 @@ contract UniswapConfig {
     uint256 internal immutable baseUnit26;
     uint256 internal immutable baseUnit27;
     uint256 internal immutable baseUnit28;
-    uint256 internal immutable baseUnit29;
-    uint256 internal immutable baseUnit30;
-    uint256 internal immutable baseUnit31;
-    uint256 internal immutable baseUnit32;
-    uint256 internal immutable baseUnit33;
-    uint256 internal immutable baseUnit34;
 
     PriceSource internal immutable priceSource00;
     PriceSource internal immutable priceSource01;
@@ -182,12 +194,6 @@ contract UniswapConfig {
     PriceSource internal immutable priceSource26;
     PriceSource internal immutable priceSource27;
     PriceSource internal immutable priceSource28;
-    PriceSource internal immutable priceSource29;
-    PriceSource internal immutable priceSource30;
-    PriceSource internal immutable priceSource31;
-    PriceSource internal immutable priceSource32;
-    PriceSource internal immutable priceSource33;
-    PriceSource internal immutable priceSource34;
 
     uint256 internal immutable fixedPrice00;
     uint256 internal immutable fixedPrice01;
@@ -218,12 +224,6 @@ contract UniswapConfig {
     uint256 internal immutable fixedPrice26;
     uint256 internal immutable fixedPrice27;
     uint256 internal immutable fixedPrice28;
-    uint256 internal immutable fixedPrice29;
-    uint256 internal immutable fixedPrice30;
-    uint256 internal immutable fixedPrice31;
-    uint256 internal immutable fixedPrice32;
-    uint256 internal immutable fixedPrice33;
-    uint256 internal immutable fixedPrice34;
 
     address internal immutable uniswapMarket00;
     address internal immutable uniswapMarket01;
@@ -254,12 +254,6 @@ contract UniswapConfig {
     address internal immutable uniswapMarket26;
     address internal immutable uniswapMarket27;
     address internal immutable uniswapMarket28;
-    address internal immutable uniswapMarket29;
-    address internal immutable uniswapMarket30;
-    address internal immutable uniswapMarket31;
-    address internal immutable uniswapMarket32;
-    address internal immutable uniswapMarket33;
-    address internal immutable uniswapMarket34;
 
     address internal immutable reporter00;
     address internal immutable reporter01;
@@ -290,12 +284,6 @@ contract UniswapConfig {
     address internal immutable reporter26;
     address internal immutable reporter27;
     address internal immutable reporter28;
-    address internal immutable reporter29;
-    address internal immutable reporter30;
-    address internal immutable reporter31;
-    address internal immutable reporter32;
-    address internal immutable reporter33;
-    address internal immutable reporter34;
 
     uint256 internal immutable reporterMultiplier00;
     uint256 internal immutable reporterMultiplier01;
@@ -326,12 +314,6 @@ contract UniswapConfig {
     uint256 internal immutable reporterMultiplier26;
     uint256 internal immutable reporterMultiplier27;
     uint256 internal immutable reporterMultiplier28;
-    uint256 internal immutable reporterMultiplier29;
-    uint256 internal immutable reporterMultiplier30;
-    uint256 internal immutable reporterMultiplier31;
-    uint256 internal immutable reporterMultiplier32;
-    uint256 internal immutable reporterMultiplier33;
-    uint256 internal immutable reporterMultiplier34;
 
     // Contract bytecode size optimization:
     // Each bit i stores a bool, corresponding to the ith config.
@@ -346,6 +328,7 @@ contract UniswapConfig {
         numTokens = configs.length;
 
         TokenConfig memory config = get(configs, 0);
+        cToken00 = config.cToken;
         underlying00 = config.underlying;
         symbolHash00 = config.symbolHash;
         baseUnit00 = config.baseUnit;
@@ -356,6 +339,7 @@ contract UniswapConfig {
         reporterMultiplier00 = config.reporterMultiplier;
 
         config = get(configs, 1);
+        cToken01 = config.cToken;
         underlying01 = config.underlying;
         symbolHash01 = config.symbolHash;
         baseUnit01 = config.baseUnit;
@@ -366,6 +350,7 @@ contract UniswapConfig {
         reporterMultiplier01 = config.reporterMultiplier;
 
         config = get(configs, 2);
+        cToken02 = config.cToken;
         underlying02 = config.underlying;
         symbolHash02 = config.symbolHash;
         baseUnit02 = config.baseUnit;
@@ -376,6 +361,7 @@ contract UniswapConfig {
         reporterMultiplier02 = config.reporterMultiplier;
 
         config = get(configs, 3);
+        cToken03 = config.cToken;
         underlying03 = config.underlying;
         symbolHash03 = config.symbolHash;
         baseUnit03 = config.baseUnit;
@@ -386,6 +372,7 @@ contract UniswapConfig {
         reporterMultiplier03 = config.reporterMultiplier;
 
         config = get(configs, 4);
+        cToken04 = config.cToken;
         underlying04 = config.underlying;
         symbolHash04 = config.symbolHash;
         baseUnit04 = config.baseUnit;
@@ -396,6 +383,7 @@ contract UniswapConfig {
         reporterMultiplier04 = config.reporterMultiplier;
 
         config = get(configs, 5);
+        cToken05 = config.cToken;
         underlying05 = config.underlying;
         symbolHash05 = config.symbolHash;
         baseUnit05 = config.baseUnit;
@@ -406,6 +394,7 @@ contract UniswapConfig {
         reporterMultiplier05 = config.reporterMultiplier;
 
         config = get(configs, 6);
+        cToken06 = config.cToken;
         underlying06 = config.underlying;
         symbolHash06 = config.symbolHash;
         baseUnit06 = config.baseUnit;
@@ -416,6 +405,7 @@ contract UniswapConfig {
         reporterMultiplier06 = config.reporterMultiplier;
 
         config = get(configs, 7);
+        cToken07 = config.cToken;
         underlying07 = config.underlying;
         symbolHash07 = config.symbolHash;
         baseUnit07 = config.baseUnit;
@@ -426,6 +416,7 @@ contract UniswapConfig {
         reporterMultiplier07 = config.reporterMultiplier;
 
         config = get(configs, 8);
+        cToken08 = config.cToken;
         underlying08 = config.underlying;
         symbolHash08 = config.symbolHash;
         baseUnit08 = config.baseUnit;
@@ -436,6 +427,7 @@ contract UniswapConfig {
         reporterMultiplier08 = config.reporterMultiplier;
 
         config = get(configs, 9);
+        cToken09 = config.cToken;
         underlying09 = config.underlying;
         symbolHash09 = config.symbolHash;
         baseUnit09 = config.baseUnit;
@@ -446,6 +438,7 @@ contract UniswapConfig {
         reporterMultiplier09 = config.reporterMultiplier;
 
         config = get(configs, 10);
+        cToken10 = config.cToken;
         underlying10 = config.underlying;
         symbolHash10 = config.symbolHash;
         baseUnit10 = config.baseUnit;
@@ -456,6 +449,7 @@ contract UniswapConfig {
         reporterMultiplier10 = config.reporterMultiplier;
 
         config = get(configs, 11);
+        cToken11 = config.cToken;
         underlying11 = config.underlying;
         symbolHash11 = config.symbolHash;
         baseUnit11 = config.baseUnit;
@@ -466,6 +460,7 @@ contract UniswapConfig {
         reporterMultiplier11 = config.reporterMultiplier;
 
         config = get(configs, 12);
+        cToken12 = config.cToken;
         underlying12 = config.underlying;
         symbolHash12 = config.symbolHash;
         baseUnit12 = config.baseUnit;
@@ -476,6 +471,7 @@ contract UniswapConfig {
         reporterMultiplier12 = config.reporterMultiplier;
 
         config = get(configs, 13);
+        cToken13 = config.cToken;
         underlying13 = config.underlying;
         symbolHash13 = config.symbolHash;
         baseUnit13 = config.baseUnit;
@@ -486,6 +482,7 @@ contract UniswapConfig {
         reporterMultiplier13 = config.reporterMultiplier;
 
         config = get(configs, 14);
+        cToken14 = config.cToken;
         underlying14 = config.underlying;
         symbolHash14 = config.symbolHash;
         baseUnit14 = config.baseUnit;
@@ -496,6 +493,7 @@ contract UniswapConfig {
         reporterMultiplier14 = config.reporterMultiplier;
 
         config = get(configs, 15);
+        cToken15 = config.cToken;
         underlying15 = config.underlying;
         symbolHash15 = config.symbolHash;
         baseUnit15 = config.baseUnit;
@@ -506,6 +504,7 @@ contract UniswapConfig {
         reporterMultiplier15 = config.reporterMultiplier;
 
         config = get(configs, 16);
+        cToken16 = config.cToken;
         underlying16 = config.underlying;
         symbolHash16 = config.symbolHash;
         baseUnit16 = config.baseUnit;
@@ -516,6 +515,7 @@ contract UniswapConfig {
         reporterMultiplier16 = config.reporterMultiplier;
 
         config = get(configs, 17);
+        cToken17 = config.cToken;
         underlying17 = config.underlying;
         symbolHash17 = config.symbolHash;
         baseUnit17 = config.baseUnit;
@@ -526,6 +526,7 @@ contract UniswapConfig {
         reporterMultiplier17 = config.reporterMultiplier;
 
         config = get(configs, 18);
+        cToken18 = config.cToken;
         underlying18 = config.underlying;
         symbolHash18 = config.symbolHash;
         baseUnit18 = config.baseUnit;
@@ -536,6 +537,7 @@ contract UniswapConfig {
         reporterMultiplier18 = config.reporterMultiplier;
 
         config = get(configs, 19);
+        cToken19 = config.cToken;
         underlying19 = config.underlying;
         symbolHash19 = config.symbolHash;
         baseUnit19 = config.baseUnit;
@@ -546,6 +548,7 @@ contract UniswapConfig {
         reporterMultiplier19 = config.reporterMultiplier;
 
         config = get(configs, 20);
+        cToken20 = config.cToken;
         underlying20 = config.underlying;
         symbolHash20 = config.symbolHash;
         baseUnit20 = config.baseUnit;
@@ -556,6 +559,7 @@ contract UniswapConfig {
         reporterMultiplier20 = config.reporterMultiplier;
 
         config = get(configs, 21);
+        cToken21 = config.cToken;
         underlying21 = config.underlying;
         symbolHash21 = config.symbolHash;
         baseUnit21 = config.baseUnit;
@@ -566,6 +570,7 @@ contract UniswapConfig {
         reporterMultiplier21 = config.reporterMultiplier;
 
         config = get(configs, 22);
+        cToken22 = config.cToken;
         underlying22 = config.underlying;
         symbolHash22 = config.symbolHash;
         baseUnit22 = config.baseUnit;
@@ -576,6 +581,7 @@ contract UniswapConfig {
         reporterMultiplier22 = config.reporterMultiplier;
 
         config = get(configs, 23);
+        cToken23 = config.cToken;
         underlying23 = config.underlying;
         symbolHash23 = config.symbolHash;
         baseUnit23 = config.baseUnit;
@@ -586,6 +592,7 @@ contract UniswapConfig {
         reporterMultiplier23 = config.reporterMultiplier;
 
         config = get(configs, 24);
+        cToken24 = config.cToken;
         underlying24 = config.underlying;
         symbolHash24 = config.symbolHash;
         baseUnit24 = config.baseUnit;
@@ -596,6 +603,7 @@ contract UniswapConfig {
         reporterMultiplier24 = config.reporterMultiplier;
 
         config = get(configs, 25);
+        cToken25 = config.cToken;
         underlying25 = config.underlying;
         symbolHash25 = config.symbolHash;
         baseUnit25 = config.baseUnit;
@@ -606,6 +614,7 @@ contract UniswapConfig {
         reporterMultiplier25 = config.reporterMultiplier;
 
         config = get(configs, 26);
+        cToken26 = config.cToken;
         underlying26 = config.underlying;
         symbolHash26 = config.symbolHash;
         baseUnit26 = config.baseUnit;
@@ -616,6 +625,7 @@ contract UniswapConfig {
         reporterMultiplier26 = config.reporterMultiplier;
 
         config = get(configs, 27);
+        cToken27 = config.cToken;
         underlying27 = config.underlying;
         symbolHash27 = config.symbolHash;
         baseUnit27 = config.baseUnit;
@@ -626,6 +636,7 @@ contract UniswapConfig {
         reporterMultiplier27 = config.reporterMultiplier;
 
         config = get(configs, 28);
+        cToken28 = config.cToken;
         underlying28 = config.underlying;
         symbolHash28 = config.symbolHash;
         baseUnit28 = config.baseUnit;
@@ -634,66 +645,6 @@ contract UniswapConfig {
         uniswapMarket28 = config.uniswapMarket;
         reporter28 = config.reporter;
         reporterMultiplier28 = config.reporterMultiplier;
-
-        config = get(configs, 29);
-        underlying29 = config.underlying;
-        symbolHash29 = config.symbolHash;
-        baseUnit29 = config.baseUnit;
-        priceSource29 = config.priceSource;
-        fixedPrice29 = config.fixedPrice;
-        uniswapMarket29 = config.uniswapMarket;
-        reporter29 = config.reporter;
-        reporterMultiplier29 = config.reporterMultiplier;
-
-        config = get(configs, 30);
-        underlying30 = config.underlying;
-        symbolHash30 = config.symbolHash;
-        baseUnit30 = config.baseUnit;
-        priceSource30 = config.priceSource;
-        fixedPrice30 = config.fixedPrice;
-        uniswapMarket30 = config.uniswapMarket;
-        reporter30 = config.reporter;
-        reporterMultiplier30 = config.reporterMultiplier;
-
-        config = get(configs, 31);
-        underlying31 = config.underlying;
-        symbolHash31 = config.symbolHash;
-        baseUnit31 = config.baseUnit;
-        priceSource31 = config.priceSource;
-        fixedPrice31 = config.fixedPrice;
-        uniswapMarket31 = config.uniswapMarket;
-        reporter31 = config.reporter;
-        reporterMultiplier31 = config.reporterMultiplier;
-
-        config = get(configs, 32);
-        underlying32 = config.underlying;
-        symbolHash32 = config.symbolHash;
-        baseUnit32 = config.baseUnit;
-        priceSource32 = config.priceSource;
-        fixedPrice32 = config.fixedPrice;
-        uniswapMarket32 = config.uniswapMarket;
-        reporter32 = config.reporter;
-        reporterMultiplier32 = config.reporterMultiplier;
-
-        config = get(configs, 33);
-        underlying33 = config.underlying;
-        symbolHash33 = config.symbolHash;
-        baseUnit33 = config.baseUnit;
-        priceSource33 = config.priceSource;
-        fixedPrice33 = config.fixedPrice;
-        uniswapMarket33 = config.uniswapMarket;
-        reporter33 = config.reporter;
-        reporterMultiplier33 = config.reporterMultiplier;
-
-        config = get(configs, 34);
-        underlying34 = config.underlying;
-        symbolHash34 = config.symbolHash;
-        baseUnit34 = config.baseUnit;
-        priceSource34 = config.priceSource;
-        fixedPrice34 = config.fixedPrice;
-        uniswapMarket34 = config.uniswapMarket;
-        reporter34 = config.reporter;
-        reporterMultiplier34 = config.reporterMultiplier;
 
         uint256 isUniswapReversed_;
         uint256 numTokenConfigs = configs.length;
@@ -712,6 +663,7 @@ contract UniswapConfig {
         if (i < configs.length) return configs[i];
         return
             TokenConfig({
+                cToken: address(0),
                 underlying: address(0),
                 symbolHash: bytes32(0),
                 baseUnit: uint256(0),
@@ -758,12 +710,6 @@ contract UniswapConfig {
         if (reporter == reporter26) return 26;
         if (reporter == reporter27) return 27;
         if (reporter == reporter28) return 28;
-        if (reporter == reporter29) return 29;
-        if (reporter == reporter30) return 30;
-        if (reporter == reporter31) return 31;
-        if (reporter == reporter32) return 32;
-        if (reporter == reporter33) return 33;
-        if (reporter == reporter34) return 34;
 
         return MAX_INTEGER;
     }
@@ -802,14 +748,8 @@ contract UniswapConfig {
         if (underlying == underlying26) return 26;
         if (underlying == underlying27) return 27;
         if (underlying == underlying28) return 28;
-        if (underlying == underlying29) return 29;
-        if (underlying == underlying30) return 30;
-        if (underlying == underlying31) return 31;
-        if (underlying == underlying32) return 32;
-        if (underlying == underlying33) return 33;
-        if (underlying == underlying34) return 34;
 
-        return type(uint256).max;
+        return MAX_INTEGER;
     }
 
     function getSymbolHashIndex(bytes32 symbolHash)
@@ -846,14 +786,42 @@ contract UniswapConfig {
         if (symbolHash == symbolHash26) return 26;
         if (symbolHash == symbolHash27) return 27;
         if (symbolHash == symbolHash28) return 28;
-        if (symbolHash == symbolHash29) return 29;
-        if (symbolHash == symbolHash30) return 30;
-        if (symbolHash == symbolHash31) return 31;
-        if (symbolHash == symbolHash32) return 32;
-        if (symbolHash == symbolHash33) return 33;
-        if (symbolHash == symbolHash34) return 34;
 
-        return type(uint256).max;
+        return MAX_INTEGER;
+    }
+
+    function getCTokenIndex(address cToken) internal view returns (uint256) {
+        if (cToken == cToken00) return 0;
+        if (cToken == cToken01) return 1;
+        if (cToken == cToken02) return 2;
+        if (cToken == cToken03) return 3;
+        if (cToken == cToken04) return 4;
+        if (cToken == cToken05) return 5;
+        if (cToken == cToken06) return 6;
+        if (cToken == cToken07) return 7;
+        if (cToken == cToken08) return 8;
+        if (cToken == cToken09) return 9;
+        if (cToken == cToken10) return 10;
+        if (cToken == cToken11) return 11;
+        if (cToken == cToken12) return 12;
+        if (cToken == cToken13) return 13;
+        if (cToken == cToken14) return 14;
+        if (cToken == cToken15) return 15;
+        if (cToken == cToken16) return 16;
+        if (cToken == cToken17) return 17;
+        if (cToken == cToken18) return 18;
+        if (cToken == cToken19) return 19;
+        if (cToken == cToken20) return 20;
+        if (cToken == cToken21) return 21;
+        if (cToken == cToken22) return 22;
+        if (cToken == cToken23) return 23;
+        if (cToken == cToken24) return 24;
+        if (cToken == cToken25) return 25;
+        if (cToken == cToken26) return 26;
+        if (cToken == cToken27) return 27;
+        if (cToken == cToken28) return 28;
+
+        return MAX_INTEGER;
     }
 
     /**
@@ -868,6 +836,7 @@ contract UniswapConfig {
     {
         require(i < numTokens, "Not found");
 
+        address cToken;
         address underlying;
         bytes32 symbolHash;
         uint256 baseUnit;
@@ -877,6 +846,7 @@ contract UniswapConfig {
         address reporter;
         uint256 reporterMultiplier;
         if (i == 0) {
+            cToken = cToken00;
             underlying = underlying00;
             symbolHash = symbolHash00;
             baseUnit = baseUnit00;
@@ -886,6 +856,7 @@ contract UniswapConfig {
             reporter = reporter00;
             reporterMultiplier = reporterMultiplier00;
         } else if (i == 1) {
+            cToken = cToken01;
             underlying = underlying01;
             symbolHash = symbolHash01;
             baseUnit = baseUnit01;
@@ -895,6 +866,7 @@ contract UniswapConfig {
             reporter = reporter01;
             reporterMultiplier = reporterMultiplier01;
         } else if (i == 2) {
+            cToken = cToken02;
             underlying = underlying02;
             symbolHash = symbolHash02;
             baseUnit = baseUnit02;
@@ -904,6 +876,7 @@ contract UniswapConfig {
             reporter = reporter02;
             reporterMultiplier = reporterMultiplier02;
         } else if (i == 3) {
+            cToken = cToken03;
             underlying = underlying03;
             symbolHash = symbolHash03;
             baseUnit = baseUnit03;
@@ -913,6 +886,7 @@ contract UniswapConfig {
             reporter = reporter03;
             reporterMultiplier = reporterMultiplier03;
         } else if (i == 4) {
+            cToken = cToken04;
             underlying = underlying04;
             symbolHash = symbolHash04;
             baseUnit = baseUnit04;
@@ -922,6 +896,7 @@ contract UniswapConfig {
             reporter = reporter04;
             reporterMultiplier = reporterMultiplier04;
         } else if (i == 5) {
+            cToken = cToken05;
             underlying = underlying05;
             symbolHash = symbolHash05;
             baseUnit = baseUnit05;
@@ -931,6 +906,7 @@ contract UniswapConfig {
             reporter = reporter05;
             reporterMultiplier = reporterMultiplier05;
         } else if (i == 6) {
+            cToken = cToken06;
             underlying = underlying06;
             symbolHash = symbolHash06;
             baseUnit = baseUnit06;
@@ -940,6 +916,7 @@ contract UniswapConfig {
             reporter = reporter06;
             reporterMultiplier = reporterMultiplier06;
         } else if (i == 7) {
+            cToken = cToken07;
             underlying = underlying07;
             symbolHash = symbolHash07;
             baseUnit = baseUnit07;
@@ -949,6 +926,7 @@ contract UniswapConfig {
             reporter = reporter07;
             reporterMultiplier = reporterMultiplier07;
         } else if (i == 8) {
+            cToken = cToken08;
             underlying = underlying08;
             symbolHash = symbolHash08;
             baseUnit = baseUnit08;
@@ -958,6 +936,7 @@ contract UniswapConfig {
             reporter = reporter08;
             reporterMultiplier = reporterMultiplier08;
         } else if (i == 9) {
+            cToken = cToken09;
             underlying = underlying09;
             symbolHash = symbolHash09;
             baseUnit = baseUnit09;
@@ -967,6 +946,7 @@ contract UniswapConfig {
             reporter = reporter09;
             reporterMultiplier = reporterMultiplier09;
         } else if (i == 10) {
+            cToken = cToken10;
             underlying = underlying10;
             symbolHash = symbolHash10;
             baseUnit = baseUnit10;
@@ -976,6 +956,7 @@ contract UniswapConfig {
             reporter = reporter10;
             reporterMultiplier = reporterMultiplier10;
         } else if (i == 11) {
+            cToken = cToken11;
             underlying = underlying11;
             symbolHash = symbolHash11;
             baseUnit = baseUnit11;
@@ -985,6 +966,7 @@ contract UniswapConfig {
             reporter = reporter11;
             reporterMultiplier = reporterMultiplier11;
         } else if (i == 12) {
+            cToken = cToken12;
             underlying = underlying12;
             symbolHash = symbolHash12;
             baseUnit = baseUnit12;
@@ -994,6 +976,7 @@ contract UniswapConfig {
             reporter = reporter12;
             reporterMultiplier = reporterMultiplier12;
         } else if (i == 13) {
+            cToken = cToken13;
             underlying = underlying13;
             symbolHash = symbolHash13;
             baseUnit = baseUnit13;
@@ -1003,6 +986,7 @@ contract UniswapConfig {
             reporter = reporter13;
             reporterMultiplier = reporterMultiplier13;
         } else if (i == 14) {
+            cToken = cToken14;
             underlying = underlying14;
             symbolHash = symbolHash14;
             baseUnit = baseUnit14;
@@ -1012,6 +996,7 @@ contract UniswapConfig {
             reporter = reporter14;
             reporterMultiplier = reporterMultiplier14;
         } else if (i == 15) {
+            cToken = cToken15;
             underlying = underlying15;
             symbolHash = symbolHash15;
             baseUnit = baseUnit15;
@@ -1021,6 +1006,7 @@ contract UniswapConfig {
             reporter = reporter15;
             reporterMultiplier = reporterMultiplier15;
         } else if (i == 16) {
+            cToken = cToken16;
             underlying = underlying16;
             symbolHash = symbolHash16;
             baseUnit = baseUnit16;
@@ -1030,6 +1016,7 @@ contract UniswapConfig {
             reporter = reporter16;
             reporterMultiplier = reporterMultiplier16;
         } else if (i == 17) {
+            cToken = cToken17;
             underlying = underlying17;
             symbolHash = symbolHash17;
             baseUnit = baseUnit17;
@@ -1039,6 +1026,7 @@ contract UniswapConfig {
             reporter = reporter17;
             reporterMultiplier = reporterMultiplier17;
         } else if (i == 18) {
+            cToken = cToken18;
             underlying = underlying18;
             symbolHash = symbolHash18;
             baseUnit = baseUnit18;
@@ -1048,6 +1036,7 @@ contract UniswapConfig {
             reporter = reporter18;
             reporterMultiplier = reporterMultiplier18;
         } else if (i == 19) {
+            cToken = cToken19;
             underlying = underlying19;
             symbolHash = symbolHash19;
             baseUnit = baseUnit19;
@@ -1057,6 +1046,7 @@ contract UniswapConfig {
             reporter = reporter19;
             reporterMultiplier = reporterMultiplier19;
         } else if (i == 20) {
+            cToken = cToken20;
             underlying = underlying20;
             symbolHash = symbolHash20;
             baseUnit = baseUnit20;
@@ -1066,6 +1056,7 @@ contract UniswapConfig {
             reporter = reporter20;
             reporterMultiplier = reporterMultiplier20;
         } else if (i == 21) {
+            cToken = cToken21;
             underlying = underlying21;
             symbolHash = symbolHash21;
             baseUnit = baseUnit21;
@@ -1075,6 +1066,7 @@ contract UniswapConfig {
             reporter = reporter21;
             reporterMultiplier = reporterMultiplier21;
         } else if (i == 22) {
+            cToken = cToken22;
             underlying = underlying22;
             symbolHash = symbolHash22;
             baseUnit = baseUnit22;
@@ -1084,6 +1076,7 @@ contract UniswapConfig {
             reporter = reporter22;
             reporterMultiplier = reporterMultiplier22;
         } else if (i == 23) {
+            cToken = cToken23;
             underlying = underlying23;
             symbolHash = symbolHash23;
             baseUnit = baseUnit23;
@@ -1093,6 +1086,7 @@ contract UniswapConfig {
             reporter = reporter23;
             reporterMultiplier = reporterMultiplier23;
         } else if (i == 24) {
+            cToken = cToken24;
             underlying = underlying24;
             symbolHash = symbolHash24;
             baseUnit = baseUnit24;
@@ -1102,6 +1096,7 @@ contract UniswapConfig {
             reporter = reporter24;
             reporterMultiplier = reporterMultiplier24;
         } else if (i == 25) {
+            cToken = cToken25;
             underlying = underlying25;
             symbolHash = symbolHash25;
             baseUnit = baseUnit25;
@@ -1111,6 +1106,7 @@ contract UniswapConfig {
             reporter = reporter25;
             reporterMultiplier = reporterMultiplier25;
         } else if (i == 26) {
+            cToken = cToken26;
             underlying = underlying26;
             symbolHash = symbolHash26;
             baseUnit = baseUnit26;
@@ -1120,6 +1116,7 @@ contract UniswapConfig {
             reporter = reporter26;
             reporterMultiplier = reporterMultiplier26;
         } else if (i == 27) {
+            cToken = cToken27;
             underlying = underlying27;
             symbolHash = symbolHash27;
             baseUnit = baseUnit27;
@@ -1129,6 +1126,7 @@ contract UniswapConfig {
             reporter = reporter27;
             reporterMultiplier = reporterMultiplier27;
         } else if (i == 28) {
+            cToken = cToken28;
             underlying = underlying28;
             symbolHash = symbolHash28;
             baseUnit = baseUnit28;
@@ -1137,64 +1135,10 @@ contract UniswapConfig {
             uniswapMarket = uniswapMarket28;
             reporter = reporter28;
             reporterMultiplier = reporterMultiplier28;
-        } else if (i == 29) {
-            underlying = underlying29;
-            symbolHash = symbolHash29;
-            baseUnit = baseUnit29;
-            priceSource = priceSource29;
-            fixedPrice = fixedPrice29;
-            uniswapMarket = uniswapMarket29;
-            reporter = reporter29;
-            reporterMultiplier = reporterMultiplier29;
-        } else if (i == 30) {
-            underlying = underlying30;
-            symbolHash = symbolHash30;
-            baseUnit = baseUnit30;
-            priceSource = priceSource30;
-            fixedPrice = fixedPrice30;
-            uniswapMarket = uniswapMarket30;
-            reporter = reporter30;
-            reporterMultiplier = reporterMultiplier30;
-        } else if (i == 31) {
-            underlying = underlying31;
-            symbolHash = symbolHash31;
-            baseUnit = baseUnit31;
-            priceSource = priceSource31;
-            fixedPrice = fixedPrice31;
-            uniswapMarket = uniswapMarket31;
-            reporter = reporter31;
-            reporterMultiplier = reporterMultiplier31;
-        } else if (i == 32) {
-            underlying = underlying32;
-            symbolHash = symbolHash32;
-            baseUnit = baseUnit32;
-            priceSource = priceSource32;
-            fixedPrice = fixedPrice32;
-            uniswapMarket = uniswapMarket32;
-            reporter = reporter32;
-            reporterMultiplier = reporterMultiplier32;
-        } else if (i == 33) {
-            underlying = underlying33;
-            symbolHash = symbolHash33;
-            baseUnit = baseUnit33;
-            priceSource = priceSource33;
-            fixedPrice = fixedPrice33;
-            uniswapMarket = uniswapMarket33;
-            reporter = reporter33;
-            reporterMultiplier = reporterMultiplier33;
-        } else if (i == 34) {
-            underlying = underlying34;
-            symbolHash = symbolHash34;
-            baseUnit = baseUnit34;
-            priceSource = priceSource34;
-            fixedPrice = fixedPrice34;
-            uniswapMarket = uniswapMarket34;
-            reporter = reporter34;
-            reporterMultiplier = reporterMultiplier34;
         }
-
         return
             TokenConfig({
+                cToken: cToken,
                 underlying: underlying,
                 symbolHash: symbolHash,
                 baseUnit: baseUnit,
@@ -1247,7 +1191,21 @@ contract UniswapConfig {
     }
 
     /**
+     * @notice Get the config for the cToken
+     * @param cToken The address of the cToken of the config to get
+     * @return The config object
+     */
+    function getTokenConfigByCToken(address cToken)
+        public
+        view
+        returns (TokenConfig memory)
+    {
+        return getTokenConfig(getCTokenIndex(cToken));
+    }
+
+    /**
      * @notice Get the config for an underlying asset
+     * @dev The underlying address of ETH is the zero address
      * @param underlying The address of the underlying asset of the config to get
      * @return The config object
      */

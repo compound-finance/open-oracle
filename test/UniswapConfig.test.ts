@@ -8,7 +8,7 @@ import { smock } from "@defi-wonderland/smock";
 use(smock.matchers);
 
 // Update this to the max number of tokens supported in UniswapConfig.sol
-const MAX_TOKENS = 35;
+const MAX_TOKENS = 29;
 
 describe("UniswapConfig", () => {
   let signers: SignerWithAddress[];
@@ -34,6 +34,7 @@ describe("UniswapConfig", () => {
 
     const contract = await new UniswapConfig__factory(deployer).deploy([
       {
+        cToken: address(10),
         underlying: address(0),
         symbolHash: keccak256("ETH"),
         baseUnit: uint(1e18),
@@ -45,6 +46,7 @@ describe("UniswapConfig", () => {
         isUniswapReversed: false,
       },
       {
+        cToken: address(11),
         underlying: address(3),
         symbolHash: keccak256("BTC"),
         baseUnit: uint(1e18),
@@ -56,6 +58,7 @@ describe("UniswapConfig", () => {
         isUniswapReversed: true,
       },
       {
+        cToken: address(12),
         underlying: address(4),
         symbolHash: keccak256("REP"),
         baseUnit: uint(1e18),
@@ -87,9 +90,7 @@ describe("UniswapConfig", () => {
     expect(cfg0).not.to.deep.equal(cfg1);
     expect(cfgU2).to.deep.equal(cfg2);
 
-    await expect(contract.getTokenConfig(3)).to.be.revertedWith(
-      "Not found"
-    );
+    await expect(contract.getTokenConfig(3)).to.be.revertedWith("Not found");
     await expect(contract.getTokenConfigBySymbol("COMP")).to.be.revertedWith(
       "Not found"
     );
@@ -110,6 +111,7 @@ describe("UniswapConfig", () => {
       .map((_, i) => String.fromCharCode("a".charCodeAt(0) + i));
     const configs = symbols.map((symbol, i) => {
       return {
+        cToken: address(i),
         underlying: address(i),
         symbolHash: keccak256(symbol),
         baseUnit: uint(i + 49),
@@ -167,6 +169,7 @@ describe("UniswapConfig", () => {
       .map((_, i) => {
         const symbol = String.fromCharCode("a".charCodeAt(0) + i);
         return {
+          cToken: address(i),
           underlying: address(i + 1),
           symbolHash: keccak256(symbol),
           baseUnit: uint(i + 49),
@@ -185,14 +188,14 @@ describe("UniswapConfig", () => {
     const tx9_ = await deployer.sendTransaction(tx9__);
     const tx9 = await tx9_.wait();
     expect(cfg9.underlying).to.equal(address(10));
-    expect(tx9.gasUsed).to.equal(22830);
+    expect(tx9.gasUsed).to.equal(22970);
 
     const cfg25 = await contract.getTokenConfig(24);
     const tx25__ = await contract.populateTransaction.getTokenConfig(24);
     const tx25_ = await deployer.sendTransaction(tx25__);
     const tx25 = await tx25_.wait();
     expect(cfg25.underlying).to.equal(address(25));
-    expect(tx25.gasUsed).to.equal(23220);
+    expect(tx25.gasUsed).to.equal(23360);
 
     const cfgY = await contract.getTokenConfigBySymbol("y");
     const txY__ = await contract.populateTransaction.getTokenConfigBySymbol(
@@ -201,7 +204,7 @@ describe("UniswapConfig", () => {
     const txY_ = await deployer.sendTransaction(txY__);
     const txY = await txY_.wait();
     expect(cfgY.underlying).to.equal(address(25));
-    expect(txY.gasUsed).to.equal(25070);
+    expect(txY.gasUsed).to.equal(25252);
 
     const cfgCT26 = await contract.getTokenConfigByUnderlying(address(25));
     const txCT26__ =
@@ -211,7 +214,7 @@ describe("UniswapConfig", () => {
     const txCT26_ = await deployer.sendTransaction(txCT26__);
     const txCT26 = await txCT26_.wait();
     expect(cfgCT26.underlying).to.equal(address(25));
-    expect(txCT26.gasUsed).to.equal(25188);
+    expect(txCT26.gasUsed).to.equal(25348);
 
     const cfgR26 = await contract.getTokenConfigByReporter(address(24 + 51));
     const txR26__ = await contract.populateTransaction.getTokenConfigByReporter(
@@ -220,7 +223,7 @@ describe("UniswapConfig", () => {
     const txR26_ = await deployer.sendTransaction(txR26__);
     const txR26 = await txR26_.wait();
     expect(cfgR26.underlying).to.equal(address(25));
-    expect(txR26.gasUsed).to.equal(25166);
+    expect(txR26.gasUsed).to.equal(25326);
 
     const cfgU26 = await contract.getTokenConfigByUnderlying(address(25));
     const txU26__ =
@@ -230,6 +233,6 @@ describe("UniswapConfig", () => {
     const txU26_ = await deployer.sendTransaction(txU26__);
     const txU26 = await txU26_.wait();
     expect(cfgU26.underlying).to.equal(address(25));
-    expect(txU26.gasUsed).to.equal(25188);
+    expect(txU26.gasUsed).to.equal(25348);
   });
 });

@@ -35,6 +35,7 @@ interface CTokenConfig {
 
 // struct TokenConfig from UniswapConfig.sol; not exported by Typechain
 interface TokenConfig {
+  cToken: string;
   underlying: string;
   symbolHash: string; // bytes32
   baseUnit: BigNumberish;
@@ -93,10 +94,14 @@ async function setup({ isMockedView }: SetupOptions) {
           },
         ]);
         const fakeErc20 = await smock.fake([]);
-        fakeCToken.underlying.returns(() => {
-          // return another mock token as the underlying
-          return fakeErc20.address;
-        });
+        if (symbol !== "ETH") {
+          // ETH cToken does not have an "underlying" function.
+          fakeCToken.underlying.returns(() => {
+            // return another mock token as the underlying
+            return fakeErc20.address;
+          });
+        }
+
         return {
           symbol,
           addr: fakeCToken.address,
@@ -119,6 +124,7 @@ async function setup({ isMockedView }: SetupOptions) {
   const dummyAddress = address(0);
   const tokenConfigs: TokenConfig[] = [
     {
+      cToken: cToken.ETH.addr,
       underlying: cToken.ETH.underlying,
       symbolHash: keccak256("ETH"),
       baseUnit: uint(1e18),
@@ -130,6 +136,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: true,
     },
     {
+      cToken: cToken.DAI.addr,
       underlying: cToken.DAI.underlying,
       symbolHash: keccak256("DAI"),
       baseUnit: uint(1e18),
@@ -141,6 +148,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: false,
     },
     {
+      cToken: cToken.REP.addr,
       underlying: cToken.REP.underlying,
       symbolHash: keccak256("REPv2"),
       baseUnit: uint(1e18),
@@ -152,6 +160,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: false,
     },
     {
+      cToken: cToken.USDT.addr,
       underlying: cToken.USDT.underlying,
       symbolHash: keccak256("USDT"),
       baseUnit: uint(1e6),
@@ -163,6 +172,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: false,
     },
     {
+      cToken: cToken.SAI.addr,
       underlying: cToken.SAI.underlying,
       symbolHash: keccak256("SAI"),
       baseUnit: uint(1e18),
@@ -174,6 +184,7 @@ async function setup({ isMockedView }: SetupOptions) {
       isUniswapReversed: false,
     },
     {
+      cToken: cToken.WBTC.addr,
       underlying: cToken.WBTC.underlying,
       symbolHash: keccak256("BTC"),
       baseUnit: uint(1e8),
@@ -462,9 +473,7 @@ describe("UniswapAnchoredView", () => {
       ).deploy();
       await reporter.setUniswapAnchoredView(uniswapAnchoredView.address);
 
-      await expect(reporter.validate(95)).to.be.revertedWith(
-        "Not found"
-      );
+      await expect(reporter.validate(95)).to.be.revertedWith("Not found");
     });
   });
 
@@ -621,6 +630,7 @@ describe("UniswapAnchoredView", () => {
       const tokenConfigs: TokenConfig[] = [
         // Set dummy address as a uniswap market address
         {
+          cToken: cToken.ETH.addr,
           underlying: dummyAddress,
           symbolHash: keccak256("ETH"),
           baseUnit: uint(1e18),
@@ -632,6 +642,7 @@ describe("UniswapAnchoredView", () => {
           isUniswapReversed: true,
         },
         {
+          cToken: cToken.DAI.addr,
           underlying: dummyAddress,
           symbolHash: keccak256("DAI"),
           baseUnit: uint(1e18),
@@ -643,6 +654,7 @@ describe("UniswapAnchoredView", () => {
           isUniswapReversed: false,
         },
         {
+          cToken: cToken.REP.addr,
           underlying: dummyAddress,
           symbolHash: keccak256("REP"),
           baseUnit: uint(1e18),
@@ -669,6 +681,7 @@ describe("UniswapAnchoredView", () => {
       const dummyAddress = address(0);
       const tokenConfigs1: TokenConfig[] = [
         {
+          cToken: cToken.USDT.addr,
           underlying: dummyAddress,
           symbolHash: keccak256("USDT"),
           baseUnit: uint(1e18),
@@ -690,6 +703,7 @@ describe("UniswapAnchoredView", () => {
 
       const tokenConfigs2: TokenConfig[] = [
         {
+          cToken: cToken.USDT.addr,
           underlying: dummyAddress,
           symbolHash: keccak256("USDT"),
           baseUnit: uint(1e18),
@@ -716,6 +730,7 @@ describe("UniswapAnchoredView", () => {
       const dummyAddress = address(0);
       const tokenConfigs1: TokenConfig[] = [
         {
+          cToken: cToken.USDT.addr,
           underlying: dummyAddress,
           symbolHash: keccak256("USDT"),
           baseUnit: uint(1e18),
@@ -737,6 +752,7 @@ describe("UniswapAnchoredView", () => {
 
       const tokenConfigs2: TokenConfig[] = [
         {
+          cToken: cToken.USDT.addr,
           underlying: dummyAddress,
           symbolHash: keccak256("USDT"),
           baseUnit: uint(1e18),
@@ -794,10 +810,9 @@ describe("UniswapAnchoredView", () => {
 
     it("reverts if trying to activate failover for a non reporter price", async () => {
       await expect(
-        uniswapAnchoredView
-          .activateFailover(keccak256("SAI"))
+        uniswapAnchoredView.activateFailover(keccak256("SAI"))
       ).to.be.revertedWith("Not reporter");
-    })
+    });
 
     it("basic scenario, sets failoverActive and emits FailoverUpdated event with correct args", async () => {
       const bytes32EthSymbolHash = ethers.utils.hexZeroPad(
