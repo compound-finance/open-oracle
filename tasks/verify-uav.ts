@@ -56,18 +56,20 @@ export default async function verifyProposedUAV(
     console.log(
       `Comparing prices for cToken ${cTokenSymbol} with address ${checksumCTokenAddr}`
     );
-    const prodUAVPrice = await fetchUnderlyingPrice(
-      prodUAV,
-      checksumCTokenAddr,
-      cTokenSymbol,
-      PROPOSED_UAV_ADDR
-    );
-    const proposedUAVPrice = await fetchUnderlyingPrice(
-      proposedUAV,
-      checksumCTokenAddr,
-      cTokenSymbol,
-      PROPOSED_UAV_ADDR
-    );
+    const [prodUAVPrice, proposedUAVPrice] = await Promise.all([
+      fetchUnderlyingPrice(
+        prodUAV,
+        checksumCTokenAddr,
+        cTokenSymbol,
+        PROPOSED_UAV_ADDR
+      ),
+      fetchUnderlyingPrice(
+        proposedUAV,
+        checksumCTokenAddr,
+        cTokenSymbol,
+        PROPOSED_UAV_ADDR
+      ),
+    ]);
 
     if (!prodUAVPrice.eq(proposedUAVPrice)) {
       const errorMsg = `Price mismatch for ${cTokenSymbol}!  Prod UAV Price: ${prodUAVPrice.toString()} Proposed UAV Price: ${proposedUAVPrice.toString()}`;
