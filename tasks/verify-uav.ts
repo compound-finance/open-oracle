@@ -61,7 +61,7 @@ export default async function verifyProposedUAV(
         prodUAV,
         checksumCTokenAddr,
         cTokenSymbol,
-        PROPOSED_UAV_ADDR
+        PRODUCTION_UAV_ADDR
       ),
       fetchUnderlyingPrice(
         proposedUAV,
