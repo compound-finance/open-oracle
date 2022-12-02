@@ -14,6 +14,7 @@ const MAX_TOKENS = 29;
 describe("UniswapConfig", () => {
   let signers: SignerWithAddress[];
   let deployer: SignerWithAddress;
+
   beforeEach(async () => {
     signers = await ethers.getSigners();
     deployer = signers[0];

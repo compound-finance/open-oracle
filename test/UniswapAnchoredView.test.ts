@@ -460,6 +460,13 @@ describe("UniswapAnchoredView", () => {
 
       await expect(reporter.validate(95)).to.be.revertedWith("Not found");
     });
+
+    it("should revert reporter if the reported price is negative", async () => {
+      reporter = cToken.ETH.reporter;
+      // The internal price should be initialised with a value of 1
+      expect(await uniswapAnchoredView.price("ETH")).to.equal(1);
+      await expect(reporter.validate(-1)).to.be.revertedWith("Cant be neg");
+    });
   });
 
   describe("getUnderlyingPrice", () => {
@@ -606,6 +613,136 @@ describe("UniswapAnchoredView", () => {
           tokenConfigs
         )
       ).to.be.revertedWith("baseUnit not >0");
+    });
+
+    it("should fail if anchorPeriod == 0", async () => {
+      const anchorMantissa = exp(1, 17);
+
+      const dummyAddress = address(0);
+      const usdcEthPair = await ethers.getContractAt(
+        UniswapV3Pool.abi,
+        "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8"
+      );
+      const daiEthPair = await ethers.getContractAt(
+        UniswapV3Pool.abi,
+        "0xc2e9f25be6257c210d7adf0d4cd6e3e881ba25f8"
+      );
+      const repEthPair = await ethers.getContractAt(
+        UniswapV3Pool.abi,
+        "0xb055103b7633b61518cd806d95beeb2d4cd217e7"
+      );
+      const tokenConfigs = [
+        // Set dummy address as a uniswap market address
+        {
+          cToken: address(1),
+          underlying: dummyAddress,
+          symbolHash: keccak256("ETH"),
+          baseUnit: uint(1e18),
+          priceSource: PriceSource.REPORTER,
+          fixedPrice: 0,
+          uniswapMarket: usdcEthPair.address,
+          reporter: cToken.ETH.reporter.address,
+          reporterMultiplier: uint(1e16),
+          isUniswapReversed: true,
+        },
+        {
+          cToken: address(2),
+          underlying: dummyAddress,
+          symbolHash: keccak256("DAI"),
+          baseUnit: uint(1e18),
+          priceSource: PriceSource.REPORTER,
+          fixedPrice: 0,
+          uniswapMarket: daiEthPair.address,
+          reporter: cToken.DAI.reporter.address,
+          reporterMultiplier: uint(1e16),
+          isUniswapReversed: false,
+        },
+        {
+          cToken: address(3),
+          underlying: dummyAddress,
+          symbolHash: keccak256("REPv2"),
+          baseUnit: uint(1e18),
+          priceSource: PriceSource.REPORTER,
+          fixedPrice: 0,
+          uniswapMarket: repEthPair.address,
+          reporter: cToken.REP.reporter.address,
+          reporterMultiplier: uint(1e16),
+          isUniswapReversed: false,
+        },
+      ];
+
+      await expect(
+        new UniswapAnchoredView__factory(deployer).deploy(
+          anchorMantissa,
+          0,
+          tokenConfigs
+        )
+      ).to.be.revertedWith("Period not >0");
+    });
+
+    it("should fail if the report address is 0", async () => {
+      const anchorMantissa = exp(1, 17);
+
+      const dummyAddress = address(0);
+      const usdcEthPair = await ethers.getContractAt(
+        UniswapV3Pool.abi,
+        "0x8ad599c3a0ff1de082011efddc58f1908eb6e6d8"
+      );
+      const daiEthPair = await ethers.getContractAt(
+        UniswapV3Pool.abi,
+        "0xc2e9f25be6257c210d7adf0d4cd6e3e881ba25f8"
+      );
+      const repEthPair = await ethers.getContractAt(
+        UniswapV3Pool.abi,
+        "0xb055103b7633b61518cd806d95beeb2d4cd217e7"
+      );
+      const tokenConfigs = [
+        // Set dummy address as a uniswap market address
+        {
+          cToken: address(1),
+          underlying: dummyAddress,
+          symbolHash: keccak256("ETH"),
+          baseUnit: uint(1e18),
+          priceSource: PriceSource.REPORTER,
+          fixedPrice: 0,
+          uniswapMarket: usdcEthPair.address,
+          reporter: ethers.constants.AddressZero,
+          reporterMultiplier: uint(1e16),
+          isUniswapReversed: true,
+        },
+        {
+          cToken: address(2),
+          underlying: dummyAddress,
+          symbolHash: keccak256("DAI"),
+          baseUnit: uint(1e18),
+          priceSource: PriceSource.REPORTER,
+          fixedPrice: 0,
+          uniswapMarket: daiEthPair.address,
+          reporter: cToken.DAI.reporter.address,
+          reporterMultiplier: uint(1e16),
+          isUniswapReversed: false,
+        },
+        {
+          cToken: address(3),
+          underlying: dummyAddress,
+          symbolHash: keccak256("REPv2"),
+          baseUnit: uint(1e18),
+          priceSource: PriceSource.REPORTER,
+          fixedPrice: 0,
+          uniswapMarket: repEthPair.address,
+          reporter: cToken.REP.reporter.address,
+          reporterMultiplier: uint(1e16),
+          isUniswapReversed: false,
+        },
+      ];
+
+      await expect(
+        new UniswapAnchoredView__factory(deployer).deploy(
+          anchorMantissa,
+          30,
+          tokenConfigs
+        )
+      ).to.be.revertedWith("No reporter");
     });
 
     it("should fail if uniswap market is not defined", async () => {
@@ -799,6 +936,14 @@ describe("UniswapAnchoredView", () => {
       ).to.be.revertedWith("Not reporter");
     });
 
+    it("reverts if trying to activate failover for a price that has already failed over", async () => {
+      // Check that failoverActive variable is properly set
+      await uniswapAnchoredView.activateFailover(keccak256("ETH"));
+      await expect(
+        uniswapAnchoredView.activateFailover(keccak256("ETH"))
+      ).to.be.revertedWith("Already active");
+    });
+
     it("basic scenario, sets failoverActive and emits FailoverUpdated event with correct args", async () => {
       const bytes32EthSymbolHash = ethers.utils.hexZeroPad(
         keccak256("ETH"),
@@ -932,6 +1077,12 @@ describe("UniswapAnchoredView", () => {
       ).to.be.revertedWith("Only callable by owner");
     });
 
+    it("reverts if trying to deactivate a price that has not been failed over", async () => {
+      await expect(
+        uniswapAnchoredView.deactivateFailover(keccak256("ETH"))
+      ).to.be.revertedWith("Not active");
+    });
+
     it("basic scenario, sets failoverActive and emits FailoverUpdate event with correct args", async () => {
       // Check that failoverActive variable is properly set
       const response1 = await uniswapAnchoredView.prices(keccak256("ETH"));
@@ -1008,6 +1159,24 @@ describe("UniswapAnchoredView", () => {
         cToken.ETH.addr
       );
       expect(ethPrice3).to.equal(expectedEth1);
+    });
+  });
+
+  describe("pokeFailedOverPrice", () => {
+    let signers: SignerWithAddress[];
+
+    beforeEach(async () => {
+      ({ uniswapAnchoredView, signers, cToken } = await setup({
+        isMockedView: true,
+      }));
+    });
+
+    it("reverts if failover not active", async () => {
+      await expect(
+        uniswapAnchoredView
+          .connect(signers[1])
+          .pokeFailedOverPrice(keccak256("ETH"))
+      ).to.be.revertedWith("Not active");
     });
   });
 });
