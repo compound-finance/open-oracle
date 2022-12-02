@@ -4,6 +4,7 @@ import { UniswapConfig__factory } from "../types";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { address, keccak256, uint } from "./utils";
 import { smock } from "@defi-wonderland/smock";
+import { getTokenAddresses } from "./utils/cTokenAddresses";
 
 use(smock.matchers);
 
@@ -27,15 +28,12 @@ describe("UniswapConfig", () => {
         outputs: [{ type: "address", name: "underlying" }],
       },
     ];
-    const unlistedButUnderlying = await smock.fake(MockCTokenABI);
-    unlistedButUnderlying.underlying.returns(address(4));
     const unlistedNorUnderlying = await smock.fake(MockCTokenABI);
-    unlistedNorUnderlying.underlying.returns(address(5));
-
+    const cTokenAddresses = getTokenAddresses(["ETH", "BTC", "REP"]);
     const contract = await new UniswapConfig__factory(deployer).deploy([
       {
-        cToken: address(10),
-        underlying: address(0),
+        cToken: cTokenAddresses["ETH"].cToken,
+        underlying: cTokenAddresses["ETH"].underlying,
         symbolHash: keccak256("ETH"),
         baseUnit: uint(1e18),
         priceSource: 0,
@@ -46,8 +44,8 @@ describe("UniswapConfig", () => {
         isUniswapReversed: false,
       },
       {
-        cToken: address(11),
-        underlying: address(3),
+        cToken: cTokenAddresses["BTC"].cToken,
+        underlying: cTokenAddresses["BTC"].underlying,
         symbolHash: keccak256("BTC"),
         baseUnit: uint(1e18),
         priceSource: 1,
@@ -58,8 +56,8 @@ describe("UniswapConfig", () => {
         isUniswapReversed: true,
       },
       {
-        cToken: address(12),
-        underlying: address(4),
+        cToken: cTokenAddresses["REP"].cToken,
+        underlying: cTokenAddresses["REP"].underlying,
         symbolHash: keccak256("REP"),
         baseUnit: uint(1e18),
         priceSource: 1,
@@ -78,9 +76,15 @@ describe("UniswapConfig", () => {
     const cfgBTC = await contract.getTokenConfigBySymbol("BTC");
     const cfgR8 = await contract.getTokenConfigByReporter(address(8));
     const cfgR9 = await contract.getTokenConfigByReporter(address(9));
-    const cfgCT0 = await contract.getTokenConfigByUnderlying(address(0));
-    const cfgCT1 = await contract.getTokenConfigByUnderlying(address(3));
-    const cfgU2 = await contract.getTokenConfigByUnderlying(address(4));
+    const cfgCT0 = await contract.getTokenConfigByUnderlying(
+      cTokenAddresses["ETH"].underlying
+    );
+    const cfgCT1 = await contract.getTokenConfigByUnderlying(
+      cTokenAddresses["BTC"].underlying
+    );
+    const cfgU2 = await contract.getTokenConfigByUnderlying(
+      cTokenAddresses["REP"].underlying
+    );
     expect(cfg0).to.deep.equal(cfgETH);
     expect(cfgETH).to.deep.equal(cfgR8);
     expect(cfgR8).to.deep.equal(cfgCT0);

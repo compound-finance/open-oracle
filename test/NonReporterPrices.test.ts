@@ -9,6 +9,7 @@ import {
 import { smock } from "@defi-wonderland/smock";
 import * as UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
 import { address, uint, keccak256 } from "./utils";
+import { getTokenAddresses } from "./utils/cTokenAddresses";
 
 // Chai matchers for mocked contracts
 use(smock.matchers);
@@ -31,10 +32,12 @@ describe("UniswapAnchoredView", () => {
     deployer = signers[0];
   });
 
+  const cTokenAddresses = getTokenAddresses(["USDC", "USDT"]);
+
   it("handles fixed_usd prices", async () => {
     const USDC = {
-      cToken: address(1),
-      underlying: address(2),
+      cToken: cTokenAddresses["USDC"].cToken,
+      underlying: cTokenAddresses["USDC"].underlying,
       symbolHash: keccak256("USDC"),
       baseUnit: uint(1e6),
       priceSource: PriceSource.FIXED_USD,
@@ -45,8 +48,8 @@ describe("UniswapAnchoredView", () => {
       isUniswapReversed: false,
     };
     const USDT = {
-      cToken: address(3),
-      underlying: address(4),
+      cToken: cTokenAddresses["USDT"].cToken,
+      underlying: cTokenAddresses["USDT"].underlying,
       symbolHash: keccak256("USDT"),
       baseUnit: uint(1e6),
       priceSource: PriceSource.FIXED_USD,
@@ -83,9 +86,7 @@ describe("UniswapAnchoredView", () => {
       60,
       [SAI]
     );
-    expect(oracle.price("SAI")).to.be.revertedWith(
-      "ETH price not set"
-    );
+    expect(oracle.price("SAI")).to.be.revertedWith("ETH price not set");
   });
 
   it("reverts if ETH has no uniswap market", async () => {

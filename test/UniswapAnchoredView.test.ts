@@ -11,6 +11,7 @@ import {
 import * as UniswapV3Pool from "@uniswap/v3-core/artifacts/contracts/UniswapV3Pool.sol/UniswapV3Pool.json";
 import { BigNumberish } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { getTokenAddresses } from "./utils/cTokenAddresses";
 
 // Chai matchers for mocked contracts
 use(smock.matchers);
@@ -82,30 +83,14 @@ async function setup({ isMockedView }: SetupOptions) {
 
   // Create mock CTokens with mock underlying ERC-20s
   const cTokenSymbols = ["ETH", "DAI", "REP", "USDT", "SAI", "WBTC"];
+  const cTokenAddresses = getTokenAddresses(cTokenSymbols);
   const cToken: CTokenConfig = (
     await Promise.all(
       cTokenSymbols.map(async (symbol, i) => {
-        const fakeCToken = await smock.fake([
-          {
-            type: "function",
-            name: "underlying",
-            stateMutability: "view",
-            outputs: [{ type: "address", name: "underlying" }],
-          },
-        ]);
-        const fakeErc20 = await smock.fake([]);
-        if (symbol !== "ETH") {
-          // ETH cToken does not have an "underlying" function.
-          fakeCToken.underlying.returns(() => {
-            // return another mock token as the underlying
-            return fakeErc20.address;
-          });
-        }
-
         return {
           symbol,
-          addr: fakeCToken.address,
-          underlying: fakeErc20.address,
+          addr: cTokenAddresses[symbol].cToken,
+          underlying: cTokenAddresses[symbol].underlying,
           reporter: await new MockChainlinkOCRAggregator__factory(
             deployer
           ).deploy(),

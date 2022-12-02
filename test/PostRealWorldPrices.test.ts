@@ -12,7 +12,8 @@ import {
   UniswapV3SwapHelper,
 } from "../types";
 import { WETH9 } from "typechain-common-abi/types/contract-types/ethers";
-import { address, uint, keccak256, getWeth9, resetFork } from "./utils";
+import { uint, keccak256, getWeth9, resetFork } from "./utils";
+import { getTokenAddresses } from "./utils/cTokenAddresses";
 
 const BigNumber = ethers.BigNumber;
 type BigNumber = ReturnType<typeof BigNumber.from>;
@@ -51,7 +52,7 @@ async function setupTokenPairs(
     deployer
   ).deploy();
 
-  // REPv2 V3 pool from mainnet
+  // REP V3 pool from mainnet
   const rep_eth_pair = await ethers.getContractAt(
     UniswapV3Pool.abi,
     "0xb055103b7633b61518cd806d95beeb2d4cd217e7"
@@ -106,16 +107,6 @@ async function setupTokenPairs(
     deployer
   ).deploy();
 
-  // Initialize KNC pair with values from mainnet
-  // Reversed market
-  const eth_knc_pair = await ethers.getContractAt(
-    UniswapV3Pool.abi,
-    "0x76838fd2f22bdc1d3e96069971e65653173edb2a"
-  );
-  const knc_reporter = await new MockChainlinkOCRAggregator__factory(
-    deployer
-  ).deploy();
-
   return {
     ETH: {
       pair: usdc_eth_pair,
@@ -125,7 +116,7 @@ async function setupTokenPairs(
       pair: dai_eth_pair,
       reporter: dai_reporter,
     },
-    REPv2: {
+    REP: {
       pair: rep_eth_pair,
       reporter: rep_reporter,
     },
@@ -149,10 +140,6 @@ async function setupTokenPairs(
       pair: link_eth_pair,
       reporter: link_reporter,
     },
-    KNC: {
-      pair: eth_knc_pair,
-      reporter: knc_reporter,
-    },
   };
 }
 
@@ -169,10 +156,21 @@ async function setupUniswapAnchoredView(
   const anchorMantissa = BigNumber.from("10").pow("17"); //1e17 equates to 10% tolerance for source price to be above or below anchor
   const anchorPeriod = 30 * 60;
 
+  const cTokenAddresses = getTokenAddresses([
+    "ETH",
+    "DAI",
+    "REP",
+    "BAT",
+    "ZRX",
+    "BTC",
+    "COMP",
+    "LINK",
+  ]);
+
   const tokenConfigs = [
     {
-      cToken: address(1),
-      underlying: address(1),
+      cToken: cTokenAddresses["ETH"].cToken,
+      underlying: cTokenAddresses["ETH"].underlying,
       symbolHash: keccak256("ETH"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -183,8 +181,8 @@ async function setupUniswapAnchoredView(
       isUniswapReversed: true,
     },
     {
-      cToken: address(2),
-      underlying: address(2),
+      cToken: cTokenAddresses["DAI"].cToken,
+      underlying: cTokenAddresses["DAI"].underlying,
       symbolHash: keccak256("DAI"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -195,20 +193,20 @@ async function setupUniswapAnchoredView(
       isUniswapReversed: false,
     },
     {
-      cToken: address(3),
-      underlying: address(3),
-      symbolHash: keccak256("REPv2"),
+      cToken: cTokenAddresses["REP"].cToken,
+      underlying: cTokenAddresses["REP"].underlying,
+      symbolHash: keccak256("REP"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
       fixedPrice: 0,
-      uniswapMarket: pairs.REPv2.pair.address,
-      reporter: pairs.REPv2.reporter.address,
+      uniswapMarket: pairs.REP.pair.address,
+      reporter: pairs.REP.reporter.address,
       reporterMultiplier: uint(1e16),
       isUniswapReversed: false,
     },
     {
-      cToken: address(4),
-      underlying: address(4),
+      cToken: cTokenAddresses["BAT"].cToken,
+      underlying: cTokenAddresses["BAT"].underlying,
       symbolHash: keccak256("BAT"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -219,8 +217,8 @@ async function setupUniswapAnchoredView(
       isUniswapReversed: false,
     },
     {
-      cToken: address(5),
-      underlying: address(5),
+      cToken: cTokenAddresses["ZRX"].cToken,
+      underlying: cTokenAddresses["ZRX"].underlying,
       symbolHash: keccak256("ZRX"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -231,8 +229,8 @@ async function setupUniswapAnchoredView(
       isUniswapReversed: true,
     },
     {
-      cToken: address(6),
-      underlying: address(6),
+      cToken: cTokenAddresses["BTC"].cToken,
+      underlying: cTokenAddresses["BTC"].underlying,
       symbolHash: keccak256("BTC"),
       baseUnit: uint(1e8),
       priceSource: PriceSource.REPORTER,
@@ -243,8 +241,8 @@ async function setupUniswapAnchoredView(
       isUniswapReversed: false,
     },
     {
-      cToken: address(7),
-      underlying: address(7),
+      cToken: cTokenAddresses["COMP"].cToken,
+      underlying: cTokenAddresses["COMP"].underlying,
       symbolHash: keccak256("COMP"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -255,20 +253,8 @@ async function setupUniswapAnchoredView(
       isUniswapReversed: false,
     },
     {
-      cToken: address(8),
-      underlying: address(8),
-      symbolHash: keccak256("KNC"),
-      baseUnit: uint(1e18),
-      priceSource: PriceSource.REPORTER,
-      fixedPrice: 0,
-      uniswapMarket: pairs.KNC.pair.address,
-      reporter: pairs.KNC.reporter.address,
-      reporterMultiplier: uint(1e16),
-      isUniswapReversed: true,
-    },
-    {
-      cToken: address(9),
-      underlying: address(9),
+      cToken: cTokenAddresses["LINK"].cToken,
+      underlying: cTokenAddresses["LINK"].underlying,
       symbolHash: keccak256("LINK"),
       baseUnit: uint(1e18),
       priceSource: PriceSource.REPORTER,
@@ -321,10 +307,9 @@ describe("UniswapAnchoredView", () => {
     ["BTC", BigNumber.from("49338784652")],
     ["ETH", BigNumber.from("3793300743")],
     ["DAI", BigNumber.from("999851")],
-    ["REPv2", BigNumber.from("28877036")],
+    ["REP", BigNumber.from("28877036")],
     ["ZRX", BigNumber.from("1119738")],
     ["BAT", BigNumber.from("851261")],
-    ["KNC", BigNumber.from("2013118")],
     ["LINK", BigNumber.from("30058454")],
   ];
   let deployer: SignerWithAddress;
