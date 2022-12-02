@@ -48,8 +48,6 @@ yarn run test
 yarn run coverage
 ```
 
-Note that tests run for coverage will likely fail as resetting forked mainnet is disabled under coverage testing, due to [this issue](https://github.com/sc-forks/solidity-coverage/issues/574) in the `solidity-coverage` package, which fails to report coverage when the fork is reset. However, it is kept here as an indicator of coverage.
-
 ## Deploy
 
 The UAV is deployed using constructor parameters defined in `./configuration/parameters.js`. If new markets need to be added, they should be added to this file first. Read more about how to add new markets in the [configuration README](./configuration/).
