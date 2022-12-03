@@ -9,7 +9,7 @@ interface Args {
 // Pair uses a different aggregator in the new UAV
 const PAIRS_WITH_EXPECTED_PRICE_DEVIATION = ["cSUSHI"];
 
-const MAX_DEVIATION = 1; //%
+const MAX_DEVIATION = 0.1; //%
 
 export default async function verifyProposedUAV(
   arg: Args,
@@ -90,7 +90,7 @@ export default async function verifyProposedUAV(
       );
 
       const pctDeviation =
-        Math.abs(prodPriceNum - proposedPriceNum) / prodPriceNum;
+        (100 * Math.abs(prodPriceNum - proposedPriceNum)) / prodPriceNum;
 
       if (pctDeviation >= MAX_DEVIATION) throw new Error(errorMsg);
     }
