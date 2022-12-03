@@ -5,6 +5,10 @@ interface Args {
   production: string;
   proposed: string;
 }
+
+// Pair uses a different aggregator in the new UAV
+const PAIRS_WITH_EXPECTED_PRICE_DEVIATION = ["cSUSHI"];
+
 export default async function verifyProposedUAV(
   arg: Args,
   hre: HardhatRuntimeEnvironment
@@ -71,7 +75,10 @@ export default async function verifyProposedUAV(
       ),
     ]);
 
-    if (!prodUAVPrice.eq(proposedUAVPrice)) {
+    if (
+      !prodUAVPrice.eq(proposedUAVPrice) &&
+      PAIRS_WITH_EXPECTED_PRICE_DEVIATION.indexOf(cTokenSymbol) === -1
+    ) {
       const errorMsg = `Price mismatch for ${cTokenSymbol}!  Prod UAV Price: ${prodUAVPrice.toString()} Proposed UAV Price: ${proposedUAVPrice.toString()}`;
       throw new Error(errorMsg);
     }
