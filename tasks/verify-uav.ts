@@ -6,6 +6,9 @@ interface Args {
   proposed: string;
 }
 
+// Ignore pairs that are not configured
+const IGNORED_PAIRS = ["cMATIC"];
+
 // Pair uses a different aggregator in the new UAV
 const PAIRS_WITH_EXPECTED_PRICE_DEVIATION = ["cSUSHI"];
 
@@ -58,6 +61,11 @@ export default async function verifyProposedUAV(
       provider
     );
     const cTokenSymbol = await cToken.symbol();
+
+    if (IGNORED_PAIRS.indexOf(cTokenSymbol) !== -1) {
+      console.log(`Skipping check for ${cTokenSymbol}`);
+      continue;
+    }
 
     console.log(
       `Comparing prices for cToken ${cTokenSymbol} with address ${checksumCTokenAddr}`

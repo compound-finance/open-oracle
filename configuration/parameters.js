@@ -283,5 +283,19 @@ module.exports = [
       reporterMultiplier: "10000000000000000",
       isUniswapReversed: false,
     },
+    {
+      // "NAME": "MATIC",
+      cToken: "0x944dd1c7ce133b75880cee913d513f8c07312393",
+      underlying: "0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0",
+      symbolHash:
+        "0xa6a7de01e8b7ba6a4a61c782a73188d808fc1f3cf5743fadb68a02ed884b594f",
+      baseUnit: "1000000000000000000",
+      priceSource: "2",
+      fixedPrice: "0",
+      uniswapMarket: "0x290A6a7460B308ee3F19023D2D00dE604bcf5B42",
+      reporter: "0x44750a79ae69D5E9bC1651E099DFFE1fb8611AbA",
+      reporterMultiplier: "10000000000000000",
+      isUniswapReversed: false,
+    },
   ],
 ];
