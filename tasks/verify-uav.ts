@@ -9,6 +9,8 @@ interface Args {
 // Pair uses a different aggregator in the new UAV
 const PAIRS_WITH_EXPECTED_PRICE_DEVIATION = ["cSUSHI"];
 
+const MAX_DEVIATION = 1; //%
+
 export default async function verifyProposedUAV(
   arg: Args,
   hre: HardhatRuntimeEnvironment
@@ -75,12 +77,22 @@ export default async function verifyProposedUAV(
       ),
     ]);
 
-    if (
-      !prodUAVPrice.eq(proposedUAVPrice) &&
-      PAIRS_WITH_EXPECTED_PRICE_DEVIATION.indexOf(cTokenSymbol) === -1
-    ) {
+    if (!prodUAVPrice.eq(proposedUAVPrice)) {
       const errorMsg = `Price mismatch for ${cTokenSymbol}!  Prod UAV Price: ${prodUAVPrice.toString()} Proposed UAV Price: ${proposedUAVPrice.toString()}`;
-      throw new Error(errorMsg);
+      if (PAIRS_WITH_EXPECTED_PRICE_DEVIATION.indexOf(cTokenSymbol) === -1) {
+        throw new Error(errorMsg);
+      }
+      const prodPriceNum = parseFloat(
+        ethers.utils.formatEther(prodUAVPrice.toString())
+      );
+      const proposedPriceNum = parseFloat(
+        ethers.utils.formatEther(proposedUAVPrice.toString())
+      );
+
+      const pctDeviation =
+        Math.abs(prodPriceNum - proposedPriceNum) / prodPriceNum;
+
+      if (pctDeviation >= MAX_DEVIATION) throw new Error(errorMsg);
     }
     console.log(`Underlying prices for ${cTokenSymbol} match.`);
   }
