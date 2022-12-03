@@ -44,6 +44,7 @@
     "compile": "yarn hardhat compile",
     "deploy": "yarn hardhat run ./scripts/deploy-uav.js --network mainnet",
     "deploy-test": "yarn hardhat run ./scripts/deploy-uav.js --network hardhat",
+    "verify-uav": "yarn hardhat verify-proposed-uav --network mainnet",
     "verify": "yarn hardhat verify --network mainnet --constructor-args ./configuration/parameters.js",
     "verify-manual": "yarn hardhat manual-verify",
     "transfer": "yarn hardhat transfer-ownership --network mainnet --uav",

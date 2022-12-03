@@ -6,6 +6,7 @@ import "@nomiclabs/hardhat-etherscan";
 import "hardhat-contract-sizer";
 import "solidity-coverage";
 import { task, HardhatUserConfig } from "hardhat/config";
+import verifyProposedUAVAction from "./tasks/verify-uav";
 require("dotenv").config();
 
 const MAINNET_URL = process.env.MAINNET_URL!;
@@ -47,6 +48,14 @@ task("transfer-ownership", "Transfer ownership of the UAV to the COMP multisig")
     const uav = await UAV.attach(args.uav);
     await uav.transferOwnership(COMP_MULTISIG);
   });
+
+task(
+  "verify-proposed-uav",
+  "Verifies that the proposed UAV retusn the correct prices for all cTokens"
+)
+  .addParam("proposed", "Proposed UAV address")
+  .addParam("production", "Production UAV address")
+  .setAction(verifyProposedUAVAction);
 
 const hardhatUserConfig: HardhatUserConfig = {
   networks: {
@@ -93,7 +102,7 @@ const hardhatUserConfig: HardhatUserConfig = {
   },
   mocha: {
     timeout: 60000,
-  }
+  },
 };
 
 module.exports = hardhatUserConfig;
