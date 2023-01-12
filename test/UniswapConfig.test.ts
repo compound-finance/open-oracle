@@ -14,9 +14,35 @@ const MAX_TOKENS = 29;
 describe("UniswapConfig", () => {
   let signers: SignerWithAddress[];
   let deployer: SignerWithAddress;
+
   beforeEach(async () => {
     signers = await ethers.getSigners();
     deployer = signers[0];
+  });
+
+  describe("constructor", () => {
+    it("reverts if too many configs", async () => {
+      const symbols = Array(MAX_TOKENS + 1)
+        .fill(0)
+        .map((_, i) => String.fromCharCode("a".charCodeAt(0) + i));
+      const configs = symbols.map((symbol, i) => {
+        return {
+          cToken: address(i),
+          underlying: address(i),
+          symbolHash: keccak256(symbol),
+          baseUnit: uint(i + 49),
+          priceSource: 0,
+          fixedPrice: 1,
+          uniswapMarket: address(i + 50),
+          reporter: address(i + 51),
+          reporterMultiplier: uint(i + 52),
+          isUniswapReversed: i % 2 == 0,
+        };
+      });
+      await expect(
+        new UniswapConfig__factory(deployer).deploy(configs)
+      ).to.be.revertedWith("Too many");
+    });
   });
 
   it("basically works", async () => {
@@ -139,6 +165,21 @@ describe("UniswapConfig", () => {
         const cfgByUnderlying = await contract.getTokenConfigByUnderlying(
           address(i)
         );
+        const cfgTokenConfig = await contract.getTokenConfigByCToken(
+          config.cToken
+        );
+        const expectedTokenConfig = {
+          underlying: config.underlying,
+          symbolHash: config.symbolHash,
+          baseUnit: config.baseUnit,
+          priceSource: config.priceSource,
+          fixedPrice: config.fixedPrice,
+          uniswapMarket: config.uniswapMarket,
+          reporter: config.reporter,
+          reporterMultiplier: config.reporterMultiplier,
+          isUniswapReversed: config.isUniswapReversed,
+        };
+        expect(cfgTokenConfig).to.deep.equal(cfgTokenConfig);
         expect({
           underlying: cfgByIndex.underlying,
           symbolHash: cfgByIndex.symbolHash,
@@ -149,22 +190,18 @@ describe("UniswapConfig", () => {
           reporter: cfgByIndex.reporter,
           reporterMultiplier: cfgByIndex.reporterMultiplier,
           isUniswapReversed: cfgByIndex.isUniswapReversed,
-        }).to.deep.equal({
-          underlying: config.underlying,
-          symbolHash: config.symbolHash,
-          baseUnit: config.baseUnit,
-          priceSource: config.priceSource,
-          fixedPrice: config.fixedPrice,
-          uniswapMarket: config.uniswapMarket,
-          reporter: config.reporter,
-          reporterMultiplier: config.reporterMultiplier,
-          isUniswapReversed: config.isUniswapReversed,
-        });
+        }).to.deep.equal(expectedTokenConfig);
         expect(cfgByIndex).to.deep.equal(cfgBySymbol);
         expect(cfgBySymbol).to.deep.equal(cfgByCReporter);
         expect(cfgByUnderlying).to.deep.equal(cfgBySymbol);
       })
     );
+
+    const nonConfiguredCTokenAddress =
+      "0x0F9a74715CfDF8Aa6c9896CE40adc05215A3013d";
+    await expect(
+      contract.getTokenConfigByCToken(nonConfiguredCTokenAddress)
+    ).to.be.revertedWith("Not found");
   });
 
   it("checks gas [ @skip-on-coverage ]", async () => {
