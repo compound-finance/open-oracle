@@ -503,6 +503,15 @@ describe("UniswapAnchoredView", () => {
         expect(events[0].args.price).to.equal(expectedPrice);
         const updatedPriceData = await uniswapAnchoredView.prices(tokenSymbol);
         expect(updatedPriceData.price).to.equal(expectedPrice);
+
+        const underlyingPrice = await uniswapAnchoredView.getUnderlyingPrice(
+          tokenConfig.cToken
+        );
+        expect(underlyingPrice).to.equal(
+          updatedPriceData.price
+            .mul(ethers.utils.parseUnits("1", 30))
+            .div(tokenConfig.baseUnit)
+        );
       });
     }
   });
