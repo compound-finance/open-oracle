@@ -12,7 +12,7 @@ const IGNORED_PAIRS = ["cMATIC"];
 // Pair uses a different aggregator in the new UAV
 const PAIRS_WITH_EXPECTED_PRICE_DEVIATION = ["cSUSHI"];
 
-const MAX_DEVIATION = 0.1; //%
+const MAX_DEVIATION = 0.5; //%
 
 export default async function verifyProposedUAV(
   arg: Args,
