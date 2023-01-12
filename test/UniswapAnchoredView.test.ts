@@ -285,12 +285,13 @@ describe("UniswapAnchoredView", () => {
 
         describe("when transferring to another address", () => {
           it("emit an event", async () => {
-            await uniswapAnchoredView
-              .connect(deployer)
-              .transferOwnership(newOwner.address);
-            expect(await uniswapAnchoredView.owner())
+            expect(
+              uniswapAnchoredView
+                .connect(deployer)
+                .transferOwnership(newOwner.address)
+            )
               .to.emit(uniswapAnchoredView, "OwnershipTransferRequested")
-              .withArgs(deployer.address, newOwner);
+              .withArgs(deployer.address, newOwner.address);
           });
         });
       });
@@ -318,9 +319,7 @@ describe("UniswapAnchoredView", () => {
         });
 
         it("emits an event", async () => {
-          await expect(
-            await uniswapAnchoredView.connect(newOwner).acceptOwnership()
-          )
+          await expect(uniswapAnchoredView.connect(newOwner).acceptOwnership())
             .to.emit(uniswapAnchoredView, "OwnershipTransferred")
             .withArgs(deployer.address, newOwner.address);
         });
