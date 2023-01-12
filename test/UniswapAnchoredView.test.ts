@@ -55,6 +55,8 @@ interface SetupOptions {
 async function setup({ isMockedView }: SetupOptions) {
   const signers = await ethers.getSigners();
   const deployer = signers[0];
+  const newOwner = signers[1];
+  const other = signers[2];
 
   const anchorMantissa = exp(1, 17);
   const anchorPeriod = 60;
@@ -217,6 +219,8 @@ async function setup({ isMockedView }: SetupOptions) {
     uniswapAnchoredView,
     signers,
     deployer,
+    newOwner,
+    other,
   };
 }
 
@@ -231,9 +235,97 @@ describe("UniswapAnchoredView", () => {
   let tokenConfigs;
   let timestamp: number;
   let deployer: SignerWithAddress;
+  let newOwner: SignerWithAddress;
+  let other: SignerWithAddress;
 
   beforeEach(async () => {
     await resetFork();
+  });
+
+  describe("Ownable", () => {
+    beforeEach(async () => {
+      ({
+        anchorMantissa,
+        cToken,
+        tokenConfigs,
+        uniswapAnchoredView,
+        deployer,
+        newOwner,
+        other,
+      } = await setup({ isMockedView: true }));
+
+      // Temp: shh
+      anchorMantissa;
+      anchorPeriod;
+      tokenConfigs;
+      timestamp;
+    });
+
+    describe("transferOwnership", () => {
+      describe("when called by non owner", async () => {
+        it("reverts", async () => {
+          await expect(
+            uniswapAnchoredView
+              .connect(other)
+              .transferOwnership(newOwner.address)
+          ).to.be.revertedWith("Only callable by owner");
+        });
+      });
+
+      describe("when called by owner", () => {
+        describe("when transferring to self", () => {
+          it("reverts", async () => {
+            await expect(
+              uniswapAnchoredView
+                .connect(deployer)
+                .transferOwnership(deployer.address)
+            ).to.be.revertedWith("Cannot transfer to self");
+          });
+        });
+
+        describe("when transferring to another address", () => {
+          it("emit an event", async () => {
+            await uniswapAnchoredView
+              .connect(deployer)
+              .transferOwnership(newOwner.address);
+            expect(await uniswapAnchoredView.owner())
+              .to.emit(uniswapAnchoredView, "OwnershipTransferRequested")
+              .withArgs(deployer.address, newOwner);
+          });
+        });
+      });
+    });
+
+    describe("acceptOwnership", () => {
+      beforeEach(async () => {
+        await uniswapAnchoredView
+          .connect(deployer)
+          .transferOwnership(newOwner.address);
+      });
+
+      describe("when called by an address that is not the new owner", () => {
+        it("reverts", async () => {
+          await expect(
+            uniswapAnchoredView.connect(other).acceptOwnership()
+          ).to.be.revertedWith("Must be proposed owner");
+        });
+      });
+
+      describe("when accepted by an address that is the new proposed owner", () => {
+        it("correctly changes the contract ownership", async () => {
+          await uniswapAnchoredView.connect(newOwner).acceptOwnership();
+          expect(await uniswapAnchoredView.owner()).to.equal(newOwner.address);
+        });
+
+        it("emits an event", async () => {
+          await expect(
+            await uniswapAnchoredView.connect(newOwner).acceptOwnership()
+          )
+            .to.emit(uniswapAnchoredView, "OwnershipTransferred")
+            .withArgs(deployer.address, newOwner.address);
+        });
+      });
+    });
   });
 
   describe("validate", () => {
