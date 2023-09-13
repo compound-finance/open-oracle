@@ -1,4 +1,4 @@
-FROM node:13.12.0-alpine3.11
+FROM node:20.6.0-bookworm-slim
 
 RUN apk update && apk add --no-cache --virtual .gyp \
     python \
