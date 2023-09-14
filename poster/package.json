@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "bignumber.js": "^9.0.0",
-    "ganache-core": "github:compound-finance/ganache-core.git#compound",
+    "ganache-core": "2.13.0",
     "node-fetch": "^2.6.0",
     "web3": "1.2.9",
     "yargs": "^15.0.2"
