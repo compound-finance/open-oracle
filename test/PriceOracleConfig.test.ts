@@ -46,7 +46,7 @@ describe("PriceOracle", () => {
 
       const invalidCToken = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
       expect(priceOracle.getConfig(invalidCToken)).to.be.revertedWith(
-        "Config for cToken does not exist"
+        "ConfigNotFound"
       );
     });
     it("reverts if repeating configs", async () => {
@@ -69,7 +69,7 @@ describe("PriceOracle", () => {
       ];
       await expect(
         new PriceOracle__factory(deployer).deploy(repeatConfigs)
-      ).to.be.revertedWith("Duplicate config for cToken found");
+      ).to.be.revertedWith("DuplicateConfig");
     });
     it("reverts if missing cToken", async () => {
       const invalidConfigs = [
@@ -81,7 +81,7 @@ describe("PriceOracle", () => {
       ];
       await expect(
         new PriceOracle__factory(deployer).deploy(invalidConfigs)
-      ).to.be.revertedWith("Config missing cToken address");
+      ).to.be.revertedWith("MissingCTokenAddress");
     });
     it("reverts if baseUnit is 0", async () => {
       const invalidConfigs = [
@@ -93,7 +93,7 @@ describe("PriceOracle", () => {
       ];
       await expect(
         new PriceOracle__factory(deployer).deploy(invalidConfigs)
-      ).to.be.revertedWith("Config either missing base unit or set to 0");
+      ).to.be.revertedWith("InvalidBaseUnit");
     });
     it("reverts if missing priceFeed", async () => {
       const invalidConfigs = [
@@ -105,7 +105,7 @@ describe("PriceOracle", () => {
       ];
       await expect(
         new PriceOracle__factory(deployer).deploy(invalidConfigs)
-      ).to.be.revertedWith("Config missing price feed address");
+      ).to.be.revertedWith("InvalidPriceFeed");
     });
   });
 });

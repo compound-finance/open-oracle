@@ -43,7 +43,7 @@ const configs = [
   {
     cToken: "0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5",
     baseUnit: "1000000000000000000",
-    priceFeed: "",
+    priceFeed: "", // Set in setup with mocked contract address
   },
 ];
 
@@ -53,16 +53,14 @@ async function setup({ isMockedView }: SetupOptions) {
   const newOwner = signers[1];
   const other = signers[2];
 
+  // Mock ETH aggregator and set in config
   const mockedEthAggregator = await deployMockContract(
     deployer,
     mockAggregatorAbi
   );
   mockedEthAggregator.mock.latestRoundData.returns(0, 181217576125, 0, 0, 0);
   mockedEthAggregator.mock.decimals.returns(8);
-  // Set config price feeds to mock aggregator
-  for (let config of configs) {
-    config.priceFeed = mockedEthAggregator.address;
-  }
+  configs[0].priceFeed = mockedEthAggregator.address;
 
   let priceOracle: PriceOracle | MockContract<PriceOracle>;
   if (isMockedView) {
@@ -75,7 +73,6 @@ async function setup({ isMockedView }: SetupOptions) {
   }
 
   return {
-    // aggregatorMap,
     priceOracle,
     signers,
     deployer,
@@ -85,12 +82,10 @@ async function setup({ isMockedView }: SetupOptions) {
 }
 
 describe("PriceOracle", () => {
-  // let priceFeed: MockChainlinkOCRAggregator;
   let priceOracle: PriceOracle | MockContract<PriceOracle>;
   let deployer: SignerWithAddress;
   let newOwner: SignerWithAddress;
   let other: SignerWithAddress;
-  // let aggregatorMap: Record<string, MockChainlinkOCRAggregator>;
 
   beforeEach(async () => {
     await resetFork();
@@ -162,7 +157,7 @@ describe("PriceOracle", () => {
   });
 
   describe("getUnderlyingPrice", () => {
-    // everything must return 1e36 - underlying units
+    // everything must return 1e36 - base units
 
     beforeEach(async () => {
       ({ priceOracle, deployer } = await setup({
@@ -172,19 +167,20 @@ describe("PriceOracle", () => {
 
     it("should return reported ETH price", async () => {
       const ethCToken = "0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5";
+      const formattedPrice = BigNumber.from("181217576125").mul(exp(1, 10));
       expect(await priceOracle.getUnderlyingPrice(ethCToken)).to.equal(
-        BigNumber.from("181217576125").mul(exp(1, 10))
+        formattedPrice
       );
     });
     it("should revert for missing config", async () => {
       const invalidCToken = "0xF5DCe57282A584D2746FaF1593d3121Fcac444dC";
       expect(priceOracle.getUnderlyingPrice(invalidCToken)).to.be.revertedWith(
-        "Config not found for cToken"
+        "ConfigNotFound"
       );
     });
   });
   describe("addConfig", () => {
-    // everything must return 1e36 - underlying units
+    // everything must return 1e36 - base units
 
     beforeEach(async () => {
       ({ priceOracle, deployer } = await setup({
@@ -210,7 +206,7 @@ describe("PriceOracle", () => {
       };
 
       expect(priceOracle.addConfig(dupeConfig)).to.be.revertedWith(
-        "Config for cToken already exists"
+        "DuplicateConfig"
       );
     });
     it("should revert for invalid config", async () => {
@@ -221,12 +217,12 @@ describe("PriceOracle", () => {
       };
 
       expect(priceOracle.addConfig(invalidConfig)).to.be.revertedWith(
-        "Config either missing base unit or set to 0"
+        "InvalidBaseUnit"
       );
     });
   });
   describe("updateConfigPriceFeed", () => {
-    // everything must return 1e36 - underlying units
+    // everything must return 1e36 - base units
 
     beforeEach(async () => {
       ({ priceOracle, deployer } = await setup({
@@ -258,7 +254,7 @@ describe("PriceOracle", () => {
           existingConfig.cToken,
           existingConfig.priceFeed
         )
-      ).to.be.revertedWith("Price feed address same as the existing one");
+      ).to.be.revertedWith("UnchangedPriceFeed");
     });
     it("should revert for missing config", async () => {
       const missingCToken = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
@@ -266,11 +262,11 @@ describe("PriceOracle", () => {
 
       expect(
         priceOracle.updateConfigPriceFeed(missingCToken, priceFeed)
-      ).to.be.revertedWith("Config does not exist for cToken");
+      ).to.be.revertedWith("ConfigNotFound");
     });
   });
   describe("removeConfig", () => {
-    // everything must return 1e36 - underlying units
+    // everything must return 1e36 - base units
 
     beforeEach(async () => {
       ({ priceOracle, deployer } = await setup({
@@ -292,7 +288,7 @@ describe("PriceOracle", () => {
       const missingCToken = "0x39AA39c021dfbaE8faC545936693aC917d5E7563";
 
       expect(priceOracle.removeConfig(missingCToken)).to.be.revertedWith(
-        "Config for cToken does not exist"
+        "ConfigNotFound"
       );
     });
   });
