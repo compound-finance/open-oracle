@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.7;
 
-import { Ownable } from "../Ownable.sol";
+import { Ownable2Step } from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import { AggregatorV3Interface } from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 import { FullMath } from "../Uniswap/UniswapLib.sol";
 
-contract PriceOracle is Ownable {
+contract PriceOracle is Ownable2Step {
 
     /// @dev Configuration used to return the USD price for the associated cToken asset and base unit needed for formatting
     /// There should be 1 TokenConfig object for each supported asset, passed in the constructor.
@@ -86,8 +86,6 @@ contract PriceOracle is Ownable {
         for (uint i = 0; i < configs.length; i++) {
             TokenConfig memory config = configs[i];
             validateTokenConfig(config);
-            // Check if duplicate configs were submitted for the same cToken
-            if (tokenConfigs[config.cToken].cToken != address(0)) revert DuplicateConfig(config.cToken);
             tokenConfigs[config.cToken] = config;
         }
     }
@@ -160,10 +158,6 @@ contract PriceOracle is Ownable {
      */
     function addConfig(TokenConfig calldata config) external onlyOwner {
         validateTokenConfig(config);
-        TokenConfig memory existingConfig = tokenConfigs[config.cToken];
-        // Check if duplicate configs were submitted for the same cToken
-        if (existingConfig.cToken != address(0)) revert DuplicateConfig(existingConfig.cToken);
-
         tokenConfigs[config.cToken] = config;
         emit PriceOracleAssetAdded(config.cToken, config.baseUnit, config.priceFeed);
     }
@@ -201,14 +195,16 @@ contract PriceOracle is Ownable {
     }
 
     /**
-     * @notice Validates a token config
+     * @notice Validates a token config and confirms one for the cToken does not already exist in mapping
      * @dev All fields are required
      * @param config TokenConfig struct that needs to be validated
      */
-    function validateTokenConfig(TokenConfig memory config) internal pure {
+    function validateTokenConfig(TokenConfig memory config) internal view {
         if (config.cToken == address(0)) revert MissingCTokenAddress();
         // Dual check of field being present and being non-zero
         if (config.baseUnit == 0) revert InvalidBaseUnit();
         if (config.priceFeed == address(0)) revert InvalidPriceFeed(config.priceFeed);
+        // Check if duplicate configs were submitted for the same cToken
+        if (tokenConfigs[config.cToken].cToken != address(0)) revert DuplicateConfig(config.cToken);
     }
 }

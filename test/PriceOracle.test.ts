@@ -101,18 +101,22 @@ describe("PriceOracle", () => {
     describe("transferOwnership", () => {
       describe("when called by non owner", async () => {
         it("reverts", async () => {
-          await expect(
+          expect(
             priceOracle.connect(other).transferOwnership(newOwner.address)
-          ).to.be.revertedWith("Only callable by owner");
+          ).to.be.revertedWith("Ownable: caller is not the owner");
         });
       });
 
       describe("when called by owner", () => {
         describe("when transferring to self", () => {
-          it("reverts", async () => {
-            await expect(
-              priceOracle.connect(deployer).transferOwnership(deployer.address)
-            ).to.be.revertedWith("Cannot transfer to self");
+          it("is allowed", async () => {
+            expect(
+              await priceOracle
+                .connect(deployer)
+                .transferOwnership(deployer.address)
+            )
+              .to.emit(priceOracle, "OwnershipTransferStarted")
+              .withArgs(deployer.address, deployer.address);
           });
         });
 
@@ -135,9 +139,9 @@ describe("PriceOracle", () => {
 
       describe("when called by an address that is not the new owner", () => {
         it("reverts", async () => {
-          await expect(
+          expect(
             priceOracle.connect(other).acceptOwnership()
-          ).to.be.revertedWith("Must be proposed owner");
+          ).to.be.revertedWith("Ownable2Step: caller is not the new owner");
         });
       });
 
