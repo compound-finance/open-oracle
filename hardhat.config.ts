@@ -7,6 +7,8 @@ import "hardhat-contract-sizer";
 import "solidity-coverage";
 import { task, HardhatUserConfig } from "hardhat/config";
 import verifyProposedUAVAction from "./tasks/verify-uav";
+import { compareUavAndPriceOracle } from "./tasks/price-oracle-tasks";
+import { deployPriceOracle } from "./tasks/price-oracle-tasks";
 require("dotenv").config();
 
 const MAINNET_URL = process.env.MAINNET_URL!;
@@ -42,20 +44,33 @@ task(
 });
 
 task("transfer-ownership", "Transfer ownership of the UAV to the COMP multisig")
-  .addParam("uav", "Deployed UAV address")
+  .addParam("contract", "Deployed UAV address")
   .setAction(async (args, hre) => {
-    const UAV = await hre.ethers.getContractFactory("UniswapAnchoredView");
-    const uav = await UAV.attach(args.uav);
-    await uav.transferOwnership(COMP_MULTISIG);
+    const Contract = await hre.ethers.getContractFactory("Ownable");
+    const contract = Contract.attach(args.contract);
+    await contract.transferOwnership(COMP_MULTISIG);
   });
 
 task(
   "verify-proposed-uav",
-  "Verifies that the proposed UAV retusn the correct prices for all cTokens"
+  "Verifies that the proposed UAV returns the correct prices for all cTokens"
 )
   .addParam("proposed", "Proposed UAV address")
   .addParam("production", "Production UAV address")
   .setAction(verifyProposedUAVAction);
+
+task(
+  "deploy-price-oracle",
+  "Deploy the PriceOracle contract to the specified network"
+).setAction(deployPriceOracle);
+
+task(
+  "verify-proposed-price-oracle",
+  "Reports the proposed PriceOracle and UAV prices for all cTokens for verification"
+)
+  .addParam("proposed", "Proposed PriceOracle address")
+  .addParam("production", "Production UAV address")
+  .setAction(compareUavAndPriceOracle);
 
 const hardhatUserConfig: HardhatUserConfig = {
   networks: {

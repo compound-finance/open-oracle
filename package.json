@@ -8,11 +8,13 @@
   "license": "MIT",
   "dependencies": {},
   "devDependencies": {
+    "@chainlink/contracts": "0.8.0",
     "@defi-wonderland/smock": "^2.0.3",
     "@nomiclabs/ethereumjs-vm": "^4.2.2",
     "@nomiclabs/hardhat-ethers": "^2.0.2",
     "@nomiclabs/hardhat-etherscan": "^2.1.6",
     "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "@openzeppelin/contracts": "4.9.0",
     "@typechain/ethers-v5": "^7.0.1",
     "@typechain/hardhat": "^2.3.0",
     "@types/chai": "^4.2.21",
@@ -44,10 +46,12 @@
     "compile": "yarn hardhat compile",
     "deploy": "yarn hardhat run ./scripts/deploy-uav.js --network mainnet",
     "deploy-test": "yarn hardhat run ./scripts/deploy-uav.js --network hardhat",
+    "deploy-price-oracle": "yarn hardhat deploy-price-oracle --network mainnet",
     "verify-uav": "yarn hardhat verify-proposed-uav --network mainnet",
-    "verify": "yarn hardhat verify --network mainnet --constructor-args ./configuration/parameters.js",
+    "verify-price-oracle": "yarn hardhat verify-proposed-price-oracle --network mainnet",
+    "verify": "yarn hardhat verify --network mainnet --constructor-args",
     "verify-manual": "yarn hardhat manual-verify",
-    "transfer": "yarn hardhat transfer-ownership --network mainnet --uav",
+    "transfer": "yarn hardhat transfer-ownership --network mainnet --contract",
     "size-contracts": "yarn hardhat size-contracts"
   },
   "resolutions": {
