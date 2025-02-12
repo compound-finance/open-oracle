@@ -51,14 +51,36 @@ contract OpenOraclePriceData is OpenOracleData {
     }
 
     function decodeMessage(bytes calldata message, bytes calldata signature) internal pure returns (address, uint64, string memory, uint64) {
-        // Recover the source address
-        address source = source(message, signature);
+        // Compute message hash
+        bytes32 messageHash = keccak256(message);
+        bytes32 ethSignedMessageHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
 
-        // Decode the message and check the kind
+        // Extract signature components
+        (bytes32 r, bytes32 s, uint8 v) = splitSignature(signature);
+
+        // Recover the signer
+        address recoveredSource = ecrecover(ethSignedMessageHash, v, r, s);
+        require(recoveredSource != address(0), "Invalid signature");
+
+        // Decode the message
         (string memory kind, uint64 timestamp, string memory key, uint64 value) = abi.decode(message, (string, uint64, string, uint64));
+
+        // Validate the data type
         require(keccak256(abi.encodePacked(kind)) == keccak256(abi.encodePacked("prices")), "Kind of data must be 'prices'");
-        return (source, timestamp, key, value);
+
+        return (recoveredSource, timestamp, key, value);
     }
+
+    // Utility function to split signature into r, s, v components
+    function splitSignature(bytes memory sig) internal pure returns (bytes32 r, bytes32 s, uint8 v) {
+        require(sig.length == 65, "Invalid signature length");
+        assembly {
+            r := mload(add(sig, 32))
+            s := mload(add(sig, 64))
+            v := byte(0, mload(add(sig, 96)))
+        }
+    }
+
 
     /**
      * @notice Read a single key from an authenticated source
